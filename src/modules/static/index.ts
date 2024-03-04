@@ -5,7 +5,6 @@ import * as ts from "typescript";
 import * as fs from "fs";
 import * as babel from "@babel/core";
 
-// eslint-disable-next-line node/no-unpublished-import
 import * as t from "@babel/types";
 import * as mime from "mime-types";
 
