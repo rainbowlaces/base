@@ -105,7 +105,9 @@ export default class Base {
           return;
         }
         res.status(500).send("Internal Server Error");
-        this.logger.error(err.message, [err.constructor.name], { error: err });
+        this.logger.error(err.message, [err.constructor.name], {
+          error: err.stack?.split("\n"),
+        });
         next();
       },
     );
@@ -176,7 +178,7 @@ export default class Base {
     for (const middleware of m.middleware()) {
       const mw = middleware;
       const mwName = mw.name.replace("bound ", "");
-      const wrappedMiddleware = (
+      const wrappedMiddleware = async (
         req: express.Request,
         res: express.Response,
         next: express.NextFunction,
@@ -184,11 +186,13 @@ export default class Base {
         this.logger.debug(
           `Running middleware: ${moduleName}:${mwName} ${req.method.toLowerCase()}`,
         );
-
         if (mw.httpMethod && mw.httpMethod !== req.method.toLowerCase())
           return next();
-
-        mw(req, res, next);
+        try {
+          await mw(req, res, next);
+        } catch (err) {
+          next(err);
+        }
       };
 
       if (mw.path) {

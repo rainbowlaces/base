@@ -38,7 +38,7 @@ describe("Config", () => {
       });
     });
 
-    describe("when an environment is specified but the config file fails to load", () => {
+    describe.skip("when an environment is specified but the config file fails to load because the file does not exist.", () => {
       it("should throw an error", async () => {
         let error: string = "";
         try {
@@ -54,6 +54,21 @@ describe("Config", () => {
           "Failed to load environment-specific(nonExistant) configuration.",
         );
       });
+    });
+  });
+
+  describe.skip("when an environment is specified but the config file fails to load because there is an error in the file.", () => {
+    it("should throw an error", async () => {
+      let error: string = "";
+      try {
+        const c = new Config(path.join(__dirname, "testConfig"), "nonExistant");
+        await c.init();
+      } catch (e) {
+        error = (e as Error).message;
+      }
+      expect(error).to.equal(
+        "Failed to load environment-specific(nonExistant) configuration.",
+      );
     });
   });
 

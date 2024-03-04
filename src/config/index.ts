@@ -39,8 +39,8 @@ export default class Config {
       } catch (error) {
         const err = error as NodeError;
         if (err.code === "ERR_MODULE_NOT_FOUND") {
-          throw new Error(
-            `Failed to load environment-specific(${this._env}) configuration.`,
+          console.warn(
+            `Environment-specific(${this._env}) configuration not found.`,
           );
         } else {
           throw new Error(
