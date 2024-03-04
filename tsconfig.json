@@ -1,0 +1,28 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "moduleResolution": "node", 
+        "baseUrl": "src",
+        "outDir": "dist",
+        "declaration": true,
+        "declarationMap": true,
+        "downlevelIteration": true,
+        "resolveJsonModule": true, 
+        "emitDeclarationOnly": true,
+        "isolatedModules": true,
+        "strict": true,
+        "noImplicitAny": true,
+        "strictNullChecks": true,
+        "noImplicitReturns": true,
+        "noImplicitThis": true,
+        "alwaysStrict": true,
+        "strictBindCallApply": true,
+        "strictPropertyInitialization": true,
+        "strictFunctionTypes": true,
+        "esModuleInterop": true,
+        "forceConsistentCasingInFileNames": true,
+        "lib": ["ESNext"], 
+    }, 
+    "include": [ "src/**/*.ts" ]
+}
