@@ -22,7 +22,7 @@
     "build:test": "npm run build && npm run test",
     "full": "npm run lint && npm run build:clean && npm run test",
     "full:watch": "nodemon --watch 'src/**/*' --ext ts --exec 'npm run full'",
-    "publish": "npm publish --access=public"
+    "publish": "npm run full && npm publish --access=public"
   },
   "author": "",
   "license": "MIT",
