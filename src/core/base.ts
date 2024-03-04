@@ -181,7 +181,7 @@ export default class Base {
         res: express.Response,
         next: express.NextFunction,
       ) => {
-        this.logger.info(
+        this.logger.debug(
           `Running middleware: ${moduleName}:${mwName} ${req.method.toLowerCase()}`,
         );
 
