@@ -202,6 +202,8 @@ export default class Base {
       );
     }
 
+    this._modules[moduleName] = m;
+
     this.logger.info(`Registered module: ${moduleName}.`);
   }
 
