@@ -121,9 +121,7 @@ describe("LogMessageSerializerDefault", () => {
       const serialized = serializer.serialize(message);
 
       expect(serialized.context).to.deep.equal({
-        a: {
-          b: {},
-        },
+        a: {},
       });
     });
   });

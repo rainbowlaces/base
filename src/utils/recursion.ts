@@ -3,10 +3,15 @@ type RecursiveMapOptions = {
   maxItems?: number;
 };
 
+export type TransformFunction = (value: unknown) => unknown;
+export type GetTransformerFunction = (
+  value: unknown,
+) => TransformFunction | null;
+
 export function recursiveMap(
   input: unknown,
-  transform: (value: unknown) => unknown | null,
   options: RecursiveMapOptions = {},
+  getTransformer: GetTransformerFunction = () => null,
   currentDepth: number = 1,
   seen: WeakMap<object, unknown> = new WeakMap(),
 ): unknown {
@@ -15,9 +20,9 @@ export function recursiveMap(
     return {};
   }
 
-  const serialized = transform(input);
-  if (serialized !== null) {
-    return serialized;
+  const transformer = getTransformer(input);
+  if (transformer !== null) {
+    return transformer(input);
   }
 
   if (typeof input === "object" && input !== null) {
@@ -25,28 +30,27 @@ export function recursiveMap(
       return seen.get(input);
     }
 
-    const entries = Array.isArray(input)
+    const isInputArray = Array.isArray(input);
+    const entries = isInputArray
       ? input.map((item, index) => ({ key: index, value: item }))
       : Object.entries(input).map(([key, value]) => ({ key, value }));
-
     const limitedEntries = entries.slice(0, maxItems);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const copy: any = Array.isArray(input) ? [] : {};
+    const copy: unknown[] | Record<string, unknown> = isInputArray ? [] : {};
     seen.set(input, copy);
 
     limitedEntries.forEach(({ key, value }) => {
       const transformedValue = recursiveMap(
         value,
-        transform,
         options,
+        getTransformer,
         currentDepth + 1,
         seen,
       );
-      if (Array.isArray(copy)) {
-        copy[key as number] = transformedValue;
+      if (isInputArray) {
+        (copy as unknown[])[key as number] = transformedValue;
       } else {
-        copy[key as string] = transformedValue;
+        (copy as Record<string, unknown>)[key] = transformedValue;
       }
     });
 

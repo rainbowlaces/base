@@ -1,7 +1,7 @@
 import { TypeSerializer, LogContext } from "../types";
 import { ErrorSerializer } from "./errorSerializer";
 import { ScalarSerializer } from "./scalarSerializer";
-import { recursiveMap } from "../../utils/recursion";
+import { TransformFunction, recursiveMap } from "../../utils/recursion";
 
 type ContextTransformerOptions = {
   maxItems?: number;
@@ -29,25 +29,18 @@ export class ContextTransformer {
     if (!Object.keys(input).length) return {};
     return recursiveMap(
       input,
-      this.transformValue.bind(this),
       {
         maxDepth: this.maxDepth,
         maxItems: this.maxItems,
       },
-      0,
-      new WeakMap(),
+      this.findSerializerFor.bind(this),
     );
   }
 
-  private transformValue(value: unknown): unknown {
-    const serializer = this.findSerializerFor(value);
-    return serializer && serializer.serialize(value);
-  }
-
-  private findSerializerFor(input: unknown): TypeSerializer<unknown> | null {
-    return (
-      this.serializers.find((serializer) => serializer.canSerialize(input)) ||
-      null
+  private findSerializerFor(input: unknown): TransformFunction | null {
+    const s = this.serializers.find((serializer) =>
+      serializer.canSerialize(input),
     );
+    return s ? (value) => s.serialize(value) : null;
   }
 }

@@ -1,4 +1,8 @@
-import { recursiveMap } from "../utils/recursion";
+import {
+  GetTransformerFunction,
+  TransformFunction,
+  recursiveMap,
+} from "../utils/recursion";
 import { PatternMap, LogContext, SerializedLogMessage } from "./types";
 
 export type LogMessageRedactorConfig = {
@@ -46,21 +50,30 @@ export default class LogMessageRedactorDefault implements LogMessageRedactor {
     };
   }
 
-  private redactValue(value: unknown): unknown {
-    if (typeof value === "string") {
-      return Object.entries(this.patterns).reduce(
-        (redactedValue, [name, pattern]) =>
-          redactedValue.replace(pattern, `[${name}]`),
-        value,
-      );
-    }
-    return value; // Return non-string values unchanged
+  private redactValue(value: string): string {
+    return Object.entries(this.patterns).reduce(
+      (redactedValue, [name, pattern]) =>
+        redactedValue.replace(pattern, `[${name}]`),
+      value,
+    );
   }
 
   private redactContext(context: LogContext): LogContext {
     // Use recursiveMap for deep redaction, applying redactValue to all scalar values
-    return recursiveMap(context, this.redactValue.bind(this), {
-      maxDepth: Infinity, // Assuming you want to redact deeply without limit
-    }) as LogContext; // Cast back to LogContext assuming recursiveMap returns unknown
+
+    const getTransformer: GetTransformerFunction = (value: unknown) => {
+      if (typeof value === "string") {
+        return this.redactValue.bind(this) as TransformFunction;
+      }
+      return null;
+    };
+
+    return recursiveMap(
+      context,
+      {
+        maxDepth: Infinity,
+      },
+      getTransformer,
+    ) as LogContext;
   }
 }
