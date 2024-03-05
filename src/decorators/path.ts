@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BaseRequestHandler } from "../core/baseRequestHandler";
-import { pathToRegexp } from "path-to-regexp";
+import { match, MatchFunction } from "path-to-regexp";
 /**
  * Specifies the URL path that a middleware method should handle, allowing for pattern matching and parameter
  * extraction from the request URL. Used together with @middleware, it routes HTTP requests to the appropriate
@@ -14,14 +14,17 @@ export default function path(pathStr: string) {
   ): any {
     if (context.kind !== "method") return;
 
+    let matcher: MatchFunction;
+
     try {
-      pathToRegexp(pathStr);
+      matcher = match(pathStr);
     } catch (e) {
       throw new Error(
         `Invalid path: ${pathStr}. Error: ${(e as Error).message}`,
       );
     }
 
+    target.pathMatcher = matcher;
     target.path = pathStr;
     return target;
   };

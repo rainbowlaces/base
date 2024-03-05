@@ -13,6 +13,7 @@
         "isolatedModules": true,
         "strict": true,
         "noImplicitAny": true,
+        "sourceMap": true,
         "strictNullChecks": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,

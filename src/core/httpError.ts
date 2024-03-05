@@ -5,9 +5,9 @@
  */
 export default class HttpError extends Error {
   statusCode: number;
-  wrapped?: Error;
+  wrapped?: unknown;
 
-  constructor(statusCode: number, wrappedError?: Error) {
+  constructor(statusCode: number, wrappedError?: unknown) {
     super(`HTTP Error ${statusCode}`);
     this.statusCode = statusCode;
     this.wrapped = wrappedError;

@@ -183,11 +183,22 @@ export default class Base {
         res: express.Response,
         next: express.NextFunction,
       ) => {
+        if (mw.httpMethod && mw.httpMethod !== req.method.toLowerCase()) {
+          return next();
+        }
+
+        const params = mw.pathMatcher ? mw.pathMatcher(req.path) : null;
+        if (mw.path && mw.pathMatcher && !params) {
+          return next();
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        req.params = (params && (params as any).params) || {};
+
         this.logger.debug(
           `Running middleware: ${moduleName}:${mwName} ${req.method.toLowerCase()}`,
         );
-        if (mw.httpMethod && mw.httpMethod !== req.method.toLowerCase())
-          return next();
+
         try {
           await mw(req, res, next);
         } catch (err) {
@@ -195,11 +206,11 @@ export default class Base {
         }
       };
 
-      if (mw.path) {
-        this.app.use(mw.path, wrappedMiddleware);
-      } else {
-        this.app.use(wrappedMiddleware);
-      }
+      // if (mw.path) {
+      //   this.app.use(mw.path, wrappedMiddleware);
+      // } else {
+      this.app.use(wrappedMiddleware);
+      //}
 
       this.logger.info(
         `Registered middleware: ${moduleName}:${mwName} ${mw.httpMethod?.toUpperCase() || ""} ${mw.path || ""}`,

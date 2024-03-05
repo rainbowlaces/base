@@ -26,7 +26,7 @@ export class ContextTransformer {
   }
 
   transform(input: LogContext): unknown {
-    // Utilize recursiveMap for the transformation, directly returning unknown
+    if (!Object.keys(input).length) return {};
     return recursiveMap(
       input,
       this.transformValue.bind(this),
@@ -40,20 +40,14 @@ export class ContextTransformer {
   }
 
   private transformValue(value: unknown): unknown {
-    // Find and use the appropriate serializer for the value
     const serializer = this.findSerializerFor(value);
-    return serializer.serialize(value);
+    return serializer && serializer.serialize(value);
   }
 
-  private findSerializerFor(input: unknown): TypeSerializer<unknown> {
-    const fallback: TypeSerializer<unknown> = {
-      serialize: (input: unknown) => input,
-      canSerialize: (input: unknown): input is unknown => true,
-    };
-
+  private findSerializerFor(input: unknown): TypeSerializer<unknown> | null {
     return (
       this.serializers.find((serializer) => serializer.canSerialize(input)) ||
-      fallback
+      null
     );
   }
 }

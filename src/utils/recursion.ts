@@ -5,7 +5,7 @@ type RecursiveMapOptions = {
 
 export function recursiveMap(
   input: unknown,
-  transform: (value: unknown) => unknown,
+  transform: (value: unknown) => unknown | null,
   options: RecursiveMapOptions = {},
   currentDepth: number = 1,
   seen: WeakMap<object, unknown> = new WeakMap(),
@@ -13,6 +13,11 @@ export function recursiveMap(
   const { maxDepth = 10, maxItems = Infinity } = options;
   if (currentDepth > maxDepth) {
     return {};
+  }
+
+  const serialized = transform(input);
+  if (serialized !== null) {
+    return serialized;
   }
 
   if (typeof input === "object" && input !== null) {
@@ -47,6 +52,6 @@ export function recursiveMap(
 
     return copy;
   } else {
-    return transform(input);
+    return input;
   }
 }

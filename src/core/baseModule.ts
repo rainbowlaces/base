@@ -132,6 +132,7 @@ export default abstract class BaseModule {
     if (this._commands.has(queue)) return this._commands.get(queue)!;
 
     const commandQueue = new CommandQueue(
+      this,
       new DependencyManager<Command>(
         this.getMethods<Command>(
           (method: Command) =>

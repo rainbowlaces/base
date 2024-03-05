@@ -16,6 +16,8 @@ import dependsOn from "../../decorators/dependsOn";
 import method from "../../decorators/method";
 import HttpError from "../../core/httpError";
 import command from "../../decorators/command";
+import { resolveModule } from "./utils";
+import { findFileUp, loadFile } from "../../utils/file";
 
 interface FileRequest extends Request {
   data?: Buffer | string;
@@ -41,13 +43,13 @@ export default class StaticFiles extends BaseModule {
   staticFsRoot: string = "/public";
 
   @config()
-  npmFsRoot: string = "../../node_modules";
+  npmFsRoot: string = "";
 
   @config()
   maxAge: number = 0;
 
   @config()
-  moduleAccessFilter: string[] = [];
+  moduleAccessFilter: (string | RegExp)[] = [];
 
   @config()
   accessMode: "open" | "closed" = "closed";
@@ -56,20 +58,48 @@ export default class StaticFiles extends BaseModule {
     this.staticFsRoot = fsPath.normalize(
       fsPath.join(this.base.fsRoot, this.staticFsRoot),
     );
-    this.npmFsRoot = fsPath.normalize(
-      fsPath.join(this.base.fsRoot, this.npmFsRoot),
-    );
+
+    if (!this.npmFsRoot.trim()) {
+      try {
+        this.npmFsRoot =
+          (await findFileUp(this.base.fsRoot, "package.json")) ?? "";
+        this.npmFsRoot = this.npmFsRoot
+          ? fsPath.join(fsPath.dirname(this.npmFsRoot), "node_modules")
+          : "";
+      } catch (err) {
+        this.logger.error("Error resolving package.json.", [], { err });
+      }
+    }
+
+    if (!this.npmFsRoot) {
+      this.logger.error(
+        "Failed to resolve npmFsRoot, npm modules will not be accessible.",
+      );
+    } else {
+      this.npmFsRoot = fsPath.normalize(this.npmFsRoot);
+    }
+
     this.maxAge = Number(this.maxAge);
     this.logger.debug(`Static files path: ${this.staticFsRoot}`);
     this.logger.debug(`NPM modules path: ${this.npmFsRoot}`);
     this.logger.debug(`Max age: ${this.maxAge}`);
+    this.logger.debug(`Access Mode: ${this.accessMode}`);
+    this.logger.debug(`Namespace: ${this.namespace}`);
   }
 
   @middleware
-  @path("/npm")
+  @path("/npm/(.+)")
   @method("get")
-  async handleNpm(req: FileRequest, res: Response, next: NextFunction) {
-    const { module, cleanPath } = this.parseModuleName(req.path);
+  async handleNpm(
+    req: FileRequest,
+    res: Response,
+    next: NextFunction,
+  ): Promise<unknown> {
+    const params = req.params;
+    if (!params || !params[0]) return next();
+    const { module, cleanPath } = this.parseModuleName(params[0]);
+
+    this.logger.info(`Module(${module}) requested`);
 
     if (module && !this.isModuleAccessible(module)) {
       this.logger.info(`Module(${module}) is not accessible`);
@@ -77,40 +107,50 @@ export default class StaticFiles extends BaseModule {
       return;
     }
 
-    let filePath: string;
     try {
-      filePath = require.resolve(cleanPath, { paths: [this.npmFsRoot] });
+      req.filePath = await resolveModule(cleanPath, this.npmFsRoot);
     } catch (err) {
-      this.logger.info(`Module(${module}) not found in ${this.npmFsRoot}`);
+      this.logger.info(`Module(${module}) not found in ${this.npmFsRoot}`, [], {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        e: (err as any).stack,
+      });
+      res.status(404).send("Not found");
       return;
     }
 
-    req.filePath = filePath;
     req.root = this.npmFsRoot;
     req.fileRequest = true;
 
-    return this.commands("npm").run(req, res, next);
+    this.logger.info(
+      `Module(${module}) found in ${req.root} at path ${req.filePath}`,
+    );
+
+    return this.commands("static").run(req, res, next);
   }
 
   @middleware
-  @path("/static")
+  @path("/static/(.+)")
   @method("get")
   async handleStatic(
     req: FileRequest,
     res: Response,
     next: NextFunction,
   ): Promise<unknown> {
-    const cleanPath = this.cleanPath(req.path).join("/");
+    const params = req.params;
+    if (!params || !params[0]) return next();
+
+    const cleanPath = this.cleanPath(params[0]).join("/");
+
     if (!cleanPath) return next();
 
-    req.filePath = fsPath.normalize(fsPath.join(this.staticFsRoot, req.path));
+    req.filePath = fsPath.normalize(fsPath.join(this.staticFsRoot, cleanPath));
     req.root = this.staticFsRoot;
     req.fileRequest = true;
 
     return this.commands("static").run(req, res, next);
   }
 
-  @command(["static", "npm"])
+  @command(["static"])
   async handleFile(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest || !req.filePath || !req.root) return done();
 
@@ -123,7 +163,7 @@ export default class StaticFiles extends BaseModule {
     }
 
     try {
-      const { data, stats } = await this.loadFile(req.filePath);
+      const { data, stats } = await loadFile(req.filePath);
       req.data = data;
       req.stats = stats;
     } catch (err) {
@@ -138,7 +178,7 @@ export default class StaticFiles extends BaseModule {
   }
 
   @dependsOn("handleFile")
-  @command(["static", "npm"])
+  @command(["static"])
   async handleTsJs(req: FileRequest) {
     req.ts = !!req.filePath?.endsWith(".ts");
     req.js = !!req.filePath?.endsWith(".js");
@@ -151,6 +191,7 @@ export default class StaticFiles extends BaseModule {
     if (!req.ts || !req.data) return;
     try {
       req.data = this.compileTsFile(req.data as Buffer);
+      req.data = this.replaceImportPaths(req.data, req.filePath ?? "");
       req.ts = false;
       req.js = true;
     } catch (err) {
@@ -158,19 +199,22 @@ export default class StaticFiles extends BaseModule {
     }
   }
 
-  @command(["static", "npm"])
+  @command(["static"])
   @dependsOn(["handleTypeScript"])
   async handleJavaScript(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest) return done();
     if (!req.js || !req.data) return;
     try {
-      req.data = this.replaceImportPaths(req.data.toString("utf8"));
+      req.data = this.replaceImportPaths(
+        req.data.toString("utf8"),
+        req.filePath ?? "",
+      );
     } catch (err) {
       throw new HttpError(500, err as Error);
     }
   }
 
-  @command(["static", "npm"])
+  @command(["static"])
   @dependsOn(["handleFile", "handleTypeScript", "handleJavaScript"])
   async sendFile(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest || !req.data || !req.stats) return done();
@@ -218,10 +262,19 @@ export default class StaticFiles extends BaseModule {
 
   private isModuleAccessible(moduleName: string): boolean {
     if (this.accessMode === "open") {
-      return !this.moduleAccessFilter.includes(moduleName);
+      return !this.moduleInAccessList(moduleName);
     } else {
-      return this.moduleAccessFilter.includes(moduleName);
+      return this.moduleInAccessList(moduleName);
     }
+  }
+
+  private moduleInAccessList(moduleName: string): boolean {
+    if (this.moduleAccessFilter.includes(moduleName)) return true;
+    return this.moduleAccessFilter
+      .filter((f) => f instanceof RegExp)
+      .some((f) => {
+        return (f as RegExp).test(moduleName);
+      });
   }
 
   private compileTsFile(data: Buffer): string {
@@ -232,12 +285,22 @@ export default class StaticFiles extends BaseModule {
         target: ts.ScriptTarget.ES2015,
       },
     });
-    return this.replaceImportPaths(result.outputText);
+    return result.outputText;
   }
 
-  private replaceImportPaths(js: string): string {
-    const ast = babel.parse(js, { sourceType: "module" });
-    if (!ast) throw new Error("Failed to parse JS content.");
+  private replaceImportPaths(js: string, filePath: string): string {
+    let ast;
+    try {
+      ast = babel.parse(js, {
+        sourceType: "module",
+        filename: filePath,
+      });
+    } catch (err) {
+      this.logger.error("Failed to parse JS content.", [], { err });
+      throw new HttpError(500, err);
+    }
+
+    if (!ast) throw new Error("ast is undefined");
 
     const replacePath = (
       path: babel.NodePath<
@@ -248,39 +311,18 @@ export default class StaticFiles extends BaseModule {
       >,
     ) => {
       let importPath: string;
-      const hasFileExtension = /\.[0-9a-z]+$/i;
-
       if (
         t.isImportDeclaration(path.node) ||
         t.isExportAllDeclaration(path.node) ||
         t.isExportNamedDeclaration(path.node)
       ) {
-        importPath = path.node.source?.value as string;
-        if (!importPath) throw new Error("importPath is undefined");
-
-        if (
-          importPath &&
-          !importPath.startsWith(".") &&
-          !importPath.startsWith("/")
-        ) {
-          path.node.source = t.stringLiteral(`/npm/${importPath}`);
-        } else if (importPath && !hasFileExtension.test(importPath)) {
-          path.node.source = t.stringLiteral(`${importPath}.ts`);
-        }
-      } else if (
-        t.isCallExpression(path.node) &&
-        t.isImport(path.node.callee) &&
-        t.isStringLiteral(path.node.arguments?.[0])
-      ) {
-        importPath = path.node.arguments[0]?.value;
-        if (
-          importPath &&
-          !importPath.startsWith(".") &&
-          !importPath.startsWith("/")
-        ) {
-          path.node.arguments[0] = t.stringLiteral(`/npm/${importPath}`);
-        } else if (importPath && !hasFileExtension.test(importPath)) {
-          path.node.arguments[0] = t.stringLiteral(`${importPath}.ts`);
+        if (path.node.source) {
+          importPath = path.node.source.value;
+          if (importPath) {
+            if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
+              path.node.source.value = `/npm/${importPath}`;
+            }
+          }
         }
       }
     };
@@ -292,14 +334,19 @@ export default class StaticFiles extends BaseModule {
       CallExpression: replacePath,
     });
 
-    const output = babel.transformFromAstSync(ast, js);
+    const output = babel.transformFromAstSync(ast, js, { filename: filePath });
     if (!output) throw new Error("Failed to transform JS content.");
 
     return output.code as string;
   }
 
   private cleanPath(path: string): string[] {
-    return path.split("/").filter((s: string) => !!s);
+    if (typeof path !== "string") return [];
+    if (!path || !path.trim()) return [];
+    return path
+      .trim()
+      .split("/")
+      .filter((s: string) => !!s);
   }
 
   private parseModuleName(moduleName: string): {
@@ -319,15 +366,5 @@ export default class StaticFiles extends BaseModule {
     }
 
     return { module, cleanPath: segments.join("/") };
-  }
-
-  private async loadFile(
-    file: string,
-  ): Promise<{ data: Buffer; stats: fs.Stats }> {
-    const [data, stats] = await Promise.all([
-      fs.promises.readFile(file),
-      fs.promises.stat(file),
-    ]);
-    return { data, stats };
   }
 }

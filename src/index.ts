@@ -14,6 +14,7 @@ import dependsOn from "./decorators/dependsOn";
 import method from "./decorators/method";
 import namespace from "./decorators/namespace";
 import command from "./decorators/command";
+import inject from "./decorators/inject";
 
 import * as asyncUtils from "./utils/async";
 import * as fileUtils from "./utils/file";
@@ -40,6 +41,7 @@ export const decorators = {
   method,
   namespace,
   command,
+  inject,
 };
 
 export const utils = {
@@ -52,5 +54,5 @@ export const utils = {
 export { Templates };
 
 export default Base;
-export { Base, BaseModule, html };
+export { BaseModule, html };
 export type { LoadedElements, LoadedTags, TemplateData };
