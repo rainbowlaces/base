@@ -28,6 +28,7 @@ import { Request, Response, NextFunction } from "express";
 export type { Request, Response, NextFunction };
 
 import CommandQueue, { Command } from "./core/commandQueue";
+import { LogLevel } from "./logger/types";
 
 export type { Command };
 
@@ -53,6 +54,7 @@ export const utils = {
 
 export { Templates };
 
+export { LogLevel };
 export default Base;
 export { BaseModule, html };
 export type { LoadedElements, LoadedTags, TemplateData };
