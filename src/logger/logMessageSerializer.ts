@@ -21,7 +21,7 @@ export default class DefaultLogMessageSerializer
   private config: Required<LogMessageSerializerConfig> = {
     maxMessageLength: 1024,
     maxContextDepth: 10,
-    maxItemsPerLevel: 10,
+    maxItemsPerLevel: 100,
   };
 
   private contextTransformer: ContextTransformer | undefined;
