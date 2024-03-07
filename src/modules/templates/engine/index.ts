@@ -3,8 +3,14 @@ import Render from "./render";
 import Tag from "./tag";
 import tags from "./tags";
 import path from "path";
+import { UnsafeString } from "./tags/unsafe";
 
-export type TemplateData = Record<string, unknown>;
+type Scalar = string | number | boolean | null;
+
+export interface TemplateData {
+  [key: string]: Scalar | Scalar[] | TemplateData | TemplateData[];
+}
+
 export type LoadedTags = { [key: string]: (...args: unknown[]) => Tag };
 export type LoadedElements = { [key: string]: ElementFunction };
 
@@ -16,9 +22,10 @@ type TemplateFunction = (
 ) => string;
 
 type ElementFunction = (
-  data: Record<string, unknown>,
+  data: TemplateData,
   tags?: LoadedTags,
-) => string;
+  elements?: LoadedElements,
+) => UnsafeString;
 
 class Template {
   private root: string;
@@ -71,8 +78,12 @@ class Template {
       if (path.extname(file) === ".js") {
         const elementName = path.basename(file).replace(".js", "");
         const elem = await this.loadElement(elementName);
-        this._elements[elementName] = (data: TemplateData) =>
-          elem(data, this._tags);
+        this._elements[elementName] = (data: TemplateData): UnsafeString => {
+          const e = elem(data, this._tags, this._elements);
+          const str: UnsafeString = new String(e);
+          str.__unsafe = true;
+          return str;
+        };
       }
     }
   }
@@ -80,7 +91,7 @@ class Template {
   private async loadElement(element: string): Promise<ElementFunction> {
     const p = path.resolve(path.join(this.root, "elements", `${element}.js`));
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
-    return import(p).then((template) => template.default as ElementFunction);
+    return import(p).then((element) => element.default as ElementFunction);
   }
 
   private async loadTemplates() {
@@ -111,7 +122,8 @@ class Template {
   }
 }
 
-function html(strings: TemplateStringsArray, ...values: unknown[]): string {
+// eslint-disable-next-line @typescript-eslint/ban-types
+function html(strings: TemplateStringsArray, ...values: unknown[]): String {
   return new Render(strings, values).render();
 }
 

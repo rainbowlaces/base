@@ -39,4 +39,9 @@ describe("Templates", () => {
           <h1>trout</h1>`),
     );
   });
+
+  it("should render a template safely", async () => {
+    const rendered = templates.render("unsafe");
+    expect(rendered).to.equal("XX&amp;&lt;&gt;XX&<>XX");
+  });
 });

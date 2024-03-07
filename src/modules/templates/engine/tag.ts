@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Template } from ".";
 
@@ -5,8 +6,8 @@ export default class Tag {
   closed: boolean;
   selfClosing: boolean;
   args: any[];
-  content: string[];
-  output: string;
+  content: String[];
+  output: String;
   template?: Template;
 
   id: string = (Math.random() * 10000).toFixed(0);
@@ -44,7 +45,7 @@ export default class Tag {
   }
 
   // override in children
-  close() {
+  close(): String {
     return this.content.join("").trim();
   }
 

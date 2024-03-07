@@ -1,5 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 import Tag from "./tag";
+import { UnsafeString } from "./tags/unsafe";
 
 export default class Render {
   private root: Tag;
@@ -42,7 +43,9 @@ export default class Render {
         addValue(
           values[i] instanceof Tag
             ? values[i]
-            : sanitizeHtml(values[i] as string),
+            : (values[i] as UnsafeString).__unsafe
+              ? values[i]
+              : sanitizeHtml(values[i] as string),
         );
       }
     }
@@ -52,7 +55,8 @@ export default class Render {
     return result;
   }
 
-  public render(): string {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  public render(): String {
     this.data.forEach((value) => {
       if (value instanceof Tag) {
         if (value.isBlock()) {
@@ -68,7 +72,6 @@ export default class Render {
       this.context.process(value);
       if (this.context.isClosed()) this.lastContext();
     });
-
     return this.root.close();
   }
 
