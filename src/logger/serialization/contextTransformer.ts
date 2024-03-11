@@ -2,6 +2,7 @@ import { TypeSerializer, LogContext } from "../types";
 import { ErrorSerializer } from "./errorSerializer";
 import { ScalarSerializer } from "./scalarSerializer";
 import { TransformFunction, recursiveMap } from "../../utils/recursion";
+import { ConstructorSerializer } from "./constructorSerializer";
 
 type ContextTransformerOptions = {
   maxItems?: number;
@@ -23,6 +24,7 @@ export class ContextTransformer {
 
     this.serializers.push(new ErrorSerializer());
     this.serializers.push(new ScalarSerializer({ maxLength: this.maxLength }));
+    this.serializers.push(new ConstructorSerializer());
   }
 
   transform(input: LogContext): unknown {

@@ -30,6 +30,21 @@ describe("LogMessageSerializerDefault", () => {
       });
     });
 
+    describe("and the message has a function or constructor in the context", () => {
+      it("should serialise correctly", () => {
+        const message: LogMessage = LogMessage.create(
+          "I have some interesting context",
+          "test",
+          ["tag"],
+          LogLevel.DEBUG,
+          { type: LogMessage },
+        );
+
+        const serialized = serializer.serialize(message);
+        expect(serialized.context).to.deep.equal({ type: "LogMessage" });
+      });
+    });
+
     describe("and the message is < maxMessageLenth", () => {
       it("should not truncate the message", () => {
         const message: LogMessage = LogMessage.create(
