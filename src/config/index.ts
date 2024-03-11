@@ -73,7 +73,7 @@ export default class Config {
       if (obj._T) {
         const templateName = obj._T as string;
         const templateConfig = this._templates[templateName];
-        if (templateConfig) result = templateConfig;
+        if (templateConfig) result = { ...templateConfig };
       }
 
       // Iterate over the properties of the original object
@@ -90,7 +90,10 @@ export default class Config {
           !Array.isArray(value)
         ) {
           // If the property is an object (and not an array), apply templates recursively
-          result[key] = merge(result[key], applyTemplatesRecursively(value));
+          result[key] = merge(
+            { ...result[key] },
+            applyTemplatesRecursively({ ...value }),
+          );
         } else {
           // For other values, directly assign them to the result
           result[key] = value;

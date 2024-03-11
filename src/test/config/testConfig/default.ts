@@ -30,6 +30,13 @@ export default {
           personas: { ref: "personas", type: "many" },
         },
       },
+      groups: {
+        type: "Group",
+        _T: "trackable",
+        fields: {
+          name: { type: "string", required: true, unique: true },
+        },
+      },
     },
   },
 };

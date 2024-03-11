@@ -7,6 +7,33 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const trackable = {
+  fields: {
+    history: { type: "embed" },
+  },
+  embeds: {
+    history: {
+      type: "Action",
+      fields: {
+        right: { type: "embed", required: true },
+        user: { type: "ref", required: true },
+        timestamp: { type: "date", required: true },
+      },
+      references: {
+        user: { ref: "users", type: "single" },
+      },
+      embeds: {
+        right: {
+          type: "Right",
+          fields: {
+            name: { type: "string", required: true },
+          },
+        },
+      },
+    },
+  },
+};
+
 const testConfig = {
   auth: {
     enabled: true,
@@ -19,44 +46,9 @@ const testConfig = {
   data: {
     collections: {
       users: {
-        embeds: {
-          history: {
-            embeds: {
-              right: {
-                fields: {
-                  name: {
-                    required: true,
-                    type: "string",
-                  },
-                },
-                type: "Right",
-              },
-            },
-            fields: {
-              right: {
-                required: true,
-                type: "embed",
-              },
-              timestamp: {
-                required: true,
-                type: "date",
-              },
-              user: {
-                required: true,
-                type: "ref",
-              },
-            },
-            references: {
-              user: {
-                ref: "users",
-                type: "single",
-              },
-            },
-            type: "Action",
-          },
-        },
+        type: "User",
         fields: {
-          history: { type: "embed" },
+          ...trackable.fields,
           email: {
             required: true,
             type: "string",
@@ -88,7 +80,19 @@ const testConfig = {
             type: "many",
           },
         },
-        type: "User",
+        embeds: trackable.embeds,
+      },
+      groups: {
+        type: "Group",
+        fields: {
+          ...trackable.fields,
+          name: {
+            required: true,
+            type: "string",
+            unique: true,
+          },
+        },
+        embeds: trackable.embeds,
       },
     },
     database: "some db",
