@@ -1,8 +1,8 @@
 export default {
   static_files: {
-    accessMode: "open",
+    accessMode: "closed",
   },
   data: {
-    database: "some dev db",
+    database: "csda-portal",
   },
 };

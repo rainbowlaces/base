@@ -7,6 +7,95 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const testConfig = {
+  auth: {
+    enabled: true,
+    password: "some password",
+    username: "some user",
+  },
+  base: {
+    port: 8080,
+  },
+  data: {
+    collections: {
+      users: {
+        embeds: {
+          history: {
+            embeds: {
+              right: {
+                fields: {
+                  name: {
+                    required: true,
+                    type: "string",
+                  },
+                },
+                type: "Right",
+              },
+            },
+            fields: {
+              right: {
+                required: true,
+                type: "embed",
+              },
+              timestamp: {
+                required: true,
+                type: "date",
+              },
+              user: {
+                required: true,
+                type: "ref",
+              },
+            },
+            references: {
+              user: {
+                ref: "users",
+                type: "single",
+              },
+            },
+            type: "Action",
+          },
+        },
+        fields: {
+          history: { type: "embed" },
+          email: {
+            required: true,
+            type: "string",
+            unique: true,
+          },
+          groups: {
+            required: true,
+            type: "ref",
+          },
+          name: {
+            required: true,
+            type: "string",
+          },
+          password: {
+            required: true,
+            type: "string",
+          },
+          personas: {
+            type: "ref",
+          },
+        },
+        references: {
+          groups: {
+            ref: "groups",
+            type: "many",
+          },
+          personas: {
+            ref: "personas",
+            type: "many",
+          },
+        },
+        type: "User",
+      },
+    },
+    database: "some db",
+    uri: "some uri",
+  },
+};
+
 describe("Config", () => {
   let config: Config;
 
@@ -17,10 +106,7 @@ describe("Config", () => {
         await config.init();
       });
       it("should load the default configuration", () => {
-        expect(config.getNamespace("base")).to.deep.equal({
-          hello: "world",
-          override: "me",
-        });
+        expect(config.getConfig()).to.deep.equal(testConfig);
       });
     });
 
@@ -29,52 +115,55 @@ describe("Config", () => {
         config = new Config(path.join(__dirname, "testConfig"), "development");
         await config.init();
       });
-      it("should load the default configuration", () => {
-        expect(config.getNamespace("base")).to.deep.equal({
-          hello: "developers",
-          override: "you",
-          extra: "config",
+      it("should load the configuration for the specified environment", () => {
+        expect(config.getNamespace("static_files").accessMode).to.equal("open");
+        expect(config.getNamespace("data").database).to.equal("some dev db");
+      });
+    });
+
+    describe("when templates are specified", () => {
+      beforeEach(async () => {
+        config = new Config(path.join(__dirname, "testConfig"), "production");
+        await config.init();
+      });
+      it("should load the configuration with the specified templates", () => {
+        expect(
+          config.getNamespace("data").collections.users.embeds.history,
+        ).to.deep.equal({
+          type: "Action",
+          fields: {
+            right: { type: "embed", required: true },
+            user: { type: "ref", required: true },
+            timestamp: { type: "date", required: true },
+          },
+          references: {
+            user: { ref: "users", type: "single" },
+          },
+          embeds: {
+            right: {
+              type: "Right",
+              fields: {
+                name: { type: "string", required: true },
+              },
+            },
+          },
         });
+        expect(
+          config.getNamespace("data").collections.users.fields.history,
+        ).to.deep.equal({ type: "embed" });
       });
-    });
-
-    describe.skip("when an environment is specified but the config file fails to load because the file does not exist.", () => {
-      it("should throw an error", async () => {
-        let error: string = "";
-        try {
-          const c = new Config(
-            path.join(__dirname, "testConfig"),
-            "nonExistant",
-          );
-          await c.init();
-        } catch (e) {
-          error = (e as Error).message;
-        }
-        expect(error).to.equal(
-          "Failed to load environment-specific(nonExistant) configuration.",
-        );
-      });
-    });
-  });
-
-  describe.skip("when an environment is specified but the config file fails to load because there is an error in the file.", () => {
-    it("should throw an error", async () => {
-      let error: string = "";
-      try {
-        const c = new Config(path.join(__dirname, "testConfig"), "nonExistant");
-        await c.init();
-      } catch (e) {
-        error = (e as Error).message;
-      }
-      expect(error).to.equal(
-        "Failed to load environment-specific(nonExistant) configuration.",
-      );
     });
   });
 
   describe("getNamespace", () => {
-    it("should return {} if the namespace does not exist", () => {
+    beforeEach(async () => {
       config = new Config(path.join(__dirname, "testConfig"));
+      await config.init();
+    });
+    it("should return the config for the specified namespace", () => {
+      expect(config.getNamespace("base")).to.deep.equal({ port: 8080 });
+    });
+    it("should return {} if the namespace does not exist", () => {
       expect(config.getNamespace("nonExistant")).to.deep.equal({});
     });
   });

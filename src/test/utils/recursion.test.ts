@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { recursiveMap } from "../../utils/recursion";
+import { recursiveMap, merge } from "../../utils/recursion";
 
 const context = {
   a: 1,
@@ -17,6 +17,26 @@ const context = {
     l: [14, 15, 16],
   },
 };
+
+describe("merge", () => {
+  it("recurses and returns defaults", () => {
+    expect(
+      merge(
+        { fields: { hello: "world" }, moo: "cow", baa: "sheep", woof: "dog" },
+        { fields: { goodbye: "world" }, foo: "bar" },
+      ),
+    ).to.deep.equal({
+      fields: {
+        goodbye: "world",
+        hello: "world",
+      },
+      foo: "bar",
+      moo: "cow",
+      woof: "dog",
+      baa: "sheep",
+    });
+  });
+});
 
 describe("recursiveMap", () => {
   it("recurses and returns defaults", () => {

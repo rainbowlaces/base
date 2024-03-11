@@ -1,3 +1,2 @@
-export type BaseConfigObject = Record<string, ConfigObject>;
-
-export type ConfigObject = Record<string, unknown>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ConfigObject = Record<string, any>;
