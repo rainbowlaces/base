@@ -43,7 +43,7 @@ export default class Render {
         addValue(
           values[i] instanceof Tag
             ? values[i]
-            : (values[i] as UnsafeString).__unsafe
+            : (values[i] as UnsafeString)?.__unsafe
               ? values[i]
               : sanitizeHtml(values[i] as string),
         );
