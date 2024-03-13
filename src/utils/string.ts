@@ -45,6 +45,13 @@ export function isKebabCase(str: string) {
   return /^[a-z][a-z0-9-]*$/.test(str);
 }
 
+export function stringToSlug(contentName: string): string {
+  const sanitized = contentName.replace(/[^a-z0-9\s]/gi, "");
+  const collapsedSpaces = sanitized.replace(/\s+/g, " ");
+  const slug = collapsedSpaces.trim().toLowerCase().replace(/\s/g, "-");
+  return slug;
+}
+
 export function truncate(
   str: string,
   length: number,
