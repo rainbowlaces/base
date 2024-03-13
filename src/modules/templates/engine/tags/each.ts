@@ -2,7 +2,7 @@ import Tag from "../tag";
 
 export default class EachTag extends Tag {
   static tagName = "each";
-  iterable: unknown[] = [];
+  iterable: Iterable<unknown> = [];
   templateFunction: (item: unknown) => string = () => "";
 
   init() {
@@ -11,7 +11,7 @@ export default class EachTag extends Tag {
   }
 
   close() {
-    return this.iterable
+    return Array.from(this.iterable)
       .map((item: unknown) => this.templateFunction(item))
       .join("");
   }
