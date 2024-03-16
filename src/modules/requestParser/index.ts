@@ -3,8 +3,13 @@ import cookieParserLib from "cookie-parser";
 import BaseModule from "../../core/baseModule";
 import middleware from "../../decorators/middleware";
 import init from "../../decorators/init";
+import config from "../../decorators/config";
+import { randomBytes } from "crypto";
 
 export default class RequestParser extends BaseModule {
+  @config()
+  cookieSecret: string = randomBytes(32).toString("hex");
+
   @init
   @middleware
   json() {
@@ -20,6 +25,6 @@ export default class RequestParser extends BaseModule {
   @init
   @middleware
   cookieParser() {
-    return cookieParserLib();
+    return cookieParserLib(this.cookieSecret);
   }
 }
