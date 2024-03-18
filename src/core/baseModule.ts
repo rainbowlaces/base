@@ -87,6 +87,7 @@ export default abstract class BaseModule {
    * Initializes the module. This method should be overridden by subclasses to perform module-specific initialization tasks.
    */
   async init() {}
+  async postInit() {}
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   private _bindMethodWithProps<T extends Function>(

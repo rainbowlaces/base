@@ -117,6 +117,14 @@ export default class Base {
       this.logger.warn(`404: ${req.url}`);
       res.status(404).send("Not Found");
     });
+
+    // execute any post init handlers for modules
+    Object.values(this._modules).forEach(
+      async (module) => await module.postInit(),
+    );
+  }
+
+  /**)
   }
 
   /**
