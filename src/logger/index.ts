@@ -119,6 +119,10 @@ export default class Logger {
         }
       }
       Logger._levels[out.level](Logger._logFormatter(out));
+      if (out.level === "FATAL") {
+        // eslint-disable-next-line no-process-exit
+        process.exit(1);
+      }
     } catch (error) {
       Logger.handleInternalError(error as Error);
     }
@@ -217,9 +221,15 @@ export default class Logger {
     // If the log level is higher than the current log level, drop the message.
     if (level > Logger._logLevel) return;
 
-    await delay();
-
     const tags: Array<string> = [...this._baseTags, ...messageTags];
+
+    if (level === LogLevel.FATAL) {
+      return Logger.outputLogMessage(
+        LogMessage.create(message, this._namespace, tags, level, context),
+      );
+    }
+
+    await delay();
 
     // If the log buffer was overflowing but we are now within 90% of the maximum
     // we can reset the overflow flag.

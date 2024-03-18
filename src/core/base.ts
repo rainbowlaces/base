@@ -81,6 +81,14 @@ export default class Base {
 
     this.logger = new Logger("base");
 
+    process.on("uncaughtException", (err) => {
+      this.logger.fatal("Uncaught Exception", [], { err });
+    });
+
+    process.on("unhandledRejection", (reason, promise) => {
+      this.logger.fatal("Unhandled Rejection", [], { promise, reason });
+    });
+
     this.logger.info(`Load Core Modules...`);
     await this.registerModule(Router);
     await this.registerModules([RequestParser, StaticFiles, Templates]);
@@ -122,9 +130,6 @@ export default class Base {
     Object.values(this._modules).forEach(
       async (module) => await module.postInit(),
     );
-  }
-
-  /**)
   }
 
   /**
