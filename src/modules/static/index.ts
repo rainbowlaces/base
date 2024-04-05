@@ -87,6 +87,21 @@ export default class StaticFiles extends BaseModule {
     this.logger.debug(`Namespace: ${this.namespace}`);
   }
 
+  async getFile(
+    path: string,
+  ): Promise<{ data: Buffer; stats: fs.Stats; type: string }> {
+    const data = await loadFile(path);
+    return { ...data, type: mime.lookup(path) || "application/octet-stream" };
+  }
+
+  async getFileBase64(path: string): Promise<{ data: string; type: string }> {
+    const data = await this.getFile(path);
+    return {
+      data: data.data.toString("base64"),
+      type: data.type,
+    };
+  }
+
   @middleware
   @path("/npm/(.+)")
   @method("get")

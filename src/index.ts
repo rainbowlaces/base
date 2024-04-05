@@ -22,6 +22,7 @@ import * as recursionUtils from "./utils/recursion";
 import * as stringUtils from "./utils/string";
 
 import Templates from "./modules/templates";
+import Static from "./modules/static";
 
 import { Request, Response, NextFunction } from "express";
 
@@ -52,7 +53,7 @@ export const utils = {
   string: stringUtils,
 };
 
-export { Templates };
+export { Templates, Static };
 
 export { LogLevel };
 export default Base;
