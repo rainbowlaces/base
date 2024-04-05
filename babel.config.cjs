@@ -12,6 +12,7 @@ module.exports = {
     ],
     "@babel/preset-typescript",
   ],
+  ignore: ["src/testApp/src/public/**/*"],
   plugins: [
     require("./babel/handle-imports.cjs"),
     ["@babel/plugin-proposal-decorators", { version: "2023-05" }],

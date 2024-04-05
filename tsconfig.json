@@ -25,5 +25,6 @@
         "forceConsistentCasingInFileNames": true,
         "lib": ["ESNext"], 
     }, 
-    "include": [ "src/**/*.ts" ]
+    "include": [ "src/**/*.ts" ],
+    "exclude": [ "src/testApp/src/public/**/*.ts" ]
 }

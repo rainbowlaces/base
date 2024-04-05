@@ -11,10 +11,10 @@
   },
   "scripts": {
     "start": "NODE_ENV=production node dist/testApp/src/index.js",
-    "start:dev": "NODE_ENV=development node -r source-map-support/register -r dotenv/config dist/testApp/src/index.js 2>&1 | node ./dev/logFormatter.js",
+    "start:dev": "NODE_ENV=development node --inspect -r source-map-support/register -r dotenv/config dist/testApp/src/index.js 2>&1 | node ./dev/logFormatter.js",
     "start:dev:watch": "nodemon --watch 'src/**/*' --exec 'npm run build && npm run start:dev'",
     "clean": "rm -rf dist",
-    "build": "tsc && babel 'src' --out-dir 'dist' --extensions '.ts'",
+    "build": "tsc && babel 'src' --out-dir 'dist' --extensions '.ts' && cp -r src/testApp/src/public dist/testApp/src/",
     "build:clean": "npm run clean && npm run build",
     "test": "mocha --reporter dot 'dist/test/**/*.js'",
     "lint": "eslint 'src/**/*.ts'",
