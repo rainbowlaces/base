@@ -335,7 +335,7 @@ export default class StaticFiles extends BaseModule {
           importPath = path.node.source.value;
           if (importPath) {
             if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
-              path.node.source.value = `/npm/${importPath}`;
+              path.node.source.value = `/npm/${importPath}${importPath.endsWith(".js") ? "" : "/"}`;
             }
           }
         }
