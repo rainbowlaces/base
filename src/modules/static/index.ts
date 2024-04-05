@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import fsPath from "path";
 import crypto from "crypto";
-import * as ts from "typescript";
+import ts from "typescript";
 import * as fs from "fs";
 import * as babel from "@babel/core";
 
@@ -296,8 +296,8 @@ export default class StaticFiles extends BaseModule {
     const fileContents = data.toString("utf8");
     const result = ts.transpileModule(fileContents, {
       compilerOptions: {
-        module: ts.ModuleKind.ES2015,
-        target: ts.ScriptTarget.ES2015,
+        module: ts.ModuleKind.ESNext,
+        target: ts.ScriptTarget.ESNext,
       },
     });
     return result.outputText;
