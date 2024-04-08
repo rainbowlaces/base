@@ -1,7 +1,7 @@
 {
   "name": "@rainbowlaces/base",
   "access": "public",
-  "version": "0.8.2",
+  "version": "0.9.0",
   "description": "An extensible and modular Node.js framework for building scalable web applications with built-in support for routing, middleware, configuration management, and more, designed for simplicity and ease of use.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -86,7 +86,7 @@
     "graphlib": "^2.1.8",
     "lit": "^3.1.2",
     "luxon": "^3.4.4",
-    "mime-types": "^2.1.35",    
+    "mime-types": "^2.1.35",
     "path-to-regexp": "^6.2.2",
     "resolve": "^1.22.8",
     "sanitize-html": "^2.13.0",
