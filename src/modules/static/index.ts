@@ -1,7 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import fsPath from "path";
 import crypto from "crypto";
-import ts from "typescript";
 import * as fs from "fs";
 import * as babel from "@babel/core";
 
@@ -24,7 +23,6 @@ interface FileRequest extends Request {
   stats?: fs.Stats;
   filePath?: string;
   root?: string;
-  ts?: boolean;
   js?: boolean;
   fileRequest?: boolean;
 }
@@ -33,11 +31,6 @@ interface NodeError extends Error {
   code?: string;
 }
 
-/**
- * Serves static files and npm modules directly to clients. It handles file requests with support for TypeScript
- * and JavaScript files, including on-the-fly compilation and import path resolution, to facilitate development
- * and deployment of front-end assets.
- */
 export default class StaticFiles extends BaseModule {
   @config()
   staticFsRoot: string = "/public";
@@ -194,33 +187,18 @@ export default class StaticFiles extends BaseModule {
 
   @dependsOn("handleFile")
   @command(["static"])
-  async handleTsJs(req: FileRequest) {
-    req.ts = !!req.filePath?.endsWith(".ts");
+  async handleJs(req: FileRequest) {
     req.js = !!req.filePath?.endsWith(".js");
   }
 
-  @dependsOn(["handleTsJs"])
   @command(["static"])
-  async handleTypeScript(req: FileRequest, res: Response, done: () => void) {
-    if (!req.fileRequest) return done();
-    if (!req.ts || !req.data) return;
-    try {
-      req.data = this.compileTsFile(req.data as Buffer);
-      req.data = this.replaceImportPaths(req.data, req.filePath ?? "");
-      req.ts = false;
-      req.js = true;
-    } catch (err) {
-      throw new HttpError(500, err as Error);
-    }
-  }
-
-  @command(["static"])
-  @dependsOn(["handleTypeScript"])
+  @dependsOn(["handleJs"])
   async handleJavaScript(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest) return done();
     if (!req.js || !req.data) return;
+    this.logger.info(`Processing file: ${req.filePath}`);
     try {
-      req.data = this.replaceImportPaths(
+      req.data = await this.replaceImportPaths(
         req.data.toString("utf8"),
         req.filePath ?? "",
       );
@@ -230,7 +208,7 @@ export default class StaticFiles extends BaseModule {
   }
 
   @command(["static"])
-  @dependsOn(["handleFile", "handleTypeScript", "handleJavaScript"])
+  @dependsOn(["handleFile", "handleJavaScript"])
   async sendFile(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest || !req.data || !req.stats) return done();
 
@@ -260,7 +238,7 @@ export default class StaticFiles extends BaseModule {
     }
 
     let mimeType: string;
-    if (req.ts || req.js) {
+    if (req.js) {
       mimeType = "application/javascript";
     } else {
       mimeType =
@@ -273,6 +251,7 @@ export default class StaticFiles extends BaseModule {
     res.set("Cache-Control", `public, max-age=${this.maxAge}`);
     res.send(req.data);
     this.logger.debug(`Filepath(${req.filePath}) served`);
+    return done();
   }
 
   private isModuleAccessible(moduleName: string): boolean {
@@ -292,24 +271,18 @@ export default class StaticFiles extends BaseModule {
       });
   }
 
-  private compileTsFile(data: Buffer): string {
-    const fileContents = data.toString("utf8");
-    const result = ts.transpileModule(fileContents, {
-      compilerOptions: {
-        module: ts.ModuleKind.ESNext,
-        target: ts.ScriptTarget.ESNext,
-      },
-    });
-    return result.outputText;
-  }
-
-  private replaceImportPaths(js: string, filePath: string): string {
+  private async replaceImportPaths(
+    js: string,
+    filePath: string,
+  ): Promise<string> {
     let ast;
     try {
-      ast = babel.parse(js, {
+      ast = await babel.parseAsync(js, {
         sourceType: "module",
         filename: filePath,
-      });
+        babelrc: false,
+        configFile: false,
+      } as babel.ParserOptions);
     } catch (err) {
       this.logger.error("Failed to parse JS content.", [], { err });
       throw new HttpError(500, err);
@@ -349,8 +322,20 @@ export default class StaticFiles extends BaseModule {
       CallExpression: replacePath,
     });
 
-    const output = babel.transformFromAstSync(ast, js, { filename: filePath });
-    if (!output) throw new Error("Failed to transform JS content.");
+    let output;
+    try {
+      output = await babel.transformFromAstAsync(ast, js, {
+        sourceType: "module",
+        filename: filePath,
+        babelrc: false,
+        configFile: false,
+      });
+    } catch (err) {
+      this.logger.error("Failed to transform JS content.", [], { err });
+      throw new HttpError(500, err);
+    }
+
+    if (!output) throw new Error("Failed to transform JS.");
 
     return output.code as string;
   }
