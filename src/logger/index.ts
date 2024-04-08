@@ -42,7 +42,18 @@ export default class Logger {
 
   private static _logFormatter: LogFormatter = (
     message: SerializedLogMessage,
-  ) => JSON.stringify(message);
+  ) => {
+    const seen = new WeakSet();
+    return JSON.stringify(message, (key, value) => {
+      if (typeof value === "object" && value !== null) {
+        if (seen.has(value)) {
+          return "[Circular]";
+        }
+        seen.add(value);
+      }
+      return value;
+    });
+  };
 
   private _baseTags: Array<string> = [];
   private _namespace: string;
