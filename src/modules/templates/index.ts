@@ -19,7 +19,7 @@ export default class Templates extends BaseModule {
   @config()
   templateRoot: string = "/templates";
 
-  private _template!: Template;
+  private _template: Template | undefined;
 
   async init() {
     this.templateRoot = fsPath.join(this.base.fsRoot, this.templateRoot);
