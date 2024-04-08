@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "NODE_ENV=production node dist/testApp/src/index.js",
-    "build": "tsc && npm run babel:all && npm run copyPublic`",
+    "build": "tsc && npm run babel:all && npm run copyPublic",
     "babel:all": "npm run babel:client && npm run babel:server",
     "babel:client": "BUILD_TARGET=client babel src --out-dir dist --extensions '.ts' --verbose",
     "babel:server": "BUILD_TARGET=server babel src --out-dir dist --extensions '.ts' --verbose",
