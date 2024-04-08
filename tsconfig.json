@@ -13,7 +13,7 @@
         "isolatedModules": true,
         "strict": true,
         "noImplicitAny": true,
-        "sourceMap": true,
+        "sourceMap": false,
         "strictNullChecks": true,
         "noImplicitReturns": true,
         "noImplicitThis": true,
@@ -26,5 +26,4 @@
         "lib": ["ESNext"], 
     }, 
     "include": [ "src/**/*.ts" ],
-    "exclude": [ "src/testApp/src/public/**/*.ts" ]
 }
