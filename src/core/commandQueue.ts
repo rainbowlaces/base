@@ -32,6 +32,7 @@ export default class CommandQueue {
     res: express.Response,
     next: express.NextFunction,
   ): Promise<void> {
+    this._done = false;
     for (const command of this.commands) {
       try {
         this._module.logger.debug(`Running command ${command.name}`);

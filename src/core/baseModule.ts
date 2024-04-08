@@ -22,7 +22,7 @@ export default abstract class BaseModule {
   private _config: ConfigObject;
 
   private _middleware?: DependencyManager<BaseRequestHandler>;
-  private _commands: Map<string, CommandQueue> = new Map();
+  private _commands: Map<string, DependencyManager<Command>> = new Map();
 
   /**
    * Constructs a BaseModule instance, initializing the module with
@@ -130,11 +130,11 @@ export default abstract class BaseModule {
   }
 
   commands(queue: string): CommandQueue {
-    if (this._commands.has(queue)) return this._commands.get(queue)!;
-
-    const commandQueue = new CommandQueue(
-      this,
-      new DependencyManager<Command>(
+    let methods: DependencyManager<Command>;
+    if (this._commands.has(queue)) {
+      methods = this._commands.get(queue) || new DependencyManager<Command>();
+    } else {
+      methods = new DependencyManager<Command>(
         this.getMethods<Command>(
           (method: Command) =>
             !!method.isCommand && (method.queue ?? []).includes(queue),
@@ -142,12 +142,11 @@ export default abstract class BaseModule {
           const boundMethod = method.bind(this);
           return this._bindMethodWithProps<Command>(boundMethod, method);
         }),
-      ),
-    );
+      );
+      this._commands.set(queue, methods);
+    }
 
-    this._commands.set(queue, commandQueue);
-
-    return commandQueue;
+    return new CommandQueue(this, methods);
   }
 
   private getMethods<T>(filter: (method: T) => boolean = () => true): T[] {
