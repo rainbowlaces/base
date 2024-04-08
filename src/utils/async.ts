@@ -8,22 +8,20 @@ export async function asyncMap<T, R = void>(
     | Iterable<T>
     | AsyncIterable<T>
     | Promise<Iterable<T> | AsyncIterable<T>>,
-  fn: (item: T) => Promise<R>,
+  fn: (item: T) => Promise<R | undefined>,
 ): Promise<R[]> {
-  // If the iterable is a promise, await it
   iterable = await iterable;
 
-  // Check if the iterable is an async iterable
   if (Symbol.asyncIterator in Object(iterable)) {
     const asyncIterable = iterable as AsyncIterable<T>;
     const results: R[] = [];
     for await (const item of asyncIterable) {
-      results.push(await fn(item));
+      const i = await fn(item);
+      if (i !== undefined) results.push(i);
     }
     return results;
   } else {
-    // The iterable is a synchronous iterable
-    const syncIterable = iterable as Iterable<T>;
-    return Promise.all(Array.from(syncIterable).map(fn));
+    const res = await Promise.all(Array.from(iterable as Iterable<T>).map(fn));
+    return res.filter((r) => r !== undefined) as R[];
   }
 }
