@@ -38,7 +38,7 @@ export default class CommandQueue {
         this._module.logger.debug(`Running command ${command.name}`);
         await command(req, res, () => this.done());
         this._module.logger.debug(`Command ${command.name} done.`);
-        if (this._done || res.headersSent) return;
+        if (this._done || res.headersSent) return next();
       } catch (error) {
         next(error);
         return;
