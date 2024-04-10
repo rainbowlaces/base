@@ -36,7 +36,7 @@
     "full": "npm run lint && npm run build:clean && npm run test",
     "full:watch": "nodemon --watch 'src/**/*' --ext ts --exec 'npm run full'",
     "push": "npm run full && npm publish --access=public",
-    "update": "ncu --peer -u"
+    "update": "ncu --peer -u && npm i"
   },
   "author": "",
   "license": "MIT",
@@ -77,7 +77,7 @@
     "@types/express": "^4.17.21",
     "@types/graphlib": "^2.1.12",
     "@types/mime-types": "^2.1.4",
-    "@types/node": "^20.12.5",
+    "@types/node": "^20.12.7",
     "@types/resolve": "^1.20.6",
     "@types/sanitize-html": "^2.11.0",
     "babel": "^6.23.0",
