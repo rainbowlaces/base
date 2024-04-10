@@ -23,7 +23,9 @@
         "strictFunctionTypes": true,
         "esModuleInterop": true,
         "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
         "lib": ["ESNext"], 
     }, 
     "include": [ "src/**/*.ts" ],
+    "exclude": [ "node_modules" ]
 }
