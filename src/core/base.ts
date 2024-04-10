@@ -103,26 +103,28 @@ export default class Base {
         err: HttpError | Error,
         req: express.Request,
         res: express.Response,
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         next: express.NextFunction,
       ): void => {
         if (err instanceof HttpError) {
           this.logger.error(err.message, ["http"], {
             error: err.wrapped,
           });
+          if (res.headersSent) return;
           res.status(err.statusCode).send(err.message);
           return;
         }
-        res.status(500).send("Internal Server Error");
         this.logger.error(err.message, [err.constructor.name], {
           error: err.stack?.split("\n"),
         });
-        next();
+        if (!res.headersSent) res.status(500).send("Internal Server Error");
+        return;
       },
     );
 
     this.app.use((req: express.Request, res: express.Response) => {
-      if (res.headersSent) return;
       this.logger.warn(`404: ${req.url}`);
+      if (res.headersSent) return;
       res.status(404).send("Not Found");
     });
 
