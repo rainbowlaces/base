@@ -1,13 +1,10 @@
 import express from "express";
 import DependencyManager from "../dependencyManager";
 import BaseModule from "./baseModule";
+import BaseResponse from "./baseResponse";
 
 export interface Command {
-  (
-    req: express.Request,
-    res: express.Response,
-    done: () => void,
-  ): Promise<void>;
+  (req: express.Request, res: BaseResponse, done: () => void): Promise<void>;
   queue?: string[];
   isCommand?: boolean;
 }
@@ -31,7 +28,7 @@ export default class CommandQueue {
 
   async run(
     req: express.Request,
-    res: express.Response,
+    res: BaseResponse,
     next: express.NextFunction,
   ): Promise<void> {
     this._done = false;

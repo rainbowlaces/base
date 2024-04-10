@@ -113,7 +113,7 @@ export default abstract class BaseModule {
       ).map((method: BaseRequestHandler) => {
         let boundMethod;
         if (method.isInit) {
-          boundMethod = (method as InitializationFunction)
+          boundMethod = (method as unknown as InitializationFunction)
             .apply(this)
             .bind(this);
         } else {

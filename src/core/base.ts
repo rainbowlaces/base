@@ -14,11 +14,13 @@ import HttpError from "./httpError";
 import Router from "../modules/router";
 import { ConfigObject } from "../config/types";
 import { getDirname } from "../utils/file";
+import BaseResponse from "./baseResponse";
 
 declare global {
   namespace Express {
     interface Request {
       id?: string;
+      response: BaseResponse;
     }
   }
 }
@@ -105,6 +107,7 @@ export default class Base {
         next: express.NextFunction,
       ) => {
         req.id = Math.random().toString(36).substring(7);
+        req.response = new BaseResponse(res);
         next();
       },
     );
@@ -244,7 +247,7 @@ export default class Base {
         );
 
         try {
-          await mw(req, res, next);
+          await mw(req, req.response, next);
         } catch (err) {
           next(err);
         }

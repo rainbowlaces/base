@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BaseRequestHandler } from "../core/baseRequestHandler";
+import { BaseInitializableRequestHandler } from "../core/baseRequestHandler";
 
 /**
  * Marks a class method as middleware, making it a part of the request handling pipeline in the Express application.
@@ -9,9 +9,9 @@ import { BaseRequestHandler } from "../core/baseRequestHandler";
  * process, based on the request's HTTP method and URL path.
  */
 export default function init(
-  middlewareMethod: BaseRequestHandler,
+  middlewareMethod: BaseInitializableRequestHandler,
   context: ClassMethodDecoratorContext,
-): any {
+): void {
   if (context.kind !== "method") return;
 
   middlewareMethod.isInit = true;

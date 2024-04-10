@@ -1,11 +1,12 @@
 import { expect } from "chai";
 import Router from "../../../modules/router";
-import { Request, Response, NextFunction } from "express";
+import { Request, NextFunction, Response } from "express";
 
 import Base from "../../../core/base";
 import Logger from "../../../logger";
 import { getMock } from "../../_utils";
 import { LogLevel } from "../../../logger/types";
+import BaseResponse from "../../../core/baseResponse";
 
 Logger.init({ logLevel: LogLevel.FATAL });
 
@@ -17,7 +18,7 @@ describe("Router", () => {
     query: {},
     params: {},
   } as unknown as Request;
-  const res: Response = {} as unknown as Response;
+  const res: BaseResponse = new BaseResponse({} as Response);
   const next: NextFunction = () => {};
 
   beforeEach(async () => {

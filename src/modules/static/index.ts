@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import { Request, NextFunction } from "express";
 import fsPath from "path";
 import crypto from "crypto";
 import * as fs from "fs";
@@ -17,6 +17,7 @@ import HttpError from "../../core/httpError";
 import command from "../../decorators/command";
 import { resolveModule } from "./utils";
 import { findFileUp, loadFile } from "../../utils/file";
+import BaseResponse from "../../core/baseResponse";
 
 interface FileRequest extends Request {
   data?: Buffer | string;
@@ -100,9 +101,9 @@ export default class StaticFiles extends BaseModule {
   @method("get")
   async handleNpm(
     req: FileRequest,
-    res: Response,
+    res: BaseResponse,
     next: NextFunction,
-  ): Promise<unknown> {
+  ): Promise<void> {
     const params = req.params;
     if (!params || !params[0]) return next();
     const { module, cleanPath } = this.parseModuleName(params[0]);
@@ -115,7 +116,7 @@ export default class StaticFiles extends BaseModule {
       this.logger.info(`Module(${module}) is not accessible`, [
         ...(req.id ? [req.id] : []),
       ]);
-      res.status(403).send("Forbidden");
+      res.sendStatus(403, "Forbidden");
       return;
     }
 
@@ -130,7 +131,7 @@ export default class StaticFiles extends BaseModule {
           e: (err as any).stack,
         },
       );
-      res.status(404).send("Not found");
+      res.sendStatus(404, "Not found");
       return;
     }
 
@@ -150,9 +151,9 @@ export default class StaticFiles extends BaseModule {
   @method("get")
   async handleStatic(
     req: FileRequest,
-    res: Response,
+    res: BaseResponse,
     next: NextFunction,
-  ): Promise<unknown> {
+  ): Promise<void> {
     const params = req.params;
     if (!params || !params[0]) return next();
 
@@ -168,7 +169,7 @@ export default class StaticFiles extends BaseModule {
   }
 
   @command(["static"])
-  async handleFile(req: FileRequest, res: Response, done: () => void) {
+  async handleFile(req: FileRequest, res: BaseResponse, done: () => void) {
     if (!req.fileRequest || !req.filePath || !req.root) return done();
 
     if (!req.filePath.startsWith(req.root)) {
@@ -176,7 +177,7 @@ export default class StaticFiles extends BaseModule {
         `Filepath(${req.filePath}) is outside of root(${req.root})`,
         [...(req.id ? [req.id] : [])],
       );
-      res.status(403).send("Forbidden");
+      res.sendStatus(403, "Forbidden");
       return;
     }
 
@@ -205,7 +206,11 @@ export default class StaticFiles extends BaseModule {
 
   @command(["static"])
   @dependsOn(["handleJs"])
-  async handleJavaScript(req: FileRequest, res: Response, done: () => void) {
+  async handleJavaScript(
+    req: FileRequest,
+    res: BaseResponse,
+    done: () => void,
+  ) {
     if (!req.fileRequest) return done();
     if (!req.js || !req.data) return;
     this.logger.info(`Processing file: ${req.filePath}`, [
@@ -223,7 +228,7 @@ export default class StaticFiles extends BaseModule {
 
   @command(["static"])
   @dependsOn(["handleFile", "handleJavaScript"])
-  async sendFile(req: FileRequest, res: Response, done: () => void) {
+  async sendFile(req: FileRequest, res: BaseResponse, done: () => void) {
     if (!req.fileRequest || !req.data || !req.stats) return done();
 
     // Generate ETag
@@ -262,10 +267,10 @@ export default class StaticFiles extends BaseModule {
         mime.lookup(req.filePath as string) || "application/octet-stream";
     }
 
-    res.set("Content-Type", mimeType);
-    res.set("ETag", etag);
-    res.set("Last-Modified", req.stats.mtime.toUTCString());
-    res.set("Cache-Control", `public, max-age=${this.maxAge}`);
+    res.header("Content-Type", mimeType);
+    res.header("ETag", etag);
+    res.header("Last-Modified", req.stats.mtime.toUTCString());
+    res.header("Cache-Control", `public, max-age=${this.maxAge}`);
     res.send(req.data);
     this.logger.debug(`Filepath(${req.filePath}) served`, [
       ...(req.id ? [req.id] : []),

@@ -1,9 +1,10 @@
 import { Key, pathToRegexp } from "path-to-regexp";
 
-import { Request, Response, NextFunction } from "express";
+import { Request, NextFunction } from "express";
 import BaseModule from "../../core/baseModule";
 import middleware from "../../decorators/middleware";
 import config from "../../decorators/config";
+import BaseResponse from "../../core/baseResponse";
 
 type UrlParams = Record<string, string>;
 type RouteHandler = (params: UrlParams, req: Request) => string;
@@ -63,7 +64,7 @@ export default class Router extends BaseModule {
   }
 
   @middleware
-  handleRoutes(req: Request, res: Response, next: NextFunction) {
+  async handleRoutes(req: Request, res: BaseResponse, next: NextFunction) {
     const cleanPath = this.cleanPath(req.path);
     if (!cleanPath && this.defaultRoute) {
       req.url = this.defaultRoute;
