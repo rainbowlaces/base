@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 import path from "path";
 
 import express from "express";
@@ -13,6 +14,14 @@ import HttpError from "./httpError";
 import Router from "../modules/router";
 import { ConfigObject } from "../config/types";
 import { getDirname } from "../utils/file";
+
+declare global {
+  namespace Express {
+    interface Request {
+      id?: string;
+    }
+  }
+}
 
 /**
  * Initializes and manages the core functionality of the application. It sets up the express application,
@@ -89,6 +98,17 @@ export default class Base {
       this.logger.fatal("Unhandled Rejection", [], { promise, reason });
     });
 
+    this.app.use(
+      (
+        req: express.Request,
+        res: express.Response,
+        next: express.NextFunction,
+      ) => {
+        req.id = Math.random().toString(36).substring(7);
+        next();
+      },
+    );
+
     this.logger.info(`Load Core Modules...`);
     await this.registerModule(Router);
     await this.registerModules([RequestParser, StaticFiles, Templates]);
@@ -107,23 +127,31 @@ export default class Base {
         next: express.NextFunction,
       ): void => {
         if (err instanceof HttpError) {
-          this.logger.error(err.message, ["http"], {
-            error: err.wrapped,
-          });
+          this.logger.error(
+            err.message,
+            ["http", ...(req.id ? [req.id] : [])],
+            {
+              error: err.wrapped,
+            },
+          );
           if (res.headersSent) return;
           res.status(err.statusCode).send(err.message);
           return;
         }
-        this.logger.error(err.message, [err.constructor.name], {
-          error: err.stack?.split("\n"),
-        });
+        this.logger.error(
+          err.message,
+          [err.constructor.name, ...(req.id ? [req.id] : [])],
+          {
+            error: err.stack?.split("\n"),
+          },
+        );
         if (!res.headersSent) res.status(500).send("Internal Server Error");
         return;
       },
     );
 
     this.app.use((req: express.Request, res: express.Response) => {
-      this.logger.warn(`404: ${req.url}`);
+      this.logger.warn(`404: ${req.url}`, [...(req.id ? [req.id] : [])]);
       if (res.headersSent) return;
       res.status(404).send("Not Found");
     });
@@ -212,6 +240,7 @@ export default class Base {
 
         this.logger.debug(
           `Running middleware: ${moduleName}:${mwName} ${req.method.toLowerCase()}`,
+          [moduleName, mwName, ...(req.id ? [req.id] : [])],
         );
 
         try {

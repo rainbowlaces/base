@@ -107,10 +107,14 @@ export default class StaticFiles extends BaseModule {
     if (!params || !params[0]) return next();
     const { module, cleanPath } = this.parseModuleName(params[0]);
 
-    this.logger.info(`Module(${module}) requested`);
+    this.logger.info(`Module(${module}) requested`, [
+      ...(req.id ? [req.id] : []),
+    ]);
 
     if (module && !this.isModuleAccessible(module)) {
-      this.logger.info(`Module(${module}) is not accessible`);
+      this.logger.info(`Module(${module}) is not accessible`, [
+        ...(req.id ? [req.id] : []),
+      ]);
       res.status(403).send("Forbidden");
       return;
     }
@@ -118,10 +122,14 @@ export default class StaticFiles extends BaseModule {
     try {
       req.filePath = await resolveModule(cleanPath, this.npmFsRoot);
     } catch (err) {
-      this.logger.info(`Module(${module}) not found in ${this.npmFsRoot}`, [], {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        e: (err as any).stack,
-      });
+      this.logger.info(
+        `Module(${module}) not found in ${this.npmFsRoot}`,
+        [...(req.id ? [req.id] : [])],
+        {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          e: (err as any).stack,
+        },
+      );
       res.status(404).send("Not found");
       return;
     }
@@ -131,6 +139,7 @@ export default class StaticFiles extends BaseModule {
 
     this.logger.info(
       `Module(${module}) found in ${req.root} at path ${req.filePath}`,
+      [...(req.id ? [req.id] : [])],
     );
 
     return this.commands("static").run(req, res, next);
@@ -165,6 +174,7 @@ export default class StaticFiles extends BaseModule {
     if (!req.filePath.startsWith(req.root)) {
       this.logger.warn(
         `Filepath(${req.filePath}) is outside of root(${req.root})`,
+        [...(req.id ? [req.id] : [])],
       );
       res.status(403).send("Forbidden");
       return;
@@ -177,7 +187,9 @@ export default class StaticFiles extends BaseModule {
     } catch (err) {
       const error = err as NodeError;
       if (error.message === "NOT FOUND" || error.code === "ENOENT") {
-        this.logger.info(`Filepath(${req.filePath}) not found`);
+        this.logger.info(`Filepath(${req.filePath}) not found`, [
+          ...(req.id ? [req.id] : []),
+        ]);
         return done();
       } else {
         throw new HttpError(500, error);
@@ -196,7 +208,9 @@ export default class StaticFiles extends BaseModule {
   async handleJavaScript(req: FileRequest, res: Response, done: () => void) {
     if (!req.fileRequest) return done();
     if (!req.js || !req.data) return;
-    this.logger.info(`Processing file: ${req.filePath}`);
+    this.logger.info(`Processing file: ${req.filePath}`, [
+      ...(req.id ? [req.id] : []),
+    ]);
     try {
       req.data = await this.replaceImportPaths(
         req.data.toString("utf8"),
@@ -219,7 +233,9 @@ export default class StaticFiles extends BaseModule {
 
     // Check If-None-Match header
     if (req.headers["if-none-match"] === etag) {
-      this.logger.debug(`Filepath(${req.filePath}) has not been modified`);
+      this.logger.debug(`Filepath(${req.filePath}) has not been modified`, [
+        ...(req.id ? [req.id] : []),
+      ]);
       res.sendStatus(304);
       return;
     }
@@ -232,6 +248,7 @@ export default class StaticFiles extends BaseModule {
     ) {
       this.logger.debug(
         `Filepath(${req.filePath}) not modified since ${modifiedSince}`,
+        [...(req.id ? [req.id] : [])],
       );
       res.sendStatus(304);
       return;
@@ -250,7 +267,9 @@ export default class StaticFiles extends BaseModule {
     res.set("Last-Modified", req.stats.mtime.toUTCString());
     res.set("Cache-Control", `public, max-age=${this.maxAge}`);
     res.send(req.data);
-    this.logger.debug(`Filepath(${req.filePath}) served`);
+    this.logger.debug(`Filepath(${req.filePath}) served`, [
+      ...(req.id ? [req.id] : []),
+    ]);
     return done();
   }
 
