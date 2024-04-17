@@ -5,6 +5,8 @@ module.exports = function (api) {
 
   const sharedPlugins = [
     ["@babel/plugin-proposal-decorators", { version: "2023-11" }],
+    ["@babel/plugin-transform-class-properties"],
+    ["@babel/plugin-transform-class-static-block"],
   ];
   const serverPlugins = [require("./babel/handle-imports.cjs")];
   const clientPlugins = [];
