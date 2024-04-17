@@ -1,64 +1,60 @@
-import { Request, NextFunction } from "express";
-import fsPath from "path";
-import crypto from "crypto";
-import * as fs from "fs";
-import * as babel from "@babel/core";
-
-import * as t from "@babel/types";
-import * as mime from "mime-types";
-
+import init from "../../decorators/init";
 import BaseModule from "../../core/baseModule";
-import config from "../../decorators/config";
-import middleware from "../../decorators/middleware";
-import path from "../../decorators/path";
-import dependsOn from "../../decorators/dependsOn";
-import method from "../../decorators/method";
-import HttpError from "../../core/httpError";
-import command from "../../decorators/command";
-import { resolveModule } from "./utils";
+import di from "../../decorators/di";
+import path from "path";
 import { findFileUp, loadFile } from "../../utils/file";
-import BaseResponse from "../../core/baseResponse";
+import action from "../../decorators/action";
+import { BaseActionArgs } from "../../core/baseAction";
+import { resolveModule } from "./utils";
+import dependsOn from "../../decorators/dependsOn";
+import BaseError from "../../core/baseErrors";
 
-interface FileRequest extends Request {
-  data?: Buffer | string;
-  stats?: fs.Stats;
-  filePath?: string;
-  root?: string;
-  js?: boolean;
-  fileRequest?: boolean;
-}
+import crypto from "crypto";
+
+import babel from "@babel/core";
+import * as t from "@babel/types";
+import * as fs from "fs";
+import mime from "mime-types";
+import config from "../../decorators/config";
+
+type ModuleAccessFilter = (string | RegExp)[];
+type ModileAccessType = "open" | "closed";
 
 interface NodeError extends Error {
   code?: string;
 }
 
-export default class StaticFiles extends BaseModule {
-  @config()
+export default class BaseStatic extends BaseModule {
+  @di("fsRoot")
+  baseFsRoot!: string;
+
+  @config<string>()
   staticFsRoot: string = "/public";
 
-  @config()
+  @config<string>()
   npmFsRoot: string = "";
 
-  @config()
-  maxAge: number = 0;
+  @config<number>()
+  maxAge: number = 3600;
 
-  @config()
-  moduleAccessFilter: (string | RegExp)[] = [];
+  @config<ModuleAccessFilter>()
+  moduleAccessFilter: ModuleAccessFilter = [];
 
-  @config()
-  accessMode: "open" | "closed" = "closed";
+  @config<ModileAccessType>()
+  accessMode: ModileAccessType = "closed";
 
+  @init()
   async init() {
-    this.staticFsRoot = fsPath.normalize(
-      fsPath.join(this.base.fsRoot, this.staticFsRoot),
+    this.staticFsRoot = path.normalize(
+      path.join(this.baseFsRoot, this.staticFsRoot),
     );
 
     if (!this.npmFsRoot.trim()) {
       try {
         this.npmFsRoot =
-          (await findFileUp(this.base.fsRoot, "package.json")) ?? "";
+          (await findFileUp(this.baseFsRoot, "package.json")) ?? "";
         this.npmFsRoot = this.npmFsRoot
-          ? fsPath.join(fsPath.dirname(this.npmFsRoot), "node_modules")
+          ? path.join(path.dirname(this.npmFsRoot), "node_modules")
           : "";
       } catch (err) {
         this.logger.error("Error resolving package.json.", [], { err });
@@ -70,212 +66,211 @@ export default class StaticFiles extends BaseModule {
         "Failed to resolve npmFsRoot, npm modules will not be accessible.",
       );
     } else {
-      this.npmFsRoot = fsPath.normalize(this.npmFsRoot);
+      this.npmFsRoot = path.normalize(this.npmFsRoot);
     }
-
-    this.maxAge = Number(this.maxAge);
-    this.logger.debug(`Static files path: ${this.staticFsRoot}`);
-    this.logger.debug(`NPM modules path: ${this.npmFsRoot}`);
-    this.logger.debug(`Max age: ${this.maxAge}`);
-    this.logger.debug(`Access Mode: ${this.accessMode}`);
-    this.logger.debug(`Namespace: ${this.namespace}`);
   }
 
-  async getFile(
-    path: string,
-  ): Promise<{ data: Buffer; stats: fs.Stats; type: string }> {
-    const data = await loadFile(path);
-    return { ...data, type: mime.lookup(path) || "application/octet-stream" };
-  }
+  @action("/get/npm/:module*")
+  async handleNpmModule(args?: BaseActionArgs) {
+    if (!args || !args.module) return;
+    if (!args.context) return;
+    const ctx = args.context;
 
-  async getFileBase64(path: string): Promise<{ data: string; type: string }> {
-    const data = await this.getFile(path);
-    return {
-      data: data.data.toString("base64"),
-      type: data.type,
-    };
-  }
-
-  @middleware
-  @path("/npm/(.+)")
-  @method("get")
-  async handleNpm(
-    req: FileRequest,
-    res: BaseResponse,
-    next: NextFunction,
-  ): Promise<void> {
-    const params = req.params;
-    if (!params || !params[0]) return next();
-    const { module, cleanPath } = this.parseModuleName(params[0]);
-
-    this.logger.info(`Module(${module}) requested`, [
-      ...(req.id ? [req.id] : []),
-    ]);
+    const { module, cleanPath } = this.parseModuleName(
+      args?.module as string | string[],
+    );
+    this.logger.info(`Module(${module}) requested`, [ctx.id]);
 
     if (module && !this.isModuleAccessible(module)) {
-      this.logger.info(`Module(${module}) is not accessible`, [
-        ...(req.id ? [req.id] : []),
-      ]);
-      res.sendStatus(403, "Forbidden");
+      this.logger.info(`Module(${module}) is not accessible`, [ctx.id]);
+      ctx.res.statusCode(403);
+      ctx.res.send("Forbidden");
       return;
     }
 
     try {
-      req.filePath = await resolveModule(cleanPath, this.npmFsRoot);
+      ctx.set("filePath", await resolveModule(cleanPath, this.npmFsRoot));
     } catch (err) {
       this.logger.info(
         `Module(${module}) not found in ${this.npmFsRoot}`,
-        [...(req.id ? [req.id] : [])],
+        [ctx.id],
         {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           e: (err as any).stack,
         },
       );
-      res.sendStatus(404, "Not found");
+      ctx.res.statusCode(404);
+      ctx.res.send("Not found");
       return;
     }
 
-    req.root = this.npmFsRoot;
-    req.fileRequest = true;
+    ctx.set("root", this.npmFsRoot);
+    ctx.set("fileRequest", true);
 
     this.logger.info(
-      `Module(${module}) found in ${req.root} at path ${req.filePath}`,
-      [...(req.id ? [req.id] : [])],
+      `Module(${module}) found in ${ctx.get("root")} at path ${ctx.get("filePath")}`,
+      [ctx.id],
     );
-
-    return this.commands("static").run(req, res, next);
   }
 
-  @middleware
-  @path("/static/(.+)")
-  @method("get")
-  async handleStatic(
-    req: FileRequest,
-    res: BaseResponse,
-    next: NextFunction,
-  ): Promise<void> {
-    const params = req.params;
-    if (!params || !params[0]) return next();
+  @action("/get/static/:path*")
+  async handleStatic(args?: BaseActionArgs) {
+    if (!args || !args.path) return;
+    if (!args.context) return;
+    const ctx = args.context;
+    const cleanPath = this.cleanPath(args?.path as string | string[]).join("/");
 
-    const cleanPath = this.cleanPath(params[0]).join("/");
+    if (!cleanPath) return;
 
-    if (!cleanPath) return next();
+    ctx.set(
+      "filePath",
+      path.normalize(path.join(this.staticFsRoot, cleanPath)),
+    );
+    ctx.set("root", this.staticFsRoot);
+    ctx.set("fileRequest", true);
 
-    req.filePath = fsPath.normalize(fsPath.join(this.staticFsRoot, cleanPath));
-    req.root = this.staticFsRoot;
-    req.fileRequest = true;
-
-    return this.commands("static").run(req, res, next);
+    return;
   }
 
-  @command(["static"])
-  async handleFile(req: FileRequest, res: BaseResponse, done: () => void) {
-    if (!req.fileRequest || !req.filePath || !req.root) return done();
+  @dependsOn("/(handleStatic|handleNpmModule)")
+  @action("/get/(static|npm)/:path*")
+  async handleFile(args?: BaseActionArgs) {
+    if (!args || !args.context) return;
+    const ctx = args.context;
 
-    if (!req.filePath.startsWith(req.root)) {
-      this.logger.warn(
-        `Filepath(${req.filePath}) is outside of root(${req.root})`,
-        [...(req.id ? [req.id] : [])],
-      );
-      res.sendStatus(403, "Forbidden");
+    const filePath: string = ctx.get("filePath") || "";
+    const root: string = ctx.get("root") || "";
+
+    if (!ctx.get("fileRequest") || !filePath || !root) {
+      ctx.res.statusCode(400);
+      ctx.res.send("Bad request");
+      return;
+    }
+
+    if (!filePath.startsWith(root)) {
+      this.logger.warn(`Filepath(${filePath}) is outside of root(${root})`, [
+        ctx.id,
+      ]);
+      ctx.res.statusCode(403);
+      ctx.res.send("Forbidden");
       return;
     }
 
     try {
-      const { data, stats } = await loadFile(req.filePath);
-      req.data = data;
-      req.stats = stats;
+      const { data, stats } = await loadFile(filePath);
+      ctx.set("data", data);
+      ctx.set("stats", stats);
+      ctx.set("js", !!filePath?.endsWith(".js"));
     } catch (err) {
       const error = err as NodeError;
       if (error.message === "NOT FOUND" || error.code === "ENOENT") {
-        this.logger.info(`Filepath(${req.filePath}) not found`, [
-          ...(req.id ? [req.id] : []),
-        ]);
-        return done();
+        this.logger.info(`Filepath(${filePath}) not found`, [ctx.id]);
+        ctx.res.statusCode(404);
+        ctx.res.send("Not found");
+        return;
       } else {
-        throw new HttpError(500, error);
+        throw new BaseError(error);
       }
     }
+    return;
   }
 
-  @dependsOn("handleFile")
-  @command(["static"])
-  async handleJs(req: FileRequest) {
-    req.js = !!req.filePath?.endsWith(".js");
-  }
+  @dependsOn("/handleFile")
+  @action("/get/(static|npm)/:path*")
+  async handleJavaScript(args?: BaseActionArgs) {
+    if (!args || !args.context) return;
+    const ctx = args.context;
 
-  @command(["static"])
-  @dependsOn(["handleJs"])
-  async handleJavaScript(
-    req: FileRequest,
-    res: BaseResponse,
-    done: () => void,
-  ) {
-    if (!req.fileRequest) return done();
-    if (!req.js || !req.data) return;
-    this.logger.info(`Processing file: ${req.filePath}`, [
-      ...(req.id ? [req.id] : []),
-    ]);
+    if (!ctx.get("fileRequest")) {
+      ctx.res.statusCode(400);
+      ctx.res.send("Bad request");
+      return;
+    }
+
+    if (!ctx.get("js")) return;
+
+    const filePath: string = ctx.get("filePath") || "";
+    let data: Buffer | string | undefined = ctx.get<Buffer>("data");
+
+    if (!data) {
+      ctx.res.statusCode(400);
+      ctx.res.send("Bad request");
+      return;
+    }
+
+    this.logger.debug(`Processing file: ${filePath}`, [ctx.id]);
+
     try {
-      req.data = await this.replaceImportPaths(
-        req.data.toString("utf8"),
-        req.filePath ?? "",
+      data = await this.replaceImportPaths(
+        data.toString("utf8"),
+        filePath ?? "",
       );
+      ctx.set("data", data);
     } catch (err) {
-      throw new HttpError(500, err as Error);
+      this.logger.error("Failed to replace import paths.", [], { err });
+      ctx.res.statusCode(500);
+      ctx.res.send("Failed to replace import paths.");
     }
   }
 
-  @command(["static"])
-  @dependsOn(["handleFile", "handleJavaScript"])
-  async sendFile(req: FileRequest, res: BaseResponse, done: () => void) {
-    if (!req.fileRequest || !req.data || !req.stats) return done();
+  @dependsOn("/handleJavaScript")
+  @action("/get/(static|npm)/:path*")
+  async sendFile(args?: BaseActionArgs) {
+    if (!args || !args.context) return;
+    const ctx = args.context;
+
+    if (!ctx.get("fileRequest")) return;
+
+    const filePath: string = ctx.get("filePath") || "";
+    const data: Buffer | string | undefined = ctx.get<Buffer>("data");
+    const stats: fs.Stats | undefined = ctx.get<fs.Stats>("stats");
+
+    if (!data || !stats) return;
 
     // Generate ETag
     const hash = crypto.createHash("sha1");
-    hash.update(req.data);
+    hash.update(data);
     const etag = hash.digest("hex");
 
-    // Check If-None-Match header
-    if (req.headers["if-none-match"] === etag) {
-      this.logger.debug(`Filepath(${req.filePath}) has not been modified`, [
-        ...(req.id ? [req.id] : []),
+    if (ctx.req.header("if-none-match") === etag) {
+      this.logger.debug(`Filepath(${filePath}) has not been modified`, [
+        ctx.id,
       ]);
-      res.sendStatus(304);
+
+      ctx.res.statusCode(304);
+      ctx.res.send("Not Modified");
       return;
     }
 
     // Check If-Modified-Since header
-    const modifiedSince = req.headers["if-modified-since"];
+    const modifiedSince = ctx.req.header("if-modified-since");
     if (
       modifiedSince &&
-      new Date(modifiedSince).getTime() >= req.stats.mtime.getTime()
+      new Date(modifiedSince).getTime() >= stats.mtime.getTime()
     ) {
       this.logger.debug(
-        `Filepath(${req.filePath}) not modified since ${modifiedSince}`,
-        [...(req.id ? [req.id] : [])],
+        `Filepath(${filePath}) not modified since ${modifiedSince}`,
+        [ctx.id],
       );
-      res.sendStatus(304);
+      ctx.res.statusCode(304);
+      ctx.res.send("Not Modified");
       return;
     }
 
     let mimeType: string;
-    if (req.js) {
+    if (ctx.get("js")) {
       mimeType = "application/javascript";
     } else {
-      mimeType =
-        mime.lookup(req.filePath as string) || "application/octet-stream";
+      mimeType = mime.lookup(filePath as string) || "application/octet-stream";
     }
 
-    res.header("Content-Type", mimeType);
-    res.header("ETag", etag);
-    res.header("Last-Modified", req.stats.mtime.toUTCString());
-    res.header("Cache-Control", `public, max-age=${this.maxAge}`);
-    res.send(req.data);
-    this.logger.debug(`Filepath(${req.filePath}) served`, [
-      ...(req.id ? [req.id] : []),
-    ]);
-    return done();
+    ctx.res.header("Content-Type", mimeType);
+    ctx.res.header("ETag", etag);
+    ctx.res.header("Last-Modified", stats.mtime.toUTCString());
+    ctx.res.header("Cache-Control", `public, max-age=${this.maxAge}`);
+    ctx.res.send(data);
+    this.logger.debug(`Filepath(${filePath}) served`, [ctx.id]);
+    return;
   }
 
   private isModuleAccessible(moduleName: string): boolean {
@@ -295,6 +290,35 @@ export default class StaticFiles extends BaseModule {
       });
   }
 
+  private cleanPath(path: string | string[]): string[] {
+    if (Array.isArray(path)) path = path.join("/");
+    if (typeof path !== "string") return [];
+    if (!path || !path.trim()) return [];
+    return path
+      .trim()
+      .split("/")
+      .filter((s: string) => !!s);
+  }
+
+  private parseModuleName(moduleName: string | string[]): {
+    module: string;
+    cleanPath: string;
+  } {
+    const segments: string[] = this.cleanPath(moduleName);
+
+    if (!segments.length) return { module: "", cleanPath: "" };
+
+    let module;
+
+    if (segments[0].startsWith("@")) {
+      module = segments.slice(0, 2).join("/");
+    } else {
+      module = segments[0];
+    }
+
+    return { module, cleanPath: segments.join("/") };
+  }
+
   private async replaceImportPaths(
     js: string,
     filePath: string,
@@ -308,11 +332,10 @@ export default class StaticFiles extends BaseModule {
         configFile: false,
       } as babel.ParserOptions);
     } catch (err) {
-      this.logger.error("Failed to parse JS content.", [], { err });
-      throw new HttpError(500, err);
+      throw new BaseError("Failed to parse JS content.", err as Error);
     }
 
-    if (!ast) throw new Error("ast is undefined");
+    if (!ast) throw new BaseError("AST is undefined.");
 
     const replacePath = (
       path: babel.NodePath<
@@ -355,40 +378,11 @@ export default class StaticFiles extends BaseModule {
         configFile: false,
       });
     } catch (err) {
-      this.logger.error("Failed to transform JS content.", [], { err });
-      throw new HttpError(500, err);
+      throw new BaseError("Failed to transform JS content.", err as Error);
     }
 
-    if (!output) throw new Error("Failed to transform JS.");
+    if (!output) throw new BaseError("Failed to transform JS.");
 
     return output.code as string;
-  }
-
-  private cleanPath(path: string): string[] {
-    if (typeof path !== "string") return [];
-    if (!path || !path.trim()) return [];
-    return path
-      .trim()
-      .split("/")
-      .filter((s: string) => !!s);
-  }
-
-  private parseModuleName(moduleName: string): {
-    module: string;
-    cleanPath: string;
-  } {
-    const segments: string[] = this.cleanPath(moduleName);
-
-    if (!segments.length) return { module: "", cleanPath: "" };
-
-    let module;
-
-    if (segments[0].startsWith("@")) {
-      module = segments.slice(0, 2).join("/");
-    } else {
-      module = segments[0];
-    }
-
-    return { module, cleanPath: segments.join("/") };
   }
 }

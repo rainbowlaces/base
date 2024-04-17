@@ -1,30 +1,26 @@
 import { Key, pathToRegexp } from "path-to-regexp";
 
-import { Request, NextFunction } from "express";
 import BaseModule from "../../core/baseModule";
-import middleware from "../../decorators/middleware";
+import init from "../../decorators/init";
+import { BaseActionArgs } from "../../core/baseAction";
+import action from "../../decorators/action";
+import BaseRequest from "../../core/baseRequest";
 import config from "../../decorators/config";
-import BaseResponse from "../../core/baseResponse";
 
 type UrlParams = Record<string, string>;
-type RouteHandler = (params: UrlParams, req: Request) => string;
+type RouteHandler = (params: UrlParams, req: BaseRequest) => string;
 type RouteTarget = string | RouteHandler;
+type Routes = Record<string, RouteTarget>;
 
-/**
- * Handles routing for the application by registering routes and their corresponding handlers. It supports
- * dynamic route matching and allows for the configuration of default and custom routes, enhancing the
- * application's flexibility in handling HTTP requests.
- */
-export default class Router extends BaseModule {
-  @config()
-  routes: Record<string, RouteTarget> = {};
+export default class BaseRouter extends BaseModule {
+  @config<Routes>()
+  private routes: Routes = {};
 
-  @config()
-  defaultRoute: string = "";
+  @config<string>()
+  private defaultRoute: string = "/";
 
-  async init() {
-    this.logger.log("Router initialized");
-  }
+  @init()
+  async init() {}
 
   private cleanPath(path: string): string {
     return path
@@ -35,7 +31,7 @@ export default class Router extends BaseModule {
 
   private selectRoute(
     url: string,
-    req: Request,
+    req: BaseRequest,
   ): { path: string; target: string; params: UrlParams } | null {
     url = `/${url}`;
     const routes = Object.keys(this.routes);
@@ -60,25 +56,22 @@ export default class Router extends BaseModule {
       target = target(params, req);
     }
 
-    return { path: route, target: String(target), params };
+    return { path: route, target, params };
   }
 
-  @middleware
-  async handleRoutes(req: Request, res: BaseResponse, next: NextFunction) {
-    const cleanPath = this.cleanPath(req.path);
+  @action(undefined, false)
+  async handleRoutes(args?: BaseActionArgs) {
+    if (!args || !args.context) return;
+    const ctx = args.context;
+    const cleanPath = this.cleanPath(ctx.req.url.pathname);
     if (!cleanPath && this.defaultRoute) {
-      req.url = this.defaultRoute;
-      return next();
+      ctx.res.redirect(this.defaultRoute);
+      return;
     }
 
-    const route = this.selectRoute(cleanPath, req);
-    if (!route) return next();
+    const route = this.selectRoute(cleanPath, ctx.req);
+    if (!route) return;
 
-    req.url = route.target as string;
-
-    const url = new URL(req.url, "http://example.com");
-    req.query = Object.fromEntries(url.searchParams.entries());
-    req.params = route.params;
-    next();
+    ctx.res.redirect(route.target);
   }
 }

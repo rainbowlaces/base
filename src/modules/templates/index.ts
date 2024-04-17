@@ -1,29 +1,29 @@
 import fsPath from "path";
 import BaseModule from "../../core/baseModule";
-import config from "../../decorators/config";
 import { Template, TemplateData } from "./engine";
-import dependsOn from "../../decorators/dependsOn";
 import fs from "node:fs/promises";
+
+import di from "../../decorators/di";
+import init from "../../decorators/init";
+import config from "../../decorators/config";
 
 interface NodeError extends Error {
   code?: string;
 }
 
-/**
- * Manages server-side rendering of templates. It provides functionality to render templates with dynamic data,
- * supporting a flexible templating engine that can integrate with the application's overall routing and response
- * handling mechanism.
- */
-@dependsOn(["RequestParser", "StaticFiles"])
-export default class Templates extends BaseModule {
-  @config()
-  templateRoot: string = "/templates";
-
+export default class BaseTemplates extends BaseModule {
   private _template: Template | undefined;
 
+  @di("fsRoot")
+  baseFsRoot!: string;
+
+  @config<string>()
+  private templateRoot: string = "templates";
+
+  @init()
   async init() {
-    this.templateRoot = fsPath.join(this.base.fsRoot, this.templateRoot);
-    this.logger.log(`Template path: ${this.templateRoot}`);
+    this.templateRoot = fsPath.join(this.baseFsRoot, this.templateRoot);
+    this.logger.debug(`Template path: ${this.templateRoot}`);
 
     try {
       await fs.access(this.templateRoot);

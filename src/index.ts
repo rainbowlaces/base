@@ -8,42 +8,30 @@ import {
 } from "./modules/templates/engine";
 
 import config from "./decorators/config";
-import path from "./decorators/path";
-import middleware from "./decorators/middleware";
+import action from "./decorators/action";
 import dependsOn from "./decorators/dependsOn";
-import method from "./decorators/method";
-import namespace from "./decorators/namespace";
-import command from "./decorators/command";
-import inject from "./decorators/inject";
+import di from "./decorators/di";
+import init from "./decorators/init";
+import sub from "./decorators/sub";
 
 import * as asyncUtils from "./utils/async";
 import * as fileUtils from "./utils/file";
 import * as recursionUtils from "./utils/recursion";
 import * as stringUtils from "./utils/string";
 
-import Templates from "./modules/templates";
-import Static from "./modules/static";
+import BaseTemplates from "./modules/templates";
+import BaseStaticFiles from "./modules/static";
+import BaseRouter from "./modules/router";
 
-import { Request, Response, NextFunction } from "express";
-
-export type { Request, Response, NextFunction };
-
-import CommandQueue, { Command } from "./core/commandQueue";
-import { LogLevel } from "./logger/types";
-
-export type { Command };
-
-export { CommandQueue };
+import { LogLevel } from "./core/logger/types";
 
 export const decorators = {
   config,
-  path,
-  middleware,
+  action,
+  di,
   dependsOn,
-  method,
-  namespace,
-  command,
-  inject,
+  init,
+  sub,
 };
 
 export const utils = {
@@ -53,7 +41,7 @@ export const utils = {
   string: stringUtils,
 };
 
-export { Templates, Static };
+export { BaseTemplates, BaseStaticFiles, BaseRouter };
 
 export { LogLevel };
 export default Base;

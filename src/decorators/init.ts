@@ -1,18 +1,24 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { BaseInitializableRequestHandler } from "../core/baseRequestHandler";
+import BaseModule from "../core/baseModule";
+import BasePubSub from "../core/basePubSub";
+import BaseDi from "../core/baseDi";
 
-/**
- * Marks a class method as middleware, making it a part of the request handling pipeline in the Express application.
- * This decorator is fundamental for integrating methods directly into the flow of HTTP request processing, allowing
- * for operations like request parsing, response formatting, or custom authentication checks. When combined with
- * @method and/or @path decorators, it enables fine-tuned control over which HTTP requests a middleware method should
- * process, based on the request's HTTP method and URL path.
- */
-export default function init(
-  middlewareMethod: BaseInitializableRequestHandler,
-  context: ClassMethodDecoratorContext,
-): void {
-  if (context.kind !== "method") return;
-
-  middlewareMethod.isInit = true;
+export default function init() {
+  return (
+    target: () => Promise<void>,
+    context: ClassMethodDecoratorContext,
+  ): void => {
+    if (context.kind !== "method") return;
+    context.addInitializer(function () {
+      BasePubSub.sub(
+        "/base/init",
+        async function (this: BaseModule) {
+          await this.deps.isReady();
+          await target.apply(this);
+          BaseDi.register(this);
+          this.deps.done(this.constructor.name);
+          this.logger.info(`Module ${this.constructor.name} initialized`);
+        }.bind(this as BaseModule),
+      );
+    });
+  };
 }
