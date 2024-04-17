@@ -79,7 +79,6 @@ export class BaseTopicLogger extends EventEmitter {
     super();
     const sub = BasePubSub.sub(topic, async (args: BasePubSubArgs = {}) => {
       this._topics.add(args.__topic);
-      console.log(`Seen: ${args.__topic}`);
       this.emit("topic", args.__topic);
     });
     BaseTopicCheck._registry.register(this, sub);
