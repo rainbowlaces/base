@@ -5,9 +5,9 @@ import BaseDi from "./baseDi";
 import BaseRequestHandler from "./baseRequestHandler";
 import BasePubSub from "./basePubSub";
 import BaseModule from "./baseModule";
-import BaseRouter from "../modules/router";
 import BaseStatic from "../modules/static";
 import BaseTemplates from "../modules/templates";
+import BaseRouter from "./baseRouter";
 
 export default class Base {
   private _logger!: BaseLogger;
@@ -60,6 +60,10 @@ export default class Base {
     BaseDi.register(BaseConfig);
   }
 
+  private initRouter() {
+    BaseDi.register(new BaseRouter());
+  }
+
   private initRequestHandler() {
     this._requestHandler = new BaseRequestHandler();
     BaseDi.register(this._requestHandler);
@@ -74,11 +78,11 @@ export default class Base {
     await this.initConfig();
     this.initLogger();
     this.initPubSub();
+    this.initRouter();
     this.initRequestHandler();
 
     BaseDi.register(this);
 
-    this.addModule(BaseRouter);
     this.addModule(BaseStatic);
     this.addModule(BaseTemplates);
 

@@ -35,6 +35,7 @@ export default class BaseResponse extends EventEmitter {
     this._ctx = ctx;
 
     this._res.on("finish", () => {
+      if (this._finished) return;
       this.end();
     });
 
@@ -49,7 +50,11 @@ export default class BaseResponse extends EventEmitter {
   }
 
   redirect(url: string) {
-    this.emit("redirect", url);
+    if (this._finished) return;
+    this._logger.info(`Redirecting to ${url}`, [this._ctx.id]);
+    this.statusCode(302);
+    this.header("location", url);
+    this.end();
   }
 
   statusCode(): number;
@@ -100,6 +105,8 @@ export default class BaseResponse extends EventEmitter {
     if (!this._headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
+      if (this.rawResponse.headersSent)
+        throw new BaseError("Headers already sent.");
       this.rawResponse.writeHead(this._statusCode, this._headers);
       this._headersSent = true;
     }

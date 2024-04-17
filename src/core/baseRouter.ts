@@ -1,26 +1,18 @@
 import { Key, pathToRegexp } from "path-to-regexp";
-
-import BaseModule from "../../core/baseModule";
-import init from "../../decorators/init";
-import { BaseActionArgs } from "../../core/baseAction";
-import action from "../../decorators/action";
-import BaseRequest from "../../core/baseRequest";
-import config from "../../decorators/config";
+import BaseConfig from "./config";
+import di from "../decorators/di";
 
 type UrlParams = Record<string, string>;
-type RouteHandler = (params: UrlParams, req: BaseRequest) => string;
+type RouteHandler = (params: UrlParams) => string;
 type RouteTarget = string | RouteHandler;
 type Routes = Record<string, RouteTarget>;
 
-export default class BaseRouter extends BaseModule {
-  @config<Routes>()
+export default class BaseRouter {
   private routes: Routes = {};
+  private defaultRoute?: string;
 
-  @config<string>()
-  private defaultRoute: string = "/";
-
-  @init()
-  async init() {}
+  @di<BaseConfig>("BaseConfig", "base_router")
+  private _config!: BaseConfig;
 
   private cleanPath(path: string): string {
     return path
@@ -29,9 +21,13 @@ export default class BaseRouter extends BaseModule {
       .join("/");
   }
 
+  constructor() {
+    this.routes = this._config.get<Routes>("routes", {});
+    this.defaultRoute = this._config.get<string>("defaultRoute", "");
+  }
+
   private selectRoute(
     url: string,
-    req: BaseRequest,
   ): { path: string; target: string; params: UrlParams } | null {
     url = `/${url}`;
     const routes = Object.keys(this.routes);
@@ -53,25 +49,19 @@ export default class BaseRouter extends BaseModule {
 
     let target: RouteTarget = this.routes[route];
     if (typeof target === "function") {
-      target = target(params, req);
+      target = target(params);
     }
 
     return { path: route, target, params };
   }
 
-  @action(undefined, false)
-  async handleRoutes(args?: BaseActionArgs) {
-    if (!args || !args.context) return;
-    const ctx = args.context;
-    const cleanPath = this.cleanPath(ctx.req.url.pathname);
-    if (!cleanPath && this.defaultRoute) {
-      ctx.res.redirect(this.defaultRoute);
-      return;
-    }
+  handleRoute(urlPath: string) {
+    const cleanPath = this.cleanPath(urlPath);
+    if (!cleanPath && this.defaultRoute) return this.defaultRoute;
 
-    const route = this.selectRoute(cleanPath, ctx.req);
-    if (!route) return;
+    const route = this.selectRoute(cleanPath);
+    if (!route) return cleanPath;
 
-    ctx.res.redirect(route.target);
+    return route.target;
   }
 }

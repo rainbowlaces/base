@@ -6,6 +6,7 @@ import BaseConfig from "./config";
 import BasePubSub from "./basePubSub";
 import { delay } from "../utils/async";
 import BaseError from "./baseErrors";
+import BaseRouter from "./baseRouter";
 
 export default class BaseRequestHandler {
   private _requests: Map<string, BaseContext> = new Map<string, BaseContext>();
@@ -16,6 +17,9 @@ export default class BaseRequestHandler {
 
   @di<BaseConfig>("BaseConfig", "request_handler")
   private _config!: BaseConfig;
+
+  @di<BaseRouter>("BaseRouter")
+  private _router!: BaseRouter;
 
   @di<BasePubSub>("BasePubSub")
   private _bus!: BasePubSub;
@@ -41,19 +45,6 @@ export default class BaseRequestHandler {
       this._requests.delete(ctx.id);
     });
 
-    ctx.res.on("redirect", (url: string) => {
-      const req = ctx.req.rawRequest;
-      const res = ctx.res.rawResponse;
-
-      if (!req || !res) return;
-
-      ctx.res.finish();
-
-      req.url = url;
-
-      this.handleRequest(req, res);
-    });
-
     this._logger.info(`New request: ${ctx.topic}`, [ctx.id]);
 
     this._bus.pub(ctx.topic, { context: ctx });
@@ -65,11 +56,13 @@ export default class BaseRequestHandler {
       ctx.res.statusCode(404);
       ctx.res.send("Not found.");
       this._requests.delete(ctx.id);
+      return;
     }
 
     await delay(this._config.get<number>("requestTimeout", 5000));
 
     if (ctx.res.finished) return;
+
     this._logger.warn("Request timed out.", [ctx.id]);
     ctx.res.statusCode(408);
     ctx.res.send("Request timed out.");
@@ -80,6 +73,14 @@ export default class BaseRequestHandler {
     req: http.IncomingMessage,
     res: http.ServerResponse,
   ) {
+    const _url = new URL(req.url || "", `http://example.com`);
+    const finalPath = this._router.handleRoute(_url.pathname) + _url.search;
+
+    if (finalPath !== req.url) {
+      this._logger.debug(`Rewriting ${req.url} >> ${finalPath}`);
+      req.url = finalPath;
+    }
+
     const ctx = new BaseContext(req, res);
     this._requests.set(ctx.id, ctx);
 

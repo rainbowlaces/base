@@ -2,7 +2,7 @@ export default {
   base: {
     port: 8080,
   },
-  router: {
+  base_router: {
     defaultRoute: "/bing/bang",
   },
 };

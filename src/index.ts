@@ -21,7 +21,6 @@ import * as stringUtils from "./utils/string";
 
 import BaseTemplates from "./modules/templates";
 import BaseStaticFiles from "./modules/static";
-import BaseRouter from "./modules/router";
 
 import { LogLevel } from "./core/logger/types";
 
@@ -41,7 +40,7 @@ export const utils = {
   string: stringUtils,
 };
 
-export { BaseTemplates, BaseStaticFiles, BaseRouter };
+export { BaseTemplates, BaseStaticFiles };
 
 export { LogLevel };
 export default Base;
