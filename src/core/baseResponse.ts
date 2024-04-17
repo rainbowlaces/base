@@ -7,6 +7,9 @@ import BaseConfig from "./config";
 import BaseLogger from "./logger";
 import { EventEmitter } from "events";
 
+import cookie from "cookie";
+import signature from "cookie-signature";
+
 export default class BaseResponse extends EventEmitter {
   private _ctx: BaseContext;
   private _res: http.ServerResponse;
@@ -72,6 +75,25 @@ export default class BaseResponse extends EventEmitter {
     if (!value) return this._headers[name];
     if (this._headersSent) throw new BaseError("Headers already sent.");
     this._headers[name] = value;
+  }
+
+  cookie(name: string, value: string) {
+    const secret = this._config.get<string>("cookieSecret", "");
+    let finalValue = value;
+
+    if (secret) {
+      finalValue = "s:" + signature.sign(finalValue, secret);
+    }
+
+    const cookies = this.header("set-cookie");
+    if (Array.isArray(cookies)) {
+      this.header("set-cookie", [
+        ...cookies,
+        cookie.serialize(name, finalValue),
+      ]);
+    } else {
+      this.header("set-cookie", cookie.serialize(name, finalValue));
+    }
   }
 
   private ensureHeadersSent() {

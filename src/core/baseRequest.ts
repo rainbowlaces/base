@@ -3,6 +3,8 @@ import path from "path";
 import * as os from "os";
 
 import formidable from "formidable";
+import cookie from "cookie";
+import signature from "cookie-signature";
 
 import di from "../decorators/di";
 import BaseLogger from "./logger";
@@ -62,6 +64,21 @@ export default class BaseRequest {
 
   header(name: string): string | undefined {
     return this._headers[name.toLowerCase()]?.[0];
+  }
+
+  cookie(name: string): string | undefined {
+    const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") || "");
+    const raw = cookies[name];
+    if (raw && raw.substring(0, 2) === "s:") {
+      const secret = this._config.get<string>("cookieSecret", "");
+      if (secret) {
+        const unsignedValue = signature.unsign(raw.slice(2), secret);
+        if (unsignedValue !== false) {
+          return unsignedValue;
+        }
+      }
+    }
+    return undefined;
   }
 
   allHeaders(): NodeJS.Dict<string[]>;
