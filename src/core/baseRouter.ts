@@ -55,13 +55,21 @@ export default class BaseRouter {
     return { path: route, target, params };
   }
 
-  handleRoute(urlPath: string) {
+  handleRoute(urlPath: string): {
+    original: string;
+    target: string;
+    rewrite: boolean;
+  } {
     const cleanPath = this.cleanPath(urlPath);
-    if (!cleanPath && this.defaultRoute) return this.defaultRoute;
+
+    const out = { original: cleanPath };
+
+    if (!cleanPath && this.defaultRoute)
+      return { ...out, target: this.defaultRoute, rewrite: true };
 
     const route = this.selectRoute(cleanPath);
-    if (!route) return cleanPath;
+    if (!route) return { ...out, target: cleanPath, rewrite: false };
 
-    return route.target;
+    return { ...out, target: route.target, rewrite: true };
   }
 }

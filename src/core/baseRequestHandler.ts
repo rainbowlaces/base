@@ -74,11 +74,11 @@ export default class BaseRequestHandler {
     res: http.ServerResponse,
   ) {
     const _url = new URL(req.url || "", `http://example.com`);
-    const finalPath = this._router.handleRoute(_url.pathname) + _url.search;
+    const rw = this._router.handleRoute(_url.pathname);
 
-    if (finalPath !== req.url) {
-      this._logger.debug(`Rewriting ${req.url} >> ${finalPath}`);
-      req.url = finalPath;
+    if (rw.rewrite) {
+      this._logger.debug(`Rewriting ${rw.original || "/"} >> ${rw.target}`);
+      req.url = rw.target + _url.search;
     }
 
     const ctx = new BaseContext(req, res);
