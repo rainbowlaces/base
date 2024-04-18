@@ -34,8 +34,6 @@ export default function action(topic?: string, handled: boolean = true) {
       this.logger.debug(`Action ${target.name}: DONE`);
 
       const fullTopic = `/request/${ctx.id}/${this.constructor.name}/${target.name}`;
-
-      this.logger.debug(`Publish: ${fullTopic}`);
       BasePubSub.create().pub(fullTopic);
     };
     context.addInitializer(function () {
