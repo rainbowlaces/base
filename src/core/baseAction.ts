@@ -9,4 +9,5 @@ export interface BaseActionArgs {
 export interface BaseAction extends Subscriber {
   (args?: BaseActionArgs): Promise<void>;
   dependsOn?: string[];
+  isGlobal?: boolean;
 }

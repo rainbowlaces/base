@@ -3,12 +3,12 @@ import { BaseDiWrapper, Constructor, Instance, Scalar } from "./types";
 export default class BaseDi {
   private static instances: Map<string, BaseDiWrapper<unknown>> = new Map();
 
-  resolve<T>(key: string | Constructor<T>, ...args: unknown[]): T {
+  resolve<T>(key: string | Constructor<T>, ...args: unknown[]): T | null {
     if (BaseDi.isConstructor(key)) {
       key = key.name;
     }
     const wrapper = BaseDi.instances.get(key as string) as BaseDiWrapper<T>;
-    if (!wrapper) throw new Error(`Key ${key} is not registered`);
+    if (!wrapper) return null;
 
     if (wrapper.singleton) return wrapper.value as T;
     if (wrapper.type === "constructor")

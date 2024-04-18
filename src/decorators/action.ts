@@ -1,6 +1,7 @@
 import BaseModule from "../core/baseModule";
 import { BaseAction, BaseActionArgs } from "../core/baseAction";
 import BasePubSub from "../core/basePubSub";
+import BaseDi from "../core/baseDi";
 
 export default function action(topic?: string, handled: boolean = true) {
   return function (
@@ -23,12 +24,27 @@ export default function action(topic?: string, handled: boolean = true) {
         return;
       }
 
-      if (target.dependsOn) {
+      const di = new BaseDi();
+      const globalActions =
+        di.resolve<Set<string>>("globalActions") || new Set();
+      let dependencies = [];
+      if (!target.isGlobal) {
+        dependencies = [
+          ...(target.dependsOn || []),
+          ...Array.from(globalActions),
+        ];
+      } else {
+        dependencies = [
+          ...(target.dependsOn || []).filter((dep) => !globalActions.has(dep)),
+        ];
+      }
+
+      if (dependencies.length) {
         this.logger.debug(
-          `Awaiting deps for action ${target.name}: ${target.dependsOn.join(", ")}`,
+          `Awaiting deps for action ${target.name}: ${dependencies.join(", ")}`,
           [ctx.id],
         );
-        await ctx.waitForActions(target.dependsOn);
+        await ctx.waitForActions(dependencies);
       }
 
       if (ctx.res.finished) {
