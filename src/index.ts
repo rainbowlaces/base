@@ -23,6 +23,7 @@ import BaseTemplates from "./modules/templates";
 import BaseStaticFiles from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
+import { BaseActionArgs } from "./core/baseAction";
 
 export const decorators = {
   config,
@@ -45,4 +46,4 @@ export { BaseTemplates, BaseStaticFiles };
 export { LogLevel };
 export default Base;
 export { BaseModule, html };
-export type { LoadedElements, LoadedTags, TemplateData };
+export type { LoadedElements, LoadedTags, TemplateData, BaseActionArgs };
