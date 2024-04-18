@@ -1,4 +1,4 @@
-import BaseContext from "./baseContext";
+import BaseContext from "./requestHandler/baseContext";
 import { Subscriber } from "./basePubSub";
 
 export interface BaseActionArgs {

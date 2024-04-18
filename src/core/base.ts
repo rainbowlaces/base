@@ -2,7 +2,7 @@ import BaseLogger from "../core/logger";
 import BaseConfig from "./config";
 import { getDirname } from "../utils/file";
 import BaseDi from "./baseDi";
-import BaseRequestHandler from "./baseRequestHandler";
+import BaseRequestHandler from "./requestHandler";
 import BasePubSub from "./basePubSub";
 import BaseModule from "./baseModule";
 import BaseStatic from "../modules/static";

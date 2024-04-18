@@ -3,7 +3,7 @@ import BaseModule from "../../../core/baseModule";
 import { delay } from "../../../utils/async";
 import action from "../../../decorators/action";
 import { BaseActionArgs } from "../../../core/baseAction";
-import BaseContext from "../../../core/baseContext";
+import BaseContext from "../../../core/requestHandler/baseContext";
 
 export default class TestModuleB extends BaseModule {
   @init()

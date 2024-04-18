@@ -1,10 +1,10 @@
 import * as http from "http";
-import BaseError from "./baseErrors";
+import BaseError from "../baseErrors";
 import BaseContext from "./baseContext";
 import { Readable } from "stream";
-import di from "../decorators/di";
-import BaseConfig from "./config";
-import BaseLogger from "./logger";
+import di from "../../decorators/di";
+import BaseConfig from "../config";
+import BaseLogger from "../logger";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
@@ -101,7 +101,6 @@ export default class BaseResponse extends EventEmitter {
     }
   }
 
-  private ensureHeadersSent() {
     if (!this._headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
@@ -119,13 +118,8 @@ export default class BaseResponse extends EventEmitter {
     this.emit("done");
   }
 
-  send(data: string | Buffer | Readable) {
-    this.ensureHeadersSent();
     if (data instanceof Buffer || typeof data === "string")
       return this.end(data);
-    data.pipe(this.rawResponse);
-    data.on("end", () => this.end());
-    return;
   }
 
   finish() {

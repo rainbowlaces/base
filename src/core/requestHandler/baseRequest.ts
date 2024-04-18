@@ -6,10 +6,10 @@ import formidable from "formidable";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
-import di from "../decorators/di";
-import BaseLogger from "./logger";
-import BaseConfig from "./config";
-import BaseError from "./baseErrors";
+import di from "../../decorators/di";
+import BaseLogger from "../logger";
+import BaseConfig from "../config";
+import BaseError from "../baseErrors";
 import BaseContext from "./baseContext";
 
 export type ParsedForm<T> = {

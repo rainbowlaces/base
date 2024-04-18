@@ -4,7 +4,7 @@ import BaseResponse from "./baseResponse";
 import { nanoid } from "nanoid";
 import path from "path";
 import EventEmitter from "events";
-import { BaseTopicLogger } from "./baseReadyCheck";
+import { BaseTopicLogger } from "../baseReadyCheck";
 
 export default class BaseContext extends EventEmitter {
   private _id: string;

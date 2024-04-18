@@ -1,12 +1,12 @@
 import BaseContext from "./baseContext";
 import http from "http";
-import BaseLogger from "./logger";
-import di from "../decorators/di";
-import BaseConfig from "./config";
-import BasePubSub from "./basePubSub";
-import { delay } from "../utils/async";
-import BaseError from "./baseErrors";
-import BaseRouter from "./baseRouter";
+import BaseLogger from "../logger";
+import di from "../../decorators/di";
+import BaseConfig from "../config";
+import BasePubSub from "../basePubSub";
+import { delay } from "../../utils/async";
+import BaseError from "../baseErrors";
+import BaseRouter from "../baseRouter";
 
 export default class BaseRequestHandler {
   private _requests: Map<string, BaseContext> = new Map<string, BaseContext>();
