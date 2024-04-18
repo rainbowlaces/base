@@ -50,7 +50,6 @@ export default function dependsOn(dependencies: string | string[]) {
           }
           return `${dep.module}/${dep.action}`;
         });
-        return;
       }
       if (context.kind === "class") {
         target.dependsOn = deps.map((dep) => {
@@ -63,7 +62,6 @@ export default function dependsOn(dependencies: string | string[]) {
           return `${dep.module}`;
         });
       }
-      target.dependsOn = deps;
     });
   };
 }
