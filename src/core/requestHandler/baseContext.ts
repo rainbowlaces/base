@@ -32,7 +32,7 @@ export default class BaseContext extends EventEmitter {
     this._topic = `/request/${this._req.method}${cleanPath}`;
 
     this._messageLog = new BaseTopicLogger(
-      `/request/${this.id}/:module/:action`,
+      `/module/${this.id}/:module/:action`,
     );
   }
 
@@ -78,7 +78,7 @@ export default class BaseContext extends EventEmitter {
 
   public waitForActions(actions: string[]): Promise<void> {
     return this._messageLog.waitFor(
-      actions.map((action) => `/request/${this.id}/${action}`),
+      actions.map((action) => `/module/${this.id}/${action}`),
     );
   }
 }

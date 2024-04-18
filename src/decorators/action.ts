@@ -16,7 +16,12 @@ export default function action(topic?: string, handled: boolean = true) {
       if (!args || !args.context) return;
       const ctx = args.context;
 
-      if (ctx.res.finished) return;
+      if (ctx.res.finished) {
+        this.logger.debug(
+          `Response already finished by another action. Skipping ${target.name}.`,
+        );
+        return;
+      }
 
       if (target.dependsOn) {
         this.logger.debug(
@@ -26,14 +31,19 @@ export default function action(topic?: string, handled: boolean = true) {
         await ctx.waitForActions(target.dependsOn);
       }
 
-      if (ctx.res.finished) return;
+      if (ctx.res.finished) {
+        this.logger.debug(
+          `Response already finished by another action. Skipping ${target.name}.`,
+        );
+        return;
+      }
 
       this.logger.debug(`Handling action ${target.name}`);
       if (handled) ctx.handle();
       await target.apply(this, [{ context: ctx, ...args }]);
       this.logger.debug(`Action ${target.name}: DONE`);
 
-      const fullTopic = `/request/${ctx.id}/${this.constructor.name}/${target.name}`;
+      const fullTopic = `/module/${ctx.id}/${this.constructor.name}/${target.name}`;
       BasePubSub.create().pub(fullTopic);
     };
     context.addInitializer(function () {
