@@ -19,6 +19,6 @@ export default class TestModuleA extends BaseModule {
     this.logger.info("Handling test action1");
     const ctx = args?.context;
     if (!ctx) return;
-    ctx.res.send(this._templates.render("index"));
+    ctx.res.html(this._templates.render("index"));
   }
 }

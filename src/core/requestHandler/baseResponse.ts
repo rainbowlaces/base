@@ -101,33 +101,12 @@ export default class BaseResponse extends EventEmitter {
     }
   }
 
-  private guessMimeType(body: unknown): string {
-    if (typeof body === "string") {
-      if (body.startsWith("{") || body.startsWith("[")) {
-        return "application/json; charset=utf-8";
-      }
-      if (body.startsWith("<")) {
-        return "text/html; charset=utf-8";
-      }
-    }
-
-    if (Buffer.isBuffer(body)) {
-      return "application/octet-stream";
-    }
-
-    return "text/plain; charset=utf-8";
-  }
-
-  private ensureHeadersSent(body?: unknown) {
+  private ensureHeadersSent() {
     if (!this._headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
       if (this.rawResponse.headersSent)
         throw new BaseError("Headers already sent.");
-
-      if (body && !this._headers["content-type"]) {
-        this.header("content-type", this.guessMimeType(""));
-      }
 
       this.rawResponse.writeHead(this._statusCode, this._headers);
       this._headersSent = true;
@@ -141,8 +120,33 @@ export default class BaseResponse extends EventEmitter {
     this.emit("done");
   }
 
-  async send(data: string | Buffer | Readable) {
-    this.ensureHeadersSent(data);
+  async html(html: string) {
+    return this.send(html, "text/html; charset=utf-8");
+  }
+
+  async json(data: object) {
+    return this.send(JSON.stringify(data), "application/json; charset=utf-8");
+  }
+
+  async text(text: string) {
+    return this.send(text, "text/plain; charset=utf-8");
+  }
+
+  async download(
+    data: Readable,
+    fileName: string,
+    mimeType: string = "application/octet-stream",
+  ) {
+    this.header("content-disposition", `attachment; filename=${fileName}`);
+    return this.send(data, mimeType);
+  }
+
+  async send(
+    data: string | Buffer | Readable,
+    mimeType: string = "text/plain; charset=utf-8",
+  ) {
+    this.header("content-type", mimeType);
+    this.ensureHeadersSent();
     if (data instanceof Buffer || typeof data === "string")
       return this.end(data);
     return new Promise<void>((resolve) => {
