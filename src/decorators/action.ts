@@ -39,11 +39,12 @@ export default function action(topic?: string, handled: boolean = true) {
         ];
       }
 
+      this.logger.debug(
+        `Deps for action ${target.name}: ${dependencies.join(", ")}`,
+        [ctx.id],
+      );
+
       if (dependencies.length) {
-        this.logger.debug(
-          `Awaiting deps for action ${target.name}: ${dependencies.join(", ")}`,
-          [ctx.id],
-        );
         await ctx.waitForActions(dependencies);
       }
 
