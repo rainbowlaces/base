@@ -35,7 +35,7 @@ export default function action(topic?: string, handled: boolean = true) {
         ];
       } else {
         dependencies = [
-          ...(target.dependsOn || []).filter((dep) => !globalActions.has(dep)),
+          ...(target.dependsOn || []).filter((dep) => globalActions.has(dep)),
         ];
       }
 
