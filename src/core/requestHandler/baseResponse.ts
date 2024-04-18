@@ -82,7 +82,10 @@ export default class BaseResponse extends EventEmitter {
     value?: http.OutgoingHttpHeader,
   ): void | http.OutgoingHttpHeader {
     if (!value) return this._headers[name.toLowerCase()];
-    if (this.headersSent) throw new BaseError("Headers already sent.");
+    if (this.headersSent)
+      this._logger.warn(`Headers already sent when setting header ${name}.`, [
+        this._ctx.id,
+      ]);
     this._headers[name.toLowerCase()] = value;
   }
 
@@ -109,11 +112,9 @@ export default class BaseResponse extends EventEmitter {
     if (!this.headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
-      if (this.rawResponse.headersSent)
-        throw new BaseError("Headers already sent.");
-
       this.rawResponse.writeHead(this._statusCode, this._headers);
       this._headersSent = true;
+      return;
     }
   }
 
