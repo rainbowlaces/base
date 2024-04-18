@@ -12,9 +12,7 @@ export default class TestModuleA extends BaseModule {
   private _templates!: BaseTemplates;
 
   @init()
-  async init() {
-    this.logger.info("Init");
-  }
+  async init() {}
 
   @action("/get/index")
   async handleTestAction1(args?: BaseActionArgs) {

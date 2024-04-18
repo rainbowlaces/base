@@ -9,7 +9,6 @@ export default class TestModuleB extends BaseModule {
   @init()
   async init() {
     await delay(1000);
-    this.logger.info("Init");
   }
 
   @action("/get/bing/bang")
