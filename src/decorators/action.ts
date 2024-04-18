@@ -60,11 +60,14 @@ export default function action(topic?: string, handled: boolean = true) {
 
       this.logger.debug(`Handling action ${target.name}`);
       if (handled) ctx.handle();
-      await target.apply(this, [{ context: ctx, ...args }]);
-      this.logger.debug(`Action DONE`, [myName]);
-
-      const fullTopic = `/module/${ctx.id}/${this.constructor.name}/${target.name}`;
-      BasePubSub.create().pub(fullTopic);
+      try {
+        await target.apply(this, [{ context: ctx, ...args }]);
+        this.logger.debug(`Action DONE`, [myName]);
+        const fullTopic = `/module/${ctx.id}/${this.constructor.name}/${target.name}`;
+        BasePubSub.create().pub(fullTopic);
+      } catch (e) {
+        this.logger.error(`Action ERROR`, [myName], { error: e });
+      }
     };
     context.addInitializer(function () {
       BasePubSub.sub(`/request${topic || "/:path*"}`, checkDeps.bind(this));
