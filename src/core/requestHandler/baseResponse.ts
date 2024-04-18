@@ -101,11 +101,34 @@ export default class BaseResponse extends EventEmitter {
     }
   }
 
+  private guessMimeType(body: unknown): string {
+    if (typeof body === "string") {
+      if (body.startsWith("{") || body.startsWith("[")) {
+        return "application/json; charset=utf-8";
+      }
+      if (body.startsWith("<")) {
+        return "text/html; charset=utf-8";
+      }
+    }
+
+    if (Buffer.isBuffer(body)) {
+      return "application/octet-stream";
+    }
+
+    return "text/plain; charset=utf-8";
+  }
+
+  private ensureHeadersSent(body?: unknown) {
     if (!this._headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
       if (this.rawResponse.headersSent)
         throw new BaseError("Headers already sent.");
+
+      if (body && !this._headers["content-type"]) {
+        this.header("content-type", this.guessMimeType(""));
+      }
+
       this.rawResponse.writeHead(this._statusCode, this._headers);
       this._headersSent = true;
     }
@@ -118,8 +141,17 @@ export default class BaseResponse extends EventEmitter {
     this.emit("done");
   }
 
+  async send(data: string | Buffer | Readable) {
+    this.ensureHeadersSent(data);
     if (data instanceof Buffer || typeof data === "string")
       return this.end(data);
+    return new Promise<void>((resolve) => {
+      data.pipe(this.rawResponse);
+      data.on("end", () => {
+        this.end();
+        resolve();
+      });
+    });
   }
 
   finish() {

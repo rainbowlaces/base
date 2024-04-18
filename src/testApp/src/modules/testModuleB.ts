@@ -15,6 +15,6 @@ export default class TestModuleB extends BaseModule {
   async handleTestAction(args?: BaseActionArgs) {
     this.logger.info("Handling test bang action");
     const ctx = args?.context as BaseContext;
-    ctx.res.send("Hello, BANG!");
+    ctx.res.send("Hello, BANG! 🎂");
   }
 }
