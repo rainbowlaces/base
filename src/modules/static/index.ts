@@ -264,11 +264,10 @@ export default class BaseStatic extends BaseModule {
       mimeType = mime.lookup(filePath as string) || "application/octet-stream";
     }
 
-    ctx.res.header("Content-Type", mimeType);
     ctx.res.header("ETag", etag);
     ctx.res.header("Last-Modified", stats.mtime.toUTCString());
     ctx.res.header("Cache-Control", `public, max-age=${this.maxAge}`);
-    ctx.res.send(data);
+    ctx.res.send(data, mimeType);
     this.logger.debug(`Filepath(${filePath}) served`, [ctx.id]);
     return;
   }
