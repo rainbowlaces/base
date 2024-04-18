@@ -17,9 +17,12 @@ export default function action(topic?: string, handled: boolean = true) {
       if (!args || !args.context) return;
       const ctx = args.context;
 
+      const myName = `${this.constructor.name}/${target.name}`;
+
       if (ctx.res.finished) {
         this.logger.debug(
           `Response already finished by another action. Skipping ${target.name}.`,
+          [myName],
         );
         return;
       }
@@ -39,26 +42,26 @@ export default function action(topic?: string, handled: boolean = true) {
         ];
       }
 
-      this.logger.debug(
-        `Deps for action ${target.name}: ${dependencies.join(", ")}`,
-        [ctx.id],
-      );
+      this.logger.debug(`Deps for action: ${dependencies.join(", ")}`, [
+        ctx.id,
+        myName,
+      ]);
 
       if (dependencies.length) {
         await ctx.waitForActions(dependencies);
       }
 
       if (ctx.res.finished) {
-        this.logger.debug(
-          `Response already finished by another action. Skipping ${target.name}.`,
-        );
+        this.logger.debug(`Response already finished by another action.`, [
+          myName,
+        ]);
         return;
       }
 
       this.logger.debug(`Handling action ${target.name}`);
       if (handled) ctx.handle();
       await target.apply(this, [{ context: ctx, ...args }]);
-      this.logger.debug(`Action ${target.name}: DONE`);
+      this.logger.debug(`Action DONE`, [myName]);
 
       const fullTopic = `/module/${ctx.id}/${this.constructor.name}/${target.name}`;
       BasePubSub.create().pub(fullTopic);
