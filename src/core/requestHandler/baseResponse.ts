@@ -28,6 +28,10 @@ export default class BaseResponse extends EventEmitter {
   @di("BaseConfig", "request_handler")
   private _config!: BaseConfig;
 
+  get headersSent(): boolean {
+    return this._res.headersSent || this._headersSent;
+  }
+
   constructor(ctx: BaseContext, res: http.ServerResponse) {
     super();
 
@@ -78,7 +82,7 @@ export default class BaseResponse extends EventEmitter {
     value?: http.OutgoingHttpHeader,
   ): void | http.OutgoingHttpHeader {
     if (!value) return this._headers[name.toLowerCase()];
-    if (this._headersSent) throw new BaseError("Headers already sent.");
+    if (this.headersSent) throw new BaseError("Headers already sent.");
     this._headers[name.toLowerCase()] = value;
   }
 
@@ -102,7 +106,7 @@ export default class BaseResponse extends EventEmitter {
   }
 
   private ensureHeadersSent() {
-    if (!this._headersSent) {
+    if (!this.headersSent) {
       if (this._statusMessage)
         this.rawResponse.statusMessage = this._statusMessage;
       if (this.rawResponse.headersSent)
