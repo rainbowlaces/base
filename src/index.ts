@@ -24,6 +24,9 @@ import BaseStaticFiles from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
 import { BaseActionArgs } from "./core/baseAction";
+import BaseContext from "./core/requestHandler/baseContext";
+import BaseRequest from "./core/requestHandler/baseRequest";
+import BaseResponse from "./core/requestHandler/baseResponse";
 
 export const decorators = {
   config,
@@ -41,7 +44,13 @@ export const utils = {
   string: stringUtils,
 };
 
-export { BaseTemplates, BaseStaticFiles };
+export {
+  BaseTemplates,
+  BaseStaticFiles,
+  BaseContext,
+  BaseRequest,
+  BaseResponse,
+};
 
 export { LogLevel };
 export default Base;
