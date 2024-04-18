@@ -77,9 +77,9 @@ export default class BaseResponse extends EventEmitter {
     name: string,
     value?: http.OutgoingHttpHeader,
   ): void | http.OutgoingHttpHeader {
-    if (!value) return this._headers[name];
+    if (!value) return this._headers[name.toLowerCase()];
     if (this._headersSent) throw new BaseError("Headers already sent.");
-    this._headers[name] = value;
+    this._headers[name.toLowerCase()] = value;
   }
 
   cookie(name: string, value: string) {
