@@ -7,13 +7,6 @@ import {
   TemplateData,
 } from "./modules/templates/engine";
 
-import config from "./decorators/config";
-import action from "./decorators/action";
-import dependsOn from "./decorators/dependsOn";
-import di from "./decorators/di";
-import init from "./decorators/init";
-import sub from "./decorators/sub";
-
 import * as asyncUtils from "./utils/async";
 import * as fileUtils from "./utils/file";
 import * as recursionUtils from "./utils/recursion";
@@ -28,6 +21,14 @@ import BaseContext from "./core/requestHandler/baseContext";
 import BaseRequest from "./core/requestHandler/baseRequest";
 import BaseResponse from "./core/requestHandler/baseResponse";
 
+import config from "./decorators/config";
+import action from "./decorators/action";
+import dependsOn from "./decorators/dependsOn";
+import di from "./decorators/di";
+import init from "./decorators/init";
+import sub from "./decorators/sub";
+import global from "./decorators/global";
+
 export const decorators = {
   config,
   action,
@@ -35,6 +36,7 @@ export const decorators = {
   dependsOn,
   init,
   sub,
+  global,
 };
 
 export const utils = {
