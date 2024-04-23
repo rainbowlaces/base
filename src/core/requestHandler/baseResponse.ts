@@ -9,6 +9,14 @@ import { EventEmitter } from "events";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
+interface CookieOptions {
+  expires?: Date;
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: boolean | "lax" | "strict" | "none";
+}
+
 export default class BaseResponse extends EventEmitter {
   private _res: http.ServerResponse;
 
@@ -90,7 +98,7 @@ export default class BaseResponse extends EventEmitter {
     this._headers[name.toLowerCase()] = value;
   }
 
-  cookie(name: string, value: string) {
+  cookie(name: string, value: string, options: CookieOptions = {}) {
     const secret = this._config.get<string>("cookieSecret", "");
     let finalValue = value;
 
@@ -98,14 +106,25 @@ export default class BaseResponse extends EventEmitter {
       finalValue = "s:" + signature.sign(finalValue, secret);
     }
 
+    const cookieOptions: cookie.CookieSerializeOptions = {
+      ...options,
+      httpOnly: options.httpOnly ?? true,
+      secure: options.secure ?? false,
+      sameSite: options.sameSite ?? "strict",
+      path: "/",
+    };
+
     const cookies = this.header("set-cookie");
     if (Array.isArray(cookies)) {
       this.header("set-cookie", [
         ...cookies,
-        cookie.serialize(name, finalValue),
+        cookie.serialize(name, finalValue, cookieOptions),
       ]);
     } else {
-      this.header("set-cookie", cookie.serialize(name, finalValue));
+      this.header(
+        "set-cookie",
+        cookie.serialize(name, finalValue, cookieOptions),
+      );
     }
   }
 
