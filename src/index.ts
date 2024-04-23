@@ -16,7 +16,7 @@ import BaseTemplates from "./modules/templates";
 import BaseStaticFiles from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
-import { BaseActionArgs } from "./core/baseAction";
+import { BaseActionArgs, BaseHttpActionArgs } from "./core/baseAction";
 import BaseContext from "./core/baseContext";
 import BaseRequest from "./core/requestHandler/baseRequest";
 import BaseResponse from "./core/requestHandler/baseResponse";
@@ -60,4 +60,10 @@ export {
 export { LogLevel };
 export default Base;
 export { BaseModule, html };
-export type { LoadedElements, LoadedTags, TemplateData, BaseActionArgs };
+export type {
+  LoadedElements,
+  LoadedTags,
+  TemplateData,
+  BaseActionArgs,
+  BaseHttpActionArgs,
+};
