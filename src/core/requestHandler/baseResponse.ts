@@ -58,6 +58,7 @@ export default class BaseResponse extends EventEmitter {
     this._logger.info(`Redirecting to ${url}`, [this._ctxId]);
     this.statusCode(302);
     this.header("location", url);
+    this.ensureHeadersSent();
     this.end();
   }
 
