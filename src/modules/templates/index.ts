@@ -4,7 +4,7 @@ import { Template, TemplateData } from "./engine";
 import fs from "node:fs/promises";
 
 import di from "../../decorators/di";
-import init from "../../decorators/init";
+import init from "../../decorators/actions/init";
 import config from "../../decorators/config";
 
 interface NodeError extends Error {

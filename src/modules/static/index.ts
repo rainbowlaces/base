@@ -1,10 +1,10 @@
-import init from "../../decorators/init";
+import init from "../../decorators/actions/init";
 import BaseModule from "../../core/baseModule";
 import di from "../../decorators/di";
 import path from "path";
 import { findFileUp, loadFile } from "../../utils/file";
-import action from "../../decorators/action";
-import { BaseActionArgs } from "../../core/baseAction";
+import request from "../../decorators/actions/request";
+import { BaseHttpActionArgs } from "../../core/baseAction";
 import { resolveModule } from "./utils";
 import dependsOn from "../../decorators/dependsOn";
 import BaseError from "../../core/baseErrors";
@@ -70,9 +70,8 @@ export default class BaseStatic extends BaseModule {
     }
   }
 
-  @action("/get/npm/:module*")
-  async handleNpmModule(args?: BaseActionArgs) {
-    if (!args || !args.module) return;
+  @request("/get/npm/:module*")
+  async handleNpmModule(args: BaseHttpActionArgs) {
     if (!args.context) return;
     const ctx = args.context;
 
@@ -89,7 +88,7 @@ export default class BaseStatic extends BaseModule {
     }
 
     try {
-      ctx.set("filePath", await resolveModule(cleanPath, this.npmFsRoot));
+      ctx.data.filePath = await resolveModule(cleanPath, this.npmFsRoot);
     } catch (err) {
       this.logger.info(
         `Module(${module}) not found in ${this.npmFsRoot}`,
@@ -104,44 +103,48 @@ export default class BaseStatic extends BaseModule {
       return;
     }
 
-    ctx.set("root", this.npmFsRoot);
-    ctx.set("fileRequest", true);
+    ctx.data.root = this.npmFsRoot;
+    ctx.data.fileRequest = true;
 
     this.logger.info(
-      `Module(${module}) found in ${ctx.get("root")} at path ${ctx.get("filePath")}`,
+      `Module(${module}) found in ${ctx.data.root} at path ${ctx.data.filePath}`,
       [ctx.id],
     );
   }
 
-  @action("/get/static/:path*")
-  async handleStatic(args?: BaseActionArgs) {
-    if (!args || !args.path) return;
-    if (!args.context) return;
+  @request("/get/static/:path*")
+  async handleStatic(args: BaseHttpActionArgs) {
     const ctx = args.context;
     const cleanPath = this.cleanPath(args?.path as string | string[]).join("/");
 
     if (!cleanPath) return;
 
-    ctx.set(
-      "filePath",
-      path.normalize(path.join(this.staticFsRoot, cleanPath)),
-    );
-    ctx.set("root", this.staticFsRoot);
-    ctx.set("fileRequest", true);
+    ctx.data.filePath = path.normalize(path.join(this.staticFsRoot, cleanPath));
+    ctx.data.root = this.staticFsRoot;
+    ctx.data.fileRequest = true;
 
     return;
   }
 
-  @dependsOn("/(handleStatic|handleNpmModule)")
-  @action("/get/(static|npm)/:path*")
-  async handleFile(args?: BaseActionArgs) {
-    if (!args || !args.context) return;
+  @dependsOn("/handleStatic")
+  @request("/get/static/:path*")
+  async handleStaticFile(args: BaseHttpActionArgs) {
+    return this.handleFile(args);
+  }
+
+  @dependsOn("/handleNpmModule")
+  @request("/get/npm/:module*")
+  async handleNpmFile(args: BaseHttpActionArgs) {
+    return this.handleFile(args);
+  }
+
+  private async handleFile(args: BaseHttpActionArgs) {
     const ctx = args.context;
 
-    const filePath: string = ctx.get("filePath") || "";
-    const root: string = ctx.get("root") || "";
+    const filePath = (ctx.data.filePath || "") as string;
+    const root = (ctx.data.root || "") as string;
 
-    if (!ctx.get("fileRequest") || !filePath || !root) {
+    if (!ctx.data.fileRequest || !filePath || !root) {
       ctx.res.statusCode(400);
       ctx.res.send("Bad request");
       return;
@@ -158,9 +161,9 @@ export default class BaseStatic extends BaseModule {
 
     try {
       const { data, stats } = await loadFile(filePath);
-      ctx.set("data", data);
-      ctx.set("stats", stats);
-      ctx.set("js", !!filePath?.endsWith(".js"));
+      ctx.data.data = data;
+      ctx.data.stats = stats;
+      ctx.data.js = !!filePath?.endsWith(".js");
     } catch (err) {
       const error = err as NodeError;
       if (error.message === "NOT FOUND" || error.code === "ENOENT") {
@@ -175,22 +178,31 @@ export default class BaseStatic extends BaseModule {
     return;
   }
 
-  @dependsOn("/handleFile")
-  @action("/get/(static|npm)/:path*")
-  async handleJavaScript(args?: BaseActionArgs) {
-    if (!args || !args.context) return;
+  @dependsOn("/handleStaticFile")
+  @request("/get/static/:path*")
+  async handleStaticJavaScript(args: BaseHttpActionArgs) {
+    return this.handleJavaScript(args);
+  }
+
+  @dependsOn("/handleNpmFile")
+  @request("/get/npm/:module*")
+  async handleNpmJavaScript(args: BaseHttpActionArgs) {
+    return this.handleJavaScript(args);
+  }
+
+  private async handleJavaScript(args: BaseHttpActionArgs) {
     const ctx = args.context;
 
-    if (!ctx.get("fileRequest")) {
+    if (!ctx.data.fileRequest) {
       ctx.res.statusCode(400);
       ctx.res.send("Bad request");
       return;
     }
 
-    if (!ctx.get("js")) return;
+    if (!ctx.data.js) return;
 
-    const filePath: string = ctx.get("filePath") || "";
-    let data: Buffer | string | undefined = ctx.get<Buffer>("data");
+    const filePath: string = (ctx.data.filePath || "") as string;
+    let data: Buffer | string | undefined = ctx.data.data as Buffer | string;
 
     if (!data) {
       ctx.res.statusCode(400);
@@ -205,7 +217,7 @@ export default class BaseStatic extends BaseModule {
         data.toString("utf8"),
         filePath ?? "",
       );
-      ctx.set("data", data);
+      ctx.data.data = data;
     } catch (err) {
       this.logger.error("Failed to replace import paths.", [], { err });
       ctx.res.statusCode(500);
@@ -213,17 +225,25 @@ export default class BaseStatic extends BaseModule {
     }
   }
 
-  @dependsOn("/handleJavaScript")
-  @action("/get/(static|npm)/:path*")
-  async sendFile(args?: BaseActionArgs) {
-    if (!args || !args.context) return;
+  @dependsOn("/handleStaticJavaScript")
+  @request("/get/static/:path*")
+  async sendStaticFile(args: BaseHttpActionArgs) {
+    return this.sendFile(args);
+  }
+
+  @dependsOn("/handleNpmJavaScript")
+  @request("/get/npm/:module*")
+  async sendNpmFile(args: BaseHttpActionArgs) {
+    return this.sendFile(args);
+  }
+
+  async sendFile(args: BaseHttpActionArgs) {
     const ctx = args.context;
+    if (!ctx.data.fileRequest) return;
 
-    if (!ctx.get("fileRequest")) return;
-
-    const filePath: string = ctx.get("filePath") || "";
-    const data: Buffer | string | undefined = ctx.get<Buffer>("data");
-    const stats: fs.Stats | undefined = ctx.get<fs.Stats>("stats");
+    const filePath: string = (ctx.data.filePath || "") as string;
+    const data: Buffer | string | undefined = ctx.data.data as Buffer | string;
+    const stats: fs.Stats | undefined = ctx.data.stats as fs.Stats | undefined;
 
     if (!data || !stats) return;
 
@@ -258,7 +278,7 @@ export default class BaseStatic extends BaseModule {
     }
 
     let mimeType: string;
-    if (ctx.get("js")) {
+    if (ctx.data.js) {
       mimeType = "application/javascript";
     } else {
       mimeType = mime.lookup(filePath as string) || "application/octet-stream";

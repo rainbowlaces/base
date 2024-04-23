@@ -3,6 +3,10 @@ import { BaseDiWrapper, Constructor, Instance, Scalar } from "./types";
 export default class BaseDi {
   private static instances: Map<string, BaseDiWrapper<unknown>> = new Map();
 
+  static create(): BaseDi {
+    return new this();
+  }
+
   resolve<T>(key: string | Constructor<T>, ...args: unknown[]): T | null {
     if (BaseDi.isConstructor(key)) {
       key = key.name;

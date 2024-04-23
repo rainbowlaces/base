@@ -10,7 +10,6 @@ import di from "../../decorators/di";
 import BaseLogger from "../logger";
 import BaseConfig from "../config";
 import BaseError from "../baseErrors";
-import BaseContext from "./baseContext";
 
 export type ParsedForm<T> = {
   fields: T;
@@ -22,7 +21,7 @@ export default class BaseRequest {
   private _method: string;
   private _headers: NodeJS.Dict<string[]>;
   private _url: URL;
-  private _ctx: BaseContext;
+  private _ctxId: string;
 
   @di("BaseLogger", "base_request")
   private _logger!: BaseLogger;
@@ -30,14 +29,14 @@ export default class BaseRequest {
   @di("BaseConfig", "request_handler")
   private _config!: BaseConfig;
 
-  constructor(ctx: BaseContext, req: http.IncomingMessage) {
-    this._ctx = ctx;
+  constructor(ctxId: string, req: http.IncomingMessage) {
+    this._ctxId = ctxId;
     this._req = req;
     this._method = (req.method || "").toLowerCase();
     if (!http.METHODS.includes(this._method.toUpperCase())) {
       this._logger.error(
         `Invalid HTTP method: ${this._method}`,
-        [this._ctx.id],
+        [this._ctxId],
         { req },
       );
       throw new BaseError(`Invalid HTTP method: ${this._method}`);
@@ -60,6 +59,12 @@ export default class BaseRequest {
 
   get method(): string {
     return this._method;
+  }
+
+  get cleanPath(): string {
+    return (
+      "/" + this.url.pathname.replace(/\/+/g, "/").replace(/(^\/|\/$)/g, "")
+    );
   }
 
   header(name: string): string | undefined {
@@ -116,7 +121,7 @@ export default class BaseRequest {
       this._req.on("error", (err) => {
         this._logger.error(
           "Error occurred during body parsing",
-          [this._ctx.id],
+          [this._ctxId],
           { err },
         );
         reject(
@@ -131,7 +136,7 @@ export default class BaseRequest {
       const body = await this.rawBody();
       return body.toString("utf-8");
     } catch (err) {
-      this._logger.error("Error parsing text body.", [this._ctx.id], { err });
+      this._logger.error("Error parsing text body.", [this._ctxId], { err });
       throw new BaseError("Error parsing text body.", err as Error);
     }
   }
@@ -141,7 +146,7 @@ export default class BaseRequest {
       const body = await this.text();
       return JSON.parse(body) as T;
     } catch (err) {
-      this._logger.error("Error parsing JSON body.", [this._ctx.id], { err });
+      this._logger.error("Error parsing JSON body.", [this._ctxId], { err });
       throw new BaseError("Error parsing JSON body.", err as Error);
     }
   }
@@ -166,7 +171,7 @@ export default class BaseRequest {
     try {
       [fields, files] = await form.parse(this._req);
     } catch (err) {
-      this._logger.error("Error parsing form data", [this._ctx.id], { err });
+      this._logger.error("Error parsing form data", [this._ctxId], { err });
       throw new BaseError("Error parsing form data", err as Error);
     }
 

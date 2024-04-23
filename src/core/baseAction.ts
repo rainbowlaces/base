@@ -1,13 +1,22 @@
-import BaseContext from "./requestHandler/baseContext";
-import { Subscriber } from "./basePubSub";
+import BaseContext from "./baseContext";
+import { BasePubSubArgs, Subscriber } from "./basePubSub";
+import { BaseHttpContext } from "./requestHandler/httpContext";
 
-export interface BaseActionArgs {
-  context?: BaseContext;
-  [key: string]: unknown;
+export interface BaseHttpActionArgs extends BasePubSubArgs {
+  context: BaseHttpContext;
+}
+
+export interface BaseActionArgs extends BasePubSubArgs {
+  context: BaseContext;
 }
 
 export interface BaseAction extends Subscriber {
+  (): Promise<void>;
   (args?: BaseActionArgs): Promise<void>;
   dependsOn?: string[];
-  isGlobal?: boolean;
+  action: true;
+  handler: boolean;
+  isGlobal: boolean;
+  type: "request" | "init";
+  name: string;
 }

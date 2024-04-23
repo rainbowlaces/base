@@ -2,12 +2,12 @@ import BaseLogger from "../core/logger";
 import BaseConfig from "./config";
 import { getDirname } from "../utils/file";
 import BaseDi from "./baseDi";
-import BaseRequestHandler from "./requestHandler";
 import BasePubSub from "./basePubSub";
 import BaseModule from "./baseModule";
 import BaseStatic from "../modules/static";
 import BaseTemplates from "../modules/templates";
-import BaseRouter from "./baseRouter";
+import { BaseInitContext } from "./initContext";
+import BaseRequestHandler from "./requestHandler";
 
 export default class Base {
   private _logger!: BaseLogger;
@@ -60,10 +60,6 @@ export default class Base {
     BaseDi.register(BaseConfig);
   }
 
-  private initRouter() {
-    BaseDi.register(new BaseRouter());
-  }
-
   private initRequestHandler() {
     this._requestHandler = new BaseRequestHandler();
     BaseDi.register(this._requestHandler);
@@ -78,7 +74,6 @@ export default class Base {
     await this.initConfig();
     this.initLogger();
     this.initPubSub();
-    this.initRouter();
     this.initRequestHandler();
 
     BaseDi.register(this);
@@ -86,7 +81,7 @@ export default class Base {
     this.addModule(BaseStatic);
     this.addModule(BaseTemplates);
 
-    this._bus.pub("/base/init");
+    this._bus.pub("/base/init", { context: new BaseInitContext() });
   }
 
   addModule<T extends BaseModule>(Module: new () => T) {

@@ -76,8 +76,6 @@ export default class BaseConfig {
     const applyTemplatesRecursively = (obj: ConfigObject): ConfigObject => {
       if (typeof obj !== "object" || obj === null) return obj;
 
-      // Initialize result from the template if specified, or start with an empty object
-
       let result: ConfigObject = {};
       if (obj._T) {
         const templateName = obj._T as string;
@@ -85,10 +83,8 @@ export default class BaseConfig {
         if (templateConfig) result = { ...templateConfig };
       }
 
-      // Iterate over the properties of the original object
       Object.keys(obj).forEach((key) => {
         if (key === "_T") {
-          // Skip the template property itself
           return;
         }
 
@@ -98,23 +94,18 @@ export default class BaseConfig {
           value !== null &&
           !Array.isArray(value)
         ) {
-          // If the property is an object (and not an array), apply templates recursively
           result[key] = merge(
             { ...result[key] },
             applyTemplatesRecursively({ ...value }),
           );
         } else {
-          // For other values, directly assign them to the result
           result[key] = value;
         }
       });
 
-      // The initial version directly merged the obj, potentially missing the recursive template application
-      // This new approach ensures each property is considered for template application or direct assignment
       return result;
     };
 
-    // Starting point: apply templates to the top-level config object
     return applyTemplatesRecursively(config);
   }
 }

@@ -26,6 +26,7 @@ type LoggerConfig = {
   logSerialiser?: LogMessageSerializer;
   logRedactor?: LogMessageRedactor;
   redaction?: boolean;
+  async?: boolean;
 } & LogMessageSerializerConfig &
   LogMessageRedactorConfig;
 
@@ -81,6 +82,7 @@ export default class BaseLogger {
       logFormatter: BaseLogger.formatter,
       logSerialiser: new DefaultLogMessageSerializer(),
       logRedactor: new DefaultLogMessageRedactor(),
+      async: false,
       ...config,
     };
 
@@ -244,7 +246,7 @@ export default class BaseLogger {
       );
     }
 
-    await delay();
+    if (BaseLogger._config.async) await delay();
 
     // If the log buffer was overflowing but we are now within 90% of the maximum
     // we can reset the overflow flag.
@@ -289,11 +291,11 @@ export default class BaseLogger {
       });
     }
 
-    // Serialize the log message.
-    // Emit the log event.
-    BaseLogger._logEmitter.emit("log", serializedMessage);
-
-    // Increment the in-flight log count.
-    BaseLogger._inFlightLogs += 1;
+    if (BaseLogger._config.async) {
+      BaseLogger._logEmitter.emit("log", serializedMessage);
+      BaseLogger._inFlightLogs += 1;
+    } else {
+      BaseLogger.outputLogMessage(serializedMessage);
+    }
   }
 }

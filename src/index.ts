@@ -17,21 +17,24 @@ import BaseStaticFiles from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
 import { BaseActionArgs } from "./core/baseAction";
-import BaseContext from "./core/requestHandler/baseContext";
+import BaseContext from "./core/baseContext";
 import BaseRequest from "./core/requestHandler/baseRequest";
 import BaseResponse from "./core/requestHandler/baseResponse";
 
+import request from "./decorators/actions/request";
+import global from "./decorators/actions/global";
+import init from "./decorators/actions/init";
+import noHandle from "./decorators/actions/noHandle";
+
 import config from "./decorators/config";
-import action from "./decorators/action";
 import dependsOn from "./decorators/dependsOn";
 import di from "./decorators/di";
-import init from "./decorators/init";
 import sub from "./decorators/sub";
-import global from "./decorators/global";
 
 export const decorators = {
   config,
-  action,
+  request,
+  noHandle,
   di,
   dependsOn,
   init,

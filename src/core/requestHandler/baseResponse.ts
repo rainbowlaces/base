@@ -1,6 +1,5 @@
 import * as http from "http";
 import BaseError from "../baseErrors";
-import BaseContext from "./baseContext";
 import { Readable } from "stream";
 import di from "../../decorators/di";
 import BaseConfig from "../config";
@@ -11,7 +10,6 @@ import cookie from "cookie";
 import signature from "cookie-signature";
 
 export default class BaseResponse extends EventEmitter {
-  private _ctx: BaseContext;
   private _res: http.ServerResponse;
 
   private _statusCode: number = 200;
@@ -28,15 +26,17 @@ export default class BaseResponse extends EventEmitter {
   @di("BaseConfig", "request_handler")
   private _config!: BaseConfig;
 
+  private _ctxId: string;
+
   get headersSent(): boolean {
     return this._res.headersSent || this._headersSent;
   }
 
-  constructor(ctx: BaseContext, res: http.ServerResponse) {
+  constructor(ctxId: string, res: http.ServerResponse) {
     super();
+    this._ctxId = ctxId;
 
     this._res = res;
-    this._ctx = ctx;
 
     this._res.on("finish", () => {
       if (this._finished) return;
@@ -55,7 +55,7 @@ export default class BaseResponse extends EventEmitter {
 
   redirect(url: string) {
     if (this._finished) return;
-    this._logger.info(`Redirecting to ${url}`, [this._ctx.id]);
+    this._logger.info(`Redirecting to ${url}`, [this._ctxId]);
     this.statusCode(302);
     this.header("location", url);
     this.end();
@@ -84,7 +84,7 @@ export default class BaseResponse extends EventEmitter {
     if (!value) return this._headers[name.toLowerCase()];
     if (this.headersSent)
       this._logger.warn(`Headers already sent when setting header ${name}.`, [
-        this._ctx.id,
+        this._ctxId,
       ]);
     this._headers[name.toLowerCase()] = value;
   }

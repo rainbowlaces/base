@@ -1,6 +1,6 @@
 import { Key, pathToRegexp } from "path-to-regexp";
-import BaseConfig from "./config";
-import di from "../decorators/di";
+import BaseConfig from "../config";
+import di from "../../decorators/di";
 
 type UrlParams = Record<string, string>;
 type RouteHandler = (params: UrlParams) => string;

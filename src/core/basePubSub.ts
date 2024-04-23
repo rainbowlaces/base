@@ -1,10 +1,14 @@
 import { Match, MatchResult, match } from "path-to-regexp";
 import { delay } from "../utils/async";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type BasePubSubArgs = Record<string, any>;
+export interface BasePubSubArgs {
+  topic: string;
+  [key: string]: unknown;
+}
+
 type MatchedTopics = Map<string, BasePubSubArgs>;
-export type Subscriber = (args: BasePubSubArgs) => Promise<void>;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Subscriber = (args: BasePubSubArgs) => Promise<any | void>;
 
 export interface Subscription {
   topic: string;
@@ -34,13 +38,13 @@ export default class BasePubSub {
     return new BasePubSub();
   }
 
-  async pub(topic: string, args: BasePubSubArgs = {}): Promise<void> {
+  async pub(topic: string, args?: Partial<BasePubSubArgs>): Promise<void> {
     BasePubSub._inflightCount += 1;
     await delay();
     await Promise.all(
       BasePubSub.filterSubs(topic).map(async (m: SubscriptionMatch) => {
         await delay();
-        const fullArgs = { __topic: topic, ...args, ...(m.params || {}) };
+        const fullArgs = { ...args, ...(m.params || {}), topic };
         m.subscription
           .handler(fullArgs)
           .catch(BasePubSub.handleError.bind(this));

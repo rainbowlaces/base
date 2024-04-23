@@ -16,9 +16,13 @@ function validateDependencies(deps: string[]): Dependencies {
     }
 
     const [, module, action] = match;
+    if (!action) {
+      throw new Error(`Action name is required in dependency: ${dep}`);
+    }
+
     const newDep = {
       module: module || undefined,
-      action: action ? action.slice(1) : undefined, // remove the leading slash
+      action: action ? action.slice(1) : undefined,
     };
 
     parsedDeps.push(newDep);
@@ -37,31 +41,13 @@ export default function dependsOn(dependencies: string | string[]) {
     );
 
     context.addInitializer(function () {
-      if (!["class", "method"].includes(context.kind)) return;
-      if (context.kind === "method") {
-        target.dependsOn = deps.map((dep) => {
-          if (!dep.module) {
-            dep.module = (this as BaseModule).constructor.name;
-          }
-          if (!dep.action) {
-            throw new Error(
-              `Action dependency must specify action. ${dep.module}/${dep.action}`,
-            );
-          }
-          return `${dep.module}/${dep.action}`;
-        });
-      }
-      if (context.kind === "class") {
-        target.dependsOn = deps.map((dep) => {
-          if (!dep.module) {
-            throw new Error("Module dependency must specify module.");
-          }
-          if (dep.action) {
-            throw new Error("Module dependency can not specify action.");
-          }
-          return `${dep.module}`;
-        });
-      }
+      if (context.kind !== "method") return;
+      target.dependsOn = deps.map((dep) => {
+        if (!dep.module) {
+          dep.module = (this as BaseModule).constructor.name;
+        }
+        return `${dep.module}${dep.action ? "/" + dep.action : ""}`;
+      });
     });
   };
 }
