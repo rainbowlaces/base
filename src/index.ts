@@ -30,6 +30,7 @@ import config from "./decorators/config";
 import dependsOn from "./decorators/dependsOn";
 import di from "./decorators/di";
 import sub from "./decorators/sub";
+import BaseDi from "./core/baseDi";
 
 export const decorators = {
   config,
@@ -55,6 +56,7 @@ export {
   BaseContext,
   BaseRequest,
   BaseResponse,
+  BaseDi,
 };
 
 export { LogLevel };
