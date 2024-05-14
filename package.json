@@ -36,7 +36,10 @@
     "full": "npm run lint && npm run build:clean && npm run test",
     "full:watch": "nodemon --watch 'src/**/*' --ext ts --exec 'npm run full'",
     "push": "npm run full && npm publish --access=public",
-    "update": "ncu --peer -u && npm i"
+    "update": "ncu --peer -u && npm i",
+    "version:patch": "npm version patch && git push --tags",
+    "version:minor": "npm version minor && git push --tags",
+    "version:major": "npm version major && git push --tags"
   },
   "author": "",
   "license": "MIT",
