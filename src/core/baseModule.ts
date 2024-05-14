@@ -116,7 +116,6 @@ export default abstract class BaseModule {
     this.logger.debug(`Handling action ${target.name}`);
 
     try {
-      if (target.handler) ctx.handle();
       await target.apply(this, [args]);
       ctx.actionDone(this.constructor.name, target.name);
       this.logger.debug(`Action DONE`, [fullName]);

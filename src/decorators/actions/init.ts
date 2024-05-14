@@ -11,7 +11,6 @@ export default function init() {
     target.action = true;
     target.type = "init";
     target.isGlobal = false;
-    target.handler = true;
 
     context.addInitializer(function () {
       BasePubSub.sub(

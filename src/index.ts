@@ -24,7 +24,6 @@ import BaseResponse from "./core/requestHandler/baseResponse";
 import request from "./decorators/actions/request";
 import global from "./decorators/actions/global";
 import init from "./decorators/actions/init";
-import noHandle from "./decorators/actions/noHandle";
 
 import config from "./decorators/config";
 import dependsOn from "./decorators/dependsOn";
@@ -35,7 +34,6 @@ import BaseDi from "./core/baseDi";
 export const decorators = {
   config,
   request,
-  noHandle,
   di,
   dependsOn,
   init,

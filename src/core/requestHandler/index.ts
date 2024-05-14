@@ -47,15 +47,6 @@ export default class BaseRequestHandler {
 
     this._bus.pub(ctx.topic, { context: ctx });
 
-    await delay(this._config.get<number>("handleTimeout", 100));
-
-    if (!ctx.res.finished && !ctx.handled) {
-      this._logger.warn("Request not handled.", [ctx.id]);
-      ctx.res.statusCode(404);
-      ctx.res.send("Request not handled.");
-      return;
-    }
-
     await delay(this._config.get<number>("requestTimeout", 5000));
 
     if (ctx.res.finished) return;

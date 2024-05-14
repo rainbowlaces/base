@@ -24,7 +24,6 @@ export default abstract class BaseContext<
   private _created: number = Date.now();
   private _actionLog: Set<string> = new Set<string>();
   private _topicFunction: TopicFunction;
-  private _handled: boolean = false;
 
   private _data: T = {} as T;
 
@@ -67,14 +66,6 @@ export default abstract class BaseContext<
     BasePubSub.create().pub(
       this._topicFunction(this._id, module, action, "error"),
     );
-  }
-
-  handle() {
-    this._handled = true;
-  }
-
-  get handled() {
-    return this._handled;
   }
 
   get id(): string {

@@ -15,7 +15,6 @@ function request(topic?: string) {
     target.action = true;
     target.type = "request";
     target.isGlobal = target.isGlobal ?? false;
-    target.handler = target.handler ?? true;
 
     context.addInitializer(function () {
       BasePubSub.sub(

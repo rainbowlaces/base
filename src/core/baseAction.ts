@@ -15,7 +15,6 @@ export interface BaseAction extends Subscriber {
   (args?: BaseActionArgs): Promise<void>;
   dependsOn?: string[];
   action: true;
-  handler: boolean;
   isGlobal: boolean;
   type: "request" | "init";
   name: string;
