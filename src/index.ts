@@ -20,6 +20,7 @@ import { BaseActionArgs, BaseHttpActionArgs } from "./core/baseAction";
 import BaseContext from "./core/baseContext";
 import BaseRequest from "./core/requestHandler/baseRequest";
 import BaseResponse from "./core/requestHandler/baseResponse";
+import { BaseHttpContext } from "./core/requestHandler/httpContext";
 
 import request from "./decorators/actions/request";
 import global from "./decorators/actions/global";
@@ -52,6 +53,7 @@ export {
   BaseTemplates,
   BaseStaticFiles,
   BaseContext,
+  BaseHttpContext,
   BaseRequest,
   BaseResponse,
   BaseDi,
