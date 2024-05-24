@@ -1,6 +1,7 @@
 import path from "path";
 import { ConfigObject } from "./types";
 import { merge } from "../../utils/recursion";
+import fs, { constants } from "fs/promises";
 
 export default class BaseConfig {
   private static _config: ConfigObject = {};
@@ -52,6 +53,13 @@ export default class BaseConfig {
     if (!configFile.startsWith(this._fsRoot)) {
       throw new Error("Invalid configuration file path.");
     }
+
+    try {
+      await fs.access(configFile, constants.R_OK);
+    } catch (error) {
+      return {};
+    }
+
     // eslint-disable-next-line node/no-unsupported-features/es-syntax
     return import(configFile).then((module) => module.default as ConfigObject);
   }
