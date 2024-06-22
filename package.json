@@ -36,7 +36,7 @@
     "full": "npm run lint && npm run build:clean && npm run test",
     "full:watch": "nodemon --watch 'src/**/*' --ext ts --exec 'npm run full'",
     "push": "npm run full && npm publish --access=public",
-    "update": "ncu --peer -u -x path-to-regexp && npm i",
+    "update": "ncu --peer -u && npm i",
     "version:patch": "npm version patch && git push --tags",
     "version:minor": "npm version minor && git push --tags",
     "version:major": "npm version major && git push --tags"
@@ -87,7 +87,7 @@
     "luxon": "^3.4.4",
     "mime-types": "^2.1.35",
     "nanoid": "^5.0.7",
-    "path-to-regexp": "^6.2.2",
+    "path-to-regexp": "6.*.*",
     "resolve": "^1.22.8",
     "sanitize-html": "^2.13.0"
   }
