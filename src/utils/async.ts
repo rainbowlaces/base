@@ -25,3 +25,34 @@ export async function asyncMap<T, R = void>(
     return res.filter((r) => r !== undefined) as R[];
   }
 }
+
+type AsyncPredicate<T> = (item: T) => Promise<boolean>;
+
+export async function asyncFilter<T>(
+  iterable:
+    | Iterable<T>
+    | AsyncIterable<T>
+    | Promise<Iterable<T> | AsyncIterable<T>>,
+  predicate: AsyncPredicate<T> = async (v) => !!v,
+): Promise<T[]> {
+  iterable = await iterable;
+
+  const results: T[] = [];
+
+  if (Symbol.asyncIterator in Object(iterable)) {
+    const asyncIterable = iterable as AsyncIterable<T>;
+    for await (const item of asyncIterable) {
+      if (await predicate(item)) {
+        results.push(item);
+      }
+    }
+  } else {
+    for (const item of iterable as Iterable<T>) {
+      if (await predicate(item)) {
+        results.push(item);
+      }
+    }
+  }
+
+  return results;
+}
