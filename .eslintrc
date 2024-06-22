@@ -1,57 +1,57 @@
 {
-    "parser": "@typescript-eslint/parser",
-    "plugins": [
-      "@typescript-eslint",
-      "node",
-      "prettier",
-      "import"
-    ],
-    "extends": [
-      "eslint:recommended",
-      "plugin:@typescript-eslint/recommended",
-      "plugin:node/recommended",
-      "plugin:prettier/recommended",
-      "plugin:import/errors",
-      "plugin:import/warnings",
-      "plugin:import/typescript"
-    ],
-    "parserOptions": {
-      "ecmaVersion": 2020,
-      "sourceType": "module"
-    },
-    "rules": {
-        "prettier/prettier": "error",
-        "import/extensions": [
-          "error",
-          "ignorePackages",
-          {
-            "ts": "never",
-            "js": "never"
-          }
-        ],
-        "import/no-unresolved": "error",
-        "node/no-missing-import": "off"
-    },
-    "overrides": [
-      {
-        "files": ["**/*.test.ts"],
-        "rules": {
-          "@typescript-eslint/no-explicit-any": "off",
-          "node/no-unpublished-import": "off",
-          "import/no-named-as-default-member": "off"
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint",
+    "node",
+    "prettier",
+    "import"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:node/recommended",
+    "plugin:prettier/recommended",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2020,
+    "sourceType": "module"
+  },
+  "rules": {
+      "prettier/prettier": "error",
+      "import/extensions": [
+        "error",
+        "ignorePackages",
+        {
+          "ts": "never",
+          "js": "never"
         }
+      ],
+      "import/no-unresolved": "error",
+      "node/no-missing-import": "off",
+      "node/no-unsupported-features/es-syntax": "off"
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.ts"],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "off",
+        "node/no-unpublished-import": "off",
+        "import/no-named-as-default-member": "off"
       }
-    ],
-    "settings": {
-      "import/resolver": {
-        "node": {
-          "extensions": [".js", ".jsx", ".ts"]
-        }
+    }
+  ],
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx", ".ts"]
       }
-    },      
-    "env": {
-      "node": true 
-    },
-    "reportUnusedDisableDirectives": true
-  }
-  
+    }
+  },      
+  "env": {
+    "node": true 
+  },
+  "reportUnusedDisableDirectives": true
+}
