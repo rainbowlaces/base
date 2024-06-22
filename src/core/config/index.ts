@@ -60,7 +60,6 @@ export default class BaseConfig {
       return {};
     }
 
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
     return import(configFile).then((module) => module.default as ConfigObject);
   }
 

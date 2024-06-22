@@ -90,7 +90,6 @@ class Template {
 
   private async loadElement(element: string): Promise<ElementFunction> {
     const p = path.resolve(path.join(this.root, "elements", `${element}.js`));
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
     return import(p).then((element) => element.default as ElementFunction);
   }
 
@@ -109,7 +108,6 @@ class Template {
 
   private async loadTemplate(template: string): Promise<TemplateFunction> {
     const p = path.resolve(path.join(this.root, `${template}.js`));
-    // eslint-disable-next-line node/no-unsupported-features/es-syntax
     return import(p).then((template) => template.default as TemplateFunction);
   }
 
