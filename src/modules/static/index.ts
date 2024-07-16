@@ -375,8 +375,18 @@ export default class BaseStatic extends BaseModule {
           if (importPath) {
             if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
               path.node.source.value = `/npm/${importPath}${importPath.endsWith(".js") ? "" : "/"}`;
+            } else if (importPath.startsWith(".")) {
+              path.node.source.value = `${importPath}${importPath.endsWith(".js") ? "" : ".js"}`;
             }
           }
+        }
+      } else if (
+        t.isCallExpression(path.node) &&
+        t.isStringLiteral(path.node.arguments[0])
+      ) {
+        importPath = path.node.arguments[0].value;
+        if (importPath.startsWith(".")) {
+          path.node.arguments[0].value = `${importPath}${importPath.endsWith(".js") ? "" : ".js"}`;
         }
       }
     };
