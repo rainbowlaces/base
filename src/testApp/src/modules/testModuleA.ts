@@ -10,7 +10,7 @@ import { delay } from "../../../utils/async";
 
 export default class TestModuleA extends BaseModule {
   @di("BaseTemplates")
-  private _templates!: BaseTemplates;
+  private accessor _templates!: BaseTemplates;
 
   @init()
   @dependsOn("TestModuleB/init")

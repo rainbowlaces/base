@@ -12,7 +12,7 @@ export default class BaseRouter {
   private defaultRoute?: string;
 
   @di<BaseConfig>("BaseConfig", "base_router")
-  private _config!: BaseConfig;
+  private accessor _config!: BaseConfig;
 
   private cleanPath(path: string): string {
     return path

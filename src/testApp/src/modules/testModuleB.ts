@@ -9,7 +9,7 @@ import { BaseHttpContext } from "../../../core/requestHandler/httpContext";
 
 export default class TestModuleB extends BaseModule {
   @di<BaseTemplates>("BaseTemplates")
-  private _templates!: BaseTemplates;
+  private accessor _templates!: BaseTemplates;
 
   @init()
   async init() {

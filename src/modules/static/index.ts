@@ -26,7 +26,7 @@ interface NodeError extends Error {
 
 export default class BaseStatic extends BaseModule {
   @di("fsRoot")
-  baseFsRoot!: string;
+  accessor baseFsRoot!: string;
 
   @config<string>()
   staticFsRoot: string = "/public";

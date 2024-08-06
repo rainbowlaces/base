@@ -15,7 +15,7 @@ export default class BaseTemplates extends BaseModule {
   private _template: Template | undefined;
 
   @di("fsRoot")
-  baseFsRoot!: string;
+  accessor baseFsRoot!: string;
 
   @config<string>()
   private templateRoot: string = "templates";

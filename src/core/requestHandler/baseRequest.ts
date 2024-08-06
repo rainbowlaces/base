@@ -24,10 +24,10 @@ export default class BaseRequest {
   private _ctxId: string;
 
   @di("BaseLogger", "base_request")
-  private _logger!: BaseLogger;
+  private accessor _logger!: BaseLogger;
 
   @di("BaseConfig", "request_handler")
-  private _config!: BaseConfig;
+  private accessor _config!: BaseConfig;
 
   constructor(ctxId: string, req: http.IncomingMessage) {
     this._ctxId = ctxId;

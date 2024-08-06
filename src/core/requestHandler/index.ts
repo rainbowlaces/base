@@ -12,15 +12,15 @@ export default class BaseRequestHandler {
   private _server!: http.Server;
 
   @di<BaseLogger>("BaseLogger", "request_handler")
-  private _logger!: BaseLogger;
+  private accessor _logger!: BaseLogger;
 
   @di<BaseConfig>("BaseConfig", "request_handler")
-  private _config!: BaseConfig;
+  private accessor _config!: BaseConfig;
 
   @di<BasePubSub>("BasePubSub")
-  private _bus!: BasePubSub;
+  private accessor _bus!: BasePubSub;
 
-  private _router: BaseRouter;
+  private accessor _router: BaseRouter;
 
   constructor() {
     this._server = http.createServer(this.handleRequest.bind(this));

@@ -13,7 +13,7 @@ export default abstract class BaseModule {
   private static dependsOn: string[] = [];
 
   @di<BasePubSub>("BasePubSub")
-  private _bus!: BasePubSub;
+  private accessor _bus!: BasePubSub;
 
   private _logger: BaseLogger;
   private _config: BaseConfig;

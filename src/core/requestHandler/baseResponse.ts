@@ -29,10 +29,10 @@ export default class BaseResponse extends EventEmitter {
   private _headers: http.OutgoingHttpHeaders = {};
 
   @di("BaseLogger", "base_response")
-  private _logger!: BaseLogger;
+  private accessor _logger!: BaseLogger;
 
   @di("BaseConfig", "request_handler")
-  private _config!: BaseConfig;
+  private accessor _config!: BaseConfig;
 
   private _ctxId: string;
 
