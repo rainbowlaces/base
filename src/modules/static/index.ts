@@ -43,6 +43,9 @@ export default class BaseStatic extends BaseModule {
   @config<ModileAccessType>()
   accessMode: ModileAccessType = "closed";
 
+  @config<string>()
+  cdnUrl: string = "";
+
   @init()
   async init() {
     this.staticFsRoot = path.normalize(
@@ -338,6 +341,22 @@ export default class BaseStatic extends BaseModule {
     return { module, cleanPath: segments.join("/") };
   }
 
+  private getCdnUrl(): string {
+    if (!this.cdnUrl.trim()) return "";
+    const [protocol, rest] = this.cdnUrl.split("://");
+    const normalizedRest = rest
+      ? rest
+          .split("/")
+          .map((part) => part.trim())
+          .filter(Boolean)
+          .join("/")
+      : "";
+
+    return protocol
+      ? `${protocol}://${normalizedRest}/`
+      : `//${normalizedRest}/`;
+  }
+
   private async replaceImportPaths(
     js: string,
     filePath: string,
@@ -349,7 +368,7 @@ export default class BaseStatic extends BaseModule {
         filename: filePath,
         babelrc: false,
         configFile: false,
-      } as babel.ParserOptions);
+      });
     } catch (err) {
       throw new BaseError("Failed to parse JS content.", err as Error);
     }
@@ -373,10 +392,12 @@ export default class BaseStatic extends BaseModule {
         if (path.node.source) {
           importPath = path.node.source.value;
           if (importPath) {
-            if (!importPath.startsWith(".") && !importPath.startsWith("/")) {
-              path.node.source.value = `/npm/${importPath}${importPath.endsWith(".js") ? "" : "/"}`;
-            } else if (importPath.startsWith(".")) {
-              path.node.source.value = `${importPath}${importPath.endsWith(".js") ? "" : ".js"}`;
+            if (
+              importPath.startsWith("/static") ||
+              importPath.startsWith("/npm")
+            ) {
+              // Prepend the CDN URL to /static or /npm paths
+              path.node.source.value = `${this.getCdnUrl()}${importPath}`;
             }
           }
         }
@@ -385,8 +406,9 @@ export default class BaseStatic extends BaseModule {
         t.isStringLiteral(path.node.arguments[0])
       ) {
         importPath = path.node.arguments[0].value;
-        if (importPath.startsWith(".")) {
-          path.node.arguments[0].value = `${importPath}${importPath.endsWith(".js") ? "" : ".js"}`;
+        if (importPath.startsWith("/static") || importPath.startsWith("/npm")) {
+          // Prepend the CDN URL to /static or /npm paths
+          path.node.arguments[0].value = `${this.getCdnUrl()}${importPath}`;
         }
       }
     };
