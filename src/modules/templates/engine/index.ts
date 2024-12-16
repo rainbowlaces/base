@@ -5,11 +5,8 @@ import tags from "./tags";
 import path from "path";
 import { UnsafeString } from "./tags/unsafe";
 
-type Scalar = string | number | boolean | null;
-
-export interface TemplateData {
-  [key: string]: Scalar | Scalar[] | TemplateData | TemplateData[];
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type TemplateData = Record<string, any>;
 
 export type LoadedTags = { [key: string]: (...args: unknown[]) => Tag };
 export type LoadedElements = { [key: string]: ElementFunction };
@@ -101,13 +98,21 @@ class Template {
     for (const file of templateFiles) {
       if (path.extname(file) === ".js") {
         const templateName = path.basename(file).replace(".js", "");
-        this._templates[templateName] = await this.loadTemplate(templateName);
+        this._templates[templateName] =
+          await this.loadTemplateInRoot(templateName);
       }
     }
   }
 
-  private async loadTemplate(template: string): Promise<TemplateFunction> {
+  private async loadTemplateInRoot(
+    template: string,
+  ): Promise<TemplateFunction> {
     const p = path.resolve(path.join(this.root, `${template}.js`));
+    return this.loadTemplate(p);
+  }
+
+  private async loadTemplate(templatePath: string): Promise<TemplateFunction> {
+    const p = path.resolve(templatePath);
     return import(p).then((template) => template.default as TemplateFunction);
   }
 
@@ -117,6 +122,15 @@ class Template {
 
   public render(templateName: string, data: TemplateData): string {
     return this._templates[templateName](data, this._tags, this._elements);
+  }
+
+  public async renderPath(
+    templatePath: string,
+    data: TemplateData,
+  ): Promise<string> {
+    if (!this._templates[templatePath])
+      this._templates[templatePath] = await this.loadTemplate(templatePath);
+    return this._templates[templatePath](data, this._tags, this._elements);
   }
 }
 

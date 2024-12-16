@@ -1,7 +1,7 @@
 import fsPath from "path";
 import BaseModule from "../../core/baseModule";
 import { Template, TemplateData } from "./engine";
-import fs from "node:fs/promises";
+import fs from "fs/promises";
 
 import di from "../../decorators/di";
 import init from "../../decorators/actions/init";
