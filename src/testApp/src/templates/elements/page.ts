@@ -9,19 +9,10 @@ export default (d: any, t: any, e: any) => {
         <div page>
           <header>
             <h1>${d.title}</h1>
-            <textarea>${d.message}</textarea>
-            <textarea>${t.unsafe(d.message)}</textarea>
           </header>
           <main id="main-content">
             ${t.unsafe(`<div grid>${d.page}</page>`)}
           </main>
-          <main id="main-content">${d.page}</main>
-          <footer>
-            <div
-              footer
-              version="${(global as any).VERSION}-${(global as any).GIT_SHA}"
-            ></div>
-          </footer>
         </div>
       </body>
     </html>`;

@@ -19,7 +19,7 @@ export default class TestModuleB extends BaseModule {
     this.logger.info("Handling test bang action");
     const ctx = args?.context as unknown as BaseHttpContext;
 
-    ctx.data.message = ctx.req.url.searchParams.get("test"); // this should be sanitized by the template engine
+    ctx.data.email = ctx.req.url.searchParams.get("email");
 
     ctx.res.html(this._templates.render("index", ctx.data as TemplateData));
   }
