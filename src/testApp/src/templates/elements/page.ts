@@ -10,9 +10,7 @@ export default (d: any, t: any, e: any) => {
           <header>
             <h1>${d.title}</h1>
           </header>
-          <main id="main-content">
-            ${t.unsafe(`<div grid>${d.page}</page>`)}
-          </main>
+          <main id="main-content">${html`<div grid>${d.page}</div>`}</main>
         </div>
       </body>
     </html>`;

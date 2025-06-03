@@ -1,141 +1,82 @@
-import sanitizeHtml from "sanitize-html";
-import Tag from "./tag";
-import { UnsafeString } from "./tags/unsafe";
+import Tag, { EndTag } from "./tag";
 
+export class TemplateValue {
+  constructor(
+    readonly value: unknown | Tag | TemplateResult,
+    readonly fromLiteral: boolean = false,
+  ) {}
+
+  render(renderer: TagRenderer): void {
+    const content = renderer.getCurrentContext().process(this);
+    if (typeof content === "string") {
+      renderer.getCurrentContext().inside(content);
+    }
+  }
+}
 export class TemplateResult {
-  public readonly content: string;
-  public readonly isTemplateResult = true;
+  public readonly values: TemplateValue[] = [];
+  private _rendered: string | null = null;
 
-  constructor(content: string) {
-    this.content = content;
+  constructor(strings: string[], values: unknown[]) {
+    const len = Math.max(strings.length, values.length);
+    for (let i = 0; i < len; i++) {
+      if (i < strings.length) {
+        this.values.push(new TemplateValue(strings[i], true));
+      }
+      if (i < values.length) {
+        this.values.push(new TemplateValue(values[i]));
+      }
+    }
+  }
+
+  render(): string {
+    const renderer = new TagRenderer();
+    this._rendered = renderer.renderAll(this.values);
+    return this._rendered;
   }
 
   toString(): string {
-    return this.content;
+    return this._rendered ?? "";
   }
 }
 
-export class TemplateElement extends TemplateResult {
-  public readonly isTemplateElement = true;
-
-  constructor(content: string) {
-    super(content);
-  }
-}
-
-// Type guards
-function isTemplateResult(value: unknown): value is TemplateResult {
-  return value instanceof TemplateResult;
-}
-
-function isTemplateElement(value: unknown): value is TemplateElement {
-  return value instanceof TemplateElement;
-}
-
-export default class Render {
+export class TagRenderer {
+  private stack: Tag[] = [];
   private root: Tag;
-  private stack: Tag[];
-  private data: unknown[];
 
-  constructor(strings: TemplateStringsArray, values: unknown[]) {
+  constructor() {
     this.root = new Tag();
-    this.stack = [];
-    this.data = this._interleave(strings, values);
-    this.newContext(this.root);
+    this.stack.push(this.root);
+    this.root.open();
   }
 
-  get context(): Tag {
-    return this.stack.length > 0
-      ? this.stack[this.stack.length - 1]
-      : this.root;
+  getCurrentContext(): Tag {
+    return this.stack[this.stack.length - 1];
   }
 
-  private _interleave(
-    strings: TemplateStringsArray,
-    values: unknown[],
-  ): unknown[] {
-    const result: unknown[] = [];
-    let current: string = "";
-
-    function addValue(val: unknown) {
-      if (val instanceof Tag) {
-        if (current.length > 0) result.push(current);
-        result.push(val);
-        current = "";
-      } else if (isTemplateElement(val)) {
-        // Template elements are trusted (like elements), add as-is
-        if (current.length > 0) result.push(current);
-        result.push(val);
-        current = "";
-      } else if (isTemplateResult(val)) {
-        // Template results are trusted - they contain already-sanitized content
-        if (current.length > 0) result.push(current);
-        result.push(val);
-        current = "";
-      } else if ((val as UnsafeString)?.__unsafe) {
-        // Legacy unsafe strings
-        if (current.length > 0) result.push(current);
-        result.push(val);
-        current = "";
-      } else if (val) {
-        current += val;
+  renderAll(values: TemplateValue[]): string {
+    for (const tv of values) {
+      const current = this.getCurrentContext();
+      const result = current.process(tv);
+      if (typeof result === "string") {
+        this.getCurrentContext().inside(result);
       }
-    }
-
-    for (let i = 0; i < strings.length; i++) {
-      addValue(strings[i]);
-      if (i < values.length) {
-        addValue(
-          values[i] instanceof Tag
-            ? values[i]
-            : isTemplateElement(values[i])
-              ? values[i]
-              : isTemplateResult(values[i])
-                ? values[i]
-                : (values[i] as UnsafeString)?.__unsafe
-                  ? values[i]
-                  : sanitizeHtml(values[i] as string, { allowedTags: [] }),
-        );
-      }
-    }
-
-    if (current.length > 0) result.push(current);
-
-    return result;
-  }
-
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  public render(): String {
-    this.data.forEach((value) => {
-      if (value instanceof Tag) {
-        if (value.isBlock()) {
-          this.newContext(value);
-          return;
+      if (tv.value instanceof Tag) {
+        if (tv.value instanceof EndTag) {
+          this.stack.pop();
+        } else if (tv.value.isBlock()) {
+          this.stack.push(tv.value);
+          tv.value.open();
         }
       }
+    }
+    return this.finalize();
+  }
 
-      if (Array.isArray(value)) {
-        value = value.join("");
-      }
-
-      // Handle template results and elements
-      if (isTemplateResult(value)) {
-        value = value.toString();
-      }
-
-      this.context.process(value);
-      if (this.context.isClosed()) this.lastContext();
-    });
+  finalize(): string {
+    if (this.stack.length > 1) {
+      throw new Error(`Unclosed tags remain: ${this.stack.length - 1}`);
+    }
     return this.root.close();
-  }
-
-  private newContext(tag: Tag): void {
-    this.stack.push(tag);
-  }
-
-  private lastContext(): void {
-    const currentContext = this.stack.pop();
-    if (!currentContext) return;
-    this.context.process(currentContext.getOutput());
   }
 }

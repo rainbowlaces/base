@@ -7,7 +7,7 @@ export default (d: any, t: any, e: any) =>
     title: d.title,
     page: html`
       <form action="${d.action || ""}" method="${d.method || "post"}">
-        ${t.unsafe(d.fields)}
+        ${d.fields}
         <div>
           <button type="submit">${d.button}</button>
         </div>

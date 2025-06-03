@@ -1,24 +1,20 @@
 import Tag from "../tag";
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type UnsafeString = String & { __unsafe?: boolean };
-
 export default class UnsafeTag extends Tag {
   static tagName = "unsafe";
-  value: UnsafeString = "";
+  unsafe: boolean = true; // This tag is unsafe and should not be sanitized
+  value: unknown;
 
   init() {
-    [this.value as UnsafeString] = this.args;
+    [this.value as unknown] = this.args;
     this.selfClosing = true;
   }
 
   close() {
-    const s: UnsafeString = new String(this.value);
-    s.__unsafe = true;
-    return s;
+    return String(this.value);
   }
 
-  static create(value: UnsafeString) {
+  static create(value: unknown) {
     return new this(value);
   }
 }

@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import Render, { TemplateElement, TemplateResult } from "./render";
+import { TemplateResult } from "./render";
 import Tag from "./tag";
 import tags from "./tags";
 import path from "path";
@@ -24,7 +24,7 @@ type ElementFunction = (
   data: TemplateData,
   tags?: LoadedTags,
   elements?: LoadedElements,
-) => TemplateElement;
+) => TemplateResult;
 
 class Template {
   private root: string;
@@ -77,9 +77,8 @@ class Template {
       if (path.extname(file) === ".js") {
         const elementName = path.basename(file).replace(".js", "");
         const elem = await this.loadElement(elementName);
-        this._elements[elementName] = (data: TemplateData): TemplateElement => {
-          const e = elem(data, this._tags, this._elements);
-          return new TemplateElement(e.toString());
+        this._elements[elementName] = (data: TemplateData): TemplateResult => {
+          return elem(data, this._tags, this._elements);
         };
       }
     }
@@ -118,7 +117,7 @@ class Template {
       this._tags,
       this._elements,
     );
-    return result.toString();
+    return result.render();
   }
 }
 
@@ -126,7 +125,7 @@ function html(
   strings: TemplateStringsArray,
   ...values: unknown[]
 ): TemplateResult {
-  return new TemplateResult(new Render(strings, values).render().toString());
+  return new TemplateResult(Array.from(strings), values);
 }
 
-export { html, Template, TemplateResult, TemplateElement };
+export { html, Template, TemplateResult };

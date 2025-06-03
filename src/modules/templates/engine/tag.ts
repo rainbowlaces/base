@@ -1,16 +1,19 @@
-/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Template } from ".";
+import { nanoid } from "nanoid";
+import { Template, TemplateResult } from ".";
+import sanitizeHtml from "sanitize-html";
+import { TemplateValue } from "./render";
 
 export default class Tag {
   closed: boolean;
   selfClosing: boolean;
+  unsafe: boolean = false; // For tags that should not be sanitized
   args: any[];
-  content: String[];
-  output: String;
+  content: string[];
+  output: string;
   template?: Template;
 
-  id: string = (Math.random() * 10000).toFixed(0);
+  id: string = nanoid(8);
 
   static tagName: string;
 
@@ -45,28 +48,70 @@ export default class Tag {
   }
 
   // override in children
-  close(): String {
+  close(): string {
     return this.content.join("").trim();
   }
 
   // final
-  process(value: EndTag | Tag | unknown = "") {
+  process(tv: TemplateValue): string | null {
+    const v = tv.value;
     if (!this.content.length) this.open();
+
     if (!this.isBlock()) {
+      // Self-closing tag: capture its output
       this.output = this.close();
-      return;
+      return this.output;
     }
 
-    if (value instanceof EndTag) {
+    if (v instanceof EndTag) {
       this.closed = true;
       this.output = this.close();
-    } else {
-      if (value instanceof Tag) {
-        value.process();
-        value = value.getOutput();
-      }
-      this.inside(value as string);
+      return this.output;
     }
+
+    if (v instanceof Tag) {
+      // If block, push new context; if self-closing, open/close immediately
+      if (v.isBlock()) {
+        v.open();
+        return null;
+      } else {
+        v.open();
+        const text = v.close();
+        // Sanitize if this tag is not marked unsafe
+        return v.unsafe ? text : sanitizeHtml(text, { allowedTags: [] });
+      }
+    }
+
+    if (v instanceof TemplateResult) {
+      // Inline its values back into this process
+      for (const innerTv of v.values) {
+        const out = this.process(innerTv);
+        if (typeof out === "string") {
+          this.inside(out);
+        }
+      }
+      return null;
+    }
+
+    // Primitive or string: sanitize only if not from literal
+    const raw = String(v ?? "");
+    const content = tv.fromLiteral ? raw : this.sanitize(raw);
+    this.inside(content);
+    return null;
+  }
+
+  private sanitize(content: string): string {
+    if (this.unsafe) return content;
+    content = sanitizeHtml(content, { allowedTags: [] });
+    content = content
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/:/g, "&#58;")
+      .replace(/=/g, "&#61;");
+    return content;
   }
 
   // final
