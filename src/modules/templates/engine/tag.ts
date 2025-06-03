@@ -83,13 +83,9 @@ export default class Tag {
     }
 
     if (v instanceof TemplateResult) {
-      // Inline its values back into this process
-      for (const innerTv of v.values) {
-        const out = this.process(innerTv);
-        if (typeof out === "string") {
-          this.inside(out);
-        }
-      }
+      // Render the TemplateResult independently to avoid tag stack corruption
+      const rendered = v.render();
+      this.inside(rendered);
       return null;
     }
 

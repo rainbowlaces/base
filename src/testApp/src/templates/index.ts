@@ -69,6 +69,9 @@ export default (d: any, t: any, e: any) => html`
     title: "Sample Page",
     page: html`
       <p>This is content inside a page element!</p>
+      ${t.if(true)}
+      <h1>I'm here!</h1>
+      ${t.end()}
       <ul>
         ${t.each(
           ["Feature 1", "Feature 2", "Feature 3"],
