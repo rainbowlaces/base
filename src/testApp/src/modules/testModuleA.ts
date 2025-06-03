@@ -6,7 +6,6 @@ import { BaseActionArgs } from "../../../core/baseAction";
 import BaseTemplates from "../../../modules/templates";
 import di from "../../../decorators/di";
 import global from "../../../decorators/actions/global";
-import { delay } from "../../../utils/async";
 
 export default class TestModuleA extends BaseModule {
   @di("BaseTemplates")
@@ -19,7 +18,6 @@ export default class TestModuleA extends BaseModule {
   @global()
   @request()
   async handleTestAction1(args?: BaseActionArgs) {
-    await delay(1000);
     this.logger.info("Handling test action1");
     const ctx = args?.context;
     if (!ctx) return;
