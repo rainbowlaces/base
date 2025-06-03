@@ -1,9 +1,8 @@
 import { readdir } from "node:fs/promises";
-import Render from "./render";
+import Render, { TemplateElement, TemplateResult } from "./render";
 import Tag from "./tag";
 import tags from "./tags";
 import path from "path";
-import { UnsafeString } from "./tags/unsafe";
 
 type Scalar = string | number | boolean | null;
 
@@ -19,13 +18,13 @@ type TemplateFunction = (
   data: TemplateData,
   tags: LoadedTags,
   elements: LoadedElements,
-) => string;
+) => TemplateResult;
 
 type ElementFunction = (
   data: TemplateData,
   tags?: LoadedTags,
   elements?: LoadedElements,
-) => UnsafeString;
+) => TemplateElement;
 
 class Template {
   private root: string;
@@ -78,11 +77,9 @@ class Template {
       if (path.extname(file) === ".js") {
         const elementName = path.basename(file).replace(".js", "");
         const elem = await this.loadElement(elementName);
-        this._elements[elementName] = (data: TemplateData): UnsafeString => {
+        this._elements[elementName] = (data: TemplateData): TemplateElement => {
           const e = elem(data, this._tags, this._elements);
-          const str: UnsafeString = new String(e);
-          str.__unsafe = true;
-          return str;
+          return new TemplateElement(e.toString());
         };
       }
     }
@@ -116,13 +113,20 @@ class Template {
   }
 
   public render(templateName: string, data: TemplateData): string {
-    return this._templates[templateName](data, this._tags, this._elements);
+    const result = this._templates[templateName](
+      data,
+      this._tags,
+      this._elements,
+    );
+    return result.toString();
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-function html(strings: TemplateStringsArray, ...values: unknown[]): String {
-  return new Render(strings, values).render();
+function html(
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): TemplateResult {
+  return new TemplateResult(new Render(strings, values).render().toString());
 }
 
-export { html, Template };
+export { html, Template, TemplateResult, TemplateElement };

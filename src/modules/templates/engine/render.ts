@@ -2,6 +2,36 @@ import sanitizeHtml from "sanitize-html";
 import Tag from "./tag";
 import { UnsafeString } from "./tags/unsafe";
 
+export class TemplateResult {
+  public readonly content: string;
+  public readonly isTemplateResult = true;
+
+  constructor(content: string) {
+    this.content = content;
+  }
+
+  toString(): string {
+    return this.content;
+  }
+}
+
+export class TemplateElement extends TemplateResult {
+  public readonly isTemplateElement = true;
+
+  constructor(content: string) {
+    super(content);
+  }
+}
+
+// Type guards
+function isTemplateResult(value: unknown): value is TemplateResult {
+  return value instanceof TemplateResult;
+}
+
+function isTemplateElement(value: unknown): value is TemplateElement {
+  return value instanceof TemplateElement;
+}
+
 export default class Render {
   private root: Tag;
   private stack: Tag[];
@@ -32,6 +62,21 @@ export default class Render {
         if (current.length > 0) result.push(current);
         result.push(val);
         current = "";
+      } else if (isTemplateElement(val)) {
+        // Template elements are trusted (like elements), add as-is
+        if (current.length > 0) result.push(current);
+        result.push(val);
+        current = "";
+      } else if (isTemplateResult(val)) {
+        // Template results are trusted - they contain already-sanitized content
+        if (current.length > 0) result.push(current);
+        result.push(val);
+        current = "";
+      } else if ((val as UnsafeString)?.__unsafe) {
+        // Legacy unsafe strings
+        if (current.length > 0) result.push(current);
+        result.push(val);
+        current = "";
       } else if (val) {
         current += val;
       }
@@ -43,9 +88,13 @@ export default class Render {
         addValue(
           values[i] instanceof Tag
             ? values[i]
-            : (values[i] as UnsafeString)?.__unsafe
+            : isTemplateElement(values[i])
               ? values[i]
-              : sanitizeHtml(values[i] as string),
+              : isTemplateResult(values[i])
+                ? values[i]
+                : (values[i] as UnsafeString)?.__unsafe
+                  ? values[i]
+                  : sanitizeHtml(values[i] as string, { allowedTags: [] }),
         );
       }
     }
@@ -67,6 +116,11 @@ export default class Render {
 
       if (Array.isArray(value)) {
         value = value.join("");
+      }
+
+      // Handle template results and elements
+      if (isTemplateResult(value)) {
+        value = value.toString();
       }
 
       this.context.process(value);
