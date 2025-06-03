@@ -48,22 +48,40 @@ export default (d: any, t: any, e: any) => html`
   <h2>Elements Test:</h2>
   <p>Elements parameter type: ${typeof e}</p>
 
-  <!-- Test 9: Nested Each inside If -->
-  <h2>Nested Each in If:</h2>
-  ${t.if(true)}
-  <p>Showing fruits because condition is true:</p>
-  <ul>
-    ${t.each(
-      ["apple", "banana", "cherry"],
-      (fruit: string) => `<li>🍎 ${fruit}</li>`,
-    )}
-  </ul>
-  ${t.end()} ${t.if(false)}
-  <p>This list won't show because condition is false:</p>
-  <ul>
-    ${t.each(["hidden1", "hidden2"], (item: string) => `<li>${item}</li>`)}
-  </ul>
-  ${t.end()}
+  <!-- Test 11: Using Form Element -->
+  <h2>Form Element Example:</h2>
+  ${e.form({
+    context: d,
+    title: "Contact Form",
+    button: "Send Message",
+    action: "/contact",
+    method: "post",
+    fields: html`
+      <input name="name" type="text" placeholder="Your Name" required />
+      <input name="email" type="email" placeholder="Your Email" required />
+      <textarea name="message" placeholder="Your Message" required></textarea>
+    `,
+  })}
+
+  <!-- Test 12: Using Page Element Directly -->
+  <h2>Page Element Example:</h2>
+  ${e.page({
+    title: "Sample Page",
+    page: html`
+      <p>This is content inside a page element!</p>
+      <ul>
+        ${t.each(
+          ["Feature 1", "Feature 2", "Feature 3"],
+          (feature: string) => `<li>${feature}</li>`,
+        )}
+      </ul>
+    `,
+  })}
+
+  <!-- Test 13: Using Head Element -->
+  <h2>Head Element Example:</h2>
+  <div>Raw head element output:</div>
+  ${t.unsafe(e.head({ title: "Test Page Title" }).render())}
 
   <!-- Test 10: Multiple nested structures -->
   <h2>Complex Nesting:</h2>
