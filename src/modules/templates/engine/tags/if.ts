@@ -6,6 +6,7 @@ export default class IfTag extends Tag {
 
   init() {
     [this.condition] = this.args;
+    this.selfClosing = false; // Make sure this is a block tag
   }
 
   close() {

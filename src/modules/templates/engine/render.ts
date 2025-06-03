@@ -63,7 +63,10 @@ export class TagRenderer {
       }
       if (tv.value instanceof Tag) {
         if (tv.value instanceof EndTag) {
-          this.stack.pop();
+          const closedTag = this.stack.pop();
+          if (closedTag && typeof result === "string") {
+            this.getCurrentContext().inside(result);
+          }
         } else if (tv.value.isBlock()) {
           this.stack.push(tv.value);
           tv.value.open();
