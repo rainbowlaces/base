@@ -2,12 +2,14 @@ import { BaseDiWrapper, Constructor, Instance, Scalar } from "./types";
 
 export default class BaseDi {
   private static instances: Map<string, BaseDiWrapper<unknown>> = new Map();
+  private static autoloadedFiles: Set<string> = new Set();
 
   static create(): BaseDi {
     return new this();
   }
 
   static async autoload(root: string, ignore: string[] = []): Promise<void> {
+    console.log(`${root}:`);
     const fs = await import("fs/promises");
     const path = await import("path");
     const files = await fs.readdir(root, { withFileTypes: true });
@@ -26,10 +28,20 @@ export default class BaseDi {
           continue;
         }
 
+        // Skip if already imported
+        if (this.autoloadedFiles.has(filePath)) {
+          continue;
+        }
+
         try {
           await import(filePath);
+          this.autoloadedFiles.add(filePath);
+          console.log(` - ${path.basename(filePath)}`);
         } catch (error) {
-          console.warn(`Failed to import ${filePath}:`, error);
+          console.warn(
+            ` - Failed to import ${path.basename(filePath)}:`,
+            error,
+          );
         }
       }
     }

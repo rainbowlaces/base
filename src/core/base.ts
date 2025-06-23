@@ -4,11 +4,10 @@ import { getDirname } from "../utils/file";
 import BaseDi from "./baseDi";
 import BasePubSub from "./basePubSub";
 import BaseModule from "./baseModule";
-import BaseStatic from "../modules/static";
-import BaseTemplates from "../modules/templates";
 import { BaseInitContext } from "./initContext";
 import BaseRequestHandler from "./requestHandler";
 import { getRegisteredModules } from "../decorators/module";
+import path from "node:path";
 
 export default class Base {
   private _logger!: BaseLogger;
@@ -65,7 +64,7 @@ export default class Base {
     const autoLoad = config.autoload === undefined || config.autoload;
 
     if (autoLoad) {
-      await BaseDi.autoload(this._libRoot);
+      await BaseDi.autoload(path.dirname(this._libRoot));
       await BaseDi.autoload(this._fsRoot, config.autoloadIgnore || []);
     }
 
@@ -74,9 +73,6 @@ export default class Base {
     this.initRequestHandler();
 
     BaseDi.register(this);
-
-    this.addModule(BaseStatic);
-    this.addModule(BaseTemplates);
 
     const registeredModules = getRegisteredModules();
     for (const ModuleClass of registeredModules) {

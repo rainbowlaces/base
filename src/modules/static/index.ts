@@ -4,6 +4,7 @@ import di from "../../decorators/di";
 import path from "path";
 import { findFileUp, loadFile } from "../../utils/file";
 import request from "../../decorators/actions/request";
+import module from "../../decorators/module";
 import { BaseHttpActionArgs } from "../../core/baseAction";
 import { resolveModule } from "./utils";
 import dependsOn from "../../decorators/dependsOn";
@@ -24,6 +25,7 @@ interface NodeError extends Error {
   code?: string;
 }
 
+@module
 export default class BaseStatic extends BaseModule {
   @di("fsRoot")
   accessor baseFsRoot!: string;
