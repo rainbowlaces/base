@@ -1,6 +1,6 @@
-import Tag from "../tag";
+import { Tag } from "../tag";
 
-export default class EachTag extends Tag {
+export class EachTag extends Tag {
   static tagName = "each";
   iterable: Iterable<unknown> = [];
   templateFunction: (item: unknown) => string = () => "";

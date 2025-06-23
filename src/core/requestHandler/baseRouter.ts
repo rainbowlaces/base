@@ -1,12 +1,12 @@
-import BaseConfig from "../config";
-import di from "../../decorators/di";
+import { BaseConfig } from "../config";
+import { di } from "../../decorators/di";
 
 type UrlParams = Record<string, string>;
 type RouteHandler = (params: UrlParams) => string;
 type RouteTarget = string | RouteHandler;
 type Routes = Record<string, RouteTarget>;
 
-export default class BaseRouter {
+export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
 

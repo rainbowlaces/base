@@ -1,4 +1,4 @@
-import Tag, { EndTag } from "./tag";
+import { Tag, EndTag } from "./tag";
 
 export class TemplateValue {
   constructor(

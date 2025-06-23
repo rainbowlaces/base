@@ -1,15 +1,15 @@
-import BaseLogger from "../core/logger";
-import BaseConfig from "./config";
+import { BaseLogger } from "../core/logger";
+import { BaseConfig } from "./config";
 import { getDirname } from "../utils/file";
-import BaseDi from "./baseDi";
-import BasePubSub from "./basePubSub";
-import BaseModule from "./baseModule";
+import { BaseDi } from "./baseDi";
+import { BasePubSub } from "./basePubSub";
+import { BaseModule } from "./baseModule";
 import { BaseInitContext } from "./initContext";
-import BaseRequestHandler from "./requestHandler";
-import { getRegisteredModules } from "../decorators/module";
+import { BaseRequestHandler } from "./requestHandler";
+import { getRegisteredModules } from "../decorators/baseModule";
 import path from "node:path";
 
-export default class Base {
+export class Base {
   private _logger!: BaseLogger;
 
   private _fsRoot: string;

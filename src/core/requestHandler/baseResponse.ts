@@ -1,9 +1,9 @@
 import * as http from "http";
-import BaseError from "../baseErrors";
+import { BaseError } from "../baseErrors";
 import { Readable } from "stream";
-import di from "../../decorators/di";
-import BaseConfig from "../config";
-import BaseLogger from "../logger";
+import { di } from "../../decorators/di";
+import { BaseConfig } from "../config";
+import { BaseLogger } from "../logger";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
@@ -17,7 +17,7 @@ interface CookieOptions {
   sameSite?: boolean | "lax" | "strict" | "none";
 }
 
-export default class BaseResponse extends EventEmitter {
+export class BaseResponse extends EventEmitter {
   private _res: http.ServerResponse;
 
   private _statusCode = 200;

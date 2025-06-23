@@ -1,13 +1,13 @@
-import BaseLogger from "./logger";
+import { BaseLogger } from "./logger";
 import { camelToLowerUnderscore } from "../utils/string";
-import BaseConfig from "./config";
-import BasePubSub from "./basePubSub";
-import di from "../decorators/di";
+import { BaseConfig } from "./config";
+import { BasePubSub } from "./basePubSub";
+import { di } from "../decorators/di";
 import { BaseAction, BaseActionArgs } from "./baseAction";
-import BaseDi from "./baseDi";
-import BaseContext from "./baseContext";
+import { BaseDi } from "./baseDi";
+import { BaseContext } from "./baseContext";
 
-export default abstract class BaseModule {
+export abstract class BaseModule {
   private _namespace: string;
 
   private static dependsOn: string[] = [];

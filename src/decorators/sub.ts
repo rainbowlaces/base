@@ -1,6 +1,6 @@
-import BasePubSub, { Subscriber } from "../core/basePubSub";
+import { BasePubSub, Subscriber } from "../core/basePubSub";
 
-export default function sub(this: object, topic: string) {
+export function sub(this: object, topic: string) {
   return (target: Subscriber, context: ClassMethodDecoratorContext): void => {
     if (context.kind !== "method") return;
     context.addInitializer(function () {

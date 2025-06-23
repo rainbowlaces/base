@@ -6,17 +6,17 @@ import formidable from "formidable";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
-import di from "../../decorators/di";
-import BaseLogger from "../logger";
-import BaseConfig from "../config";
-import BaseError from "../baseErrors";
+import { di } from "../../decorators/di";
+import { BaseLogger } from "../logger";
+import { BaseConfig } from "../config";
+import { BaseError } from "../baseErrors";
 
 export interface ParsedForm<T> {
   fields: T;
   files: formidable.Files;
 }
 
-export default class BaseRequest {
+export class BaseRequest {
   private _req!: http.IncomingMessage;
   private _method: string;
   private _headers: NodeJS.Dict<string[]>;

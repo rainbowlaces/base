@@ -1,14 +1,14 @@
-import init from "../../decorators/actions/init";
-import BaseModule from "../../core/baseModule";
-import di from "../../decorators/di";
+import { init } from "../../decorators/actions/init";
+import { BaseModule } from "../../core/baseModule";
+import { di } from "../../decorators/di";
 import path from "path";
 import { findFileUp, loadFile } from "../../utils/file";
-import request from "../../decorators/actions/request";
-import module from "../../decorators/module";
+import { request } from "../../decorators/actions/request";
+import { baseModule } from "../../decorators/baseModule";
 import { BaseHttpActionArgs } from "../../core/baseAction";
 import { resolveModule } from "./utils";
-import dependsOn from "../../decorators/dependsOn";
-import BaseError from "../../core/baseErrors";
+import { dependsOn } from "../../decorators/dependsOn";
+import { BaseError } from "../../core/baseErrors";
 
 import crypto from "crypto";
 
@@ -16,7 +16,7 @@ import babel from "@babel/core";
 import * as t from "@babel/types";
 import * as fs from "fs";
 import mime from "mime-types";
-import config from "../../decorators/config";
+import { config } from "../../decorators/config";
 
 type ModuleAccessFilter = (string | RegExp)[];
 type ModileAccessType = "open" | "closed";
@@ -25,8 +25,8 @@ interface NodeError extends Error {
   code?: string;
 }
 
-@module
-export default class BaseStatic extends BaseModule {
+@baseModule
+export class BaseStatic extends BaseModule {
   @di("fsRoot")
   accessor baseFsRoot!: string;
 

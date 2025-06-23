@@ -1,14 +1,14 @@
-import BaseModule from "../core/baseModule";
+import { BaseModule } from "../core/baseModule";
 
-// Registry to store module classes decorated with @module
+// Registry to store module classes decorated with @baseModule
 const moduleRegistry = new Set<new () => BaseModule>();
 
 /**
  * Decorator to automatically register modules with the Base framework.
- * Classes decorated with @module will be automatically instantiated and registered
+ * Classes decorated with @baseModule will be automatically instantiated and registered
  * during Base.init() without needing manual addModule() calls.
  */
-export default function module<T extends new () => BaseModule>(target: T): T {
+export function baseModule<T extends new () => BaseModule>(target: T): T {
   moduleRegistry.add(target as new () => BaseModule);
   return target;
 }

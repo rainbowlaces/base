@@ -1,19 +1,19 @@
 import fsPath from "path";
-import BaseModule from "../../core/baseModule";
+import { BaseModule } from "../../core/baseModule";
 import { Template, TemplateData } from "./engine";
 import fs from "node:fs/promises";
 
-import di from "../../decorators/di";
-import init from "../../decorators/actions/init";
-import config from "../../decorators/config";
-import module from "../../decorators/module";
+import { di } from "../../decorators/di";
+import { init } from "../../decorators/actions/init";
+import { config } from "../../decorators/config";
+import { baseModule } from "../../decorators/baseModule";
 
 interface NodeError extends Error {
   code?: string;
 }
 
-@module
-export default class BaseTemplates extends BaseModule {
+@baseModule
+export class BaseTemplates extends BaseModule {
   private _template: Template | undefined;
 
   @di("fsRoot")

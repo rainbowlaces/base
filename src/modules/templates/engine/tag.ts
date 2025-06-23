@@ -4,7 +4,7 @@ import { Template, TemplateResult } from ".";
 import sanitizeHtml from "sanitize-html";
 import { TemplateValue } from "./render";
 
-export default class Tag {
+export class Tag {
   closed: boolean;
   selfClosing: boolean;
   unsafe = false; // For tags that should not be sanitized

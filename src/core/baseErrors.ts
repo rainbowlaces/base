@@ -1,4 +1,4 @@
-export default class BaseError<T extends Error = Error> extends Error {
+export class BaseError<T extends Error = Error> extends Error {
   private _wrappedError?: T;
 
   get wrappedError(): T | undefined {

@@ -1,6 +1,6 @@
 import { BaseDiWrapper, Constructor, Instance, Scalar } from "./types";
 
-export default class BaseDi {
+export class BaseDi {
   private static instances = new Map<string, BaseDiWrapper<unknown>>();
   private static autoloadedFiles = new Set<string>();
 

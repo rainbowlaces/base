@@ -15,7 +15,7 @@ export interface LogMessageSerializer {
   serialize(logMessage: LogMessage): SerializedLogMessage;
 }
 
-export default class DefaultLogMessageSerializer
+export class DefaultLogMessageSerializer
   implements LogMessageSerializer
 {
   private config: Required<LogMessageSerializerConfig> = {

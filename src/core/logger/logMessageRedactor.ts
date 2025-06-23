@@ -17,7 +17,7 @@ export interface LogMessageRedactor {
 /**
  * Class responsible for redacting sensitive information from log messages.
  */
-export default class LogMessageRedactorDefault implements LogMessageRedactor {
+export class LogMessageRedactorDefault implements LogMessageRedactor {
   private patterns: PatternMap = {
     email: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/,
     credit_card:

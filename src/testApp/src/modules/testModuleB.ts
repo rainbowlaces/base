@@ -1,15 +1,15 @@
-import init from "../../../decorators/actions/init";
-import BaseModule from "../../../core/baseModule";
-import request from "../../../decorators/actions/request";
+import { init } from "../../../decorators/actions/init";
+import { BaseModule } from "../../../core/baseModule";
+import { request } from "../../../decorators/actions/request";
 import { BaseActionArgs } from "../../../core/baseAction";
-import BaseTemplates from "../../../modules/templates";
-import di from "../../../decorators/di";
+import { BaseTemplates } from "../../../modules/templates";
+import { di } from "../../../decorators/di";
 import { BaseHttpContext } from "../../../core/requestHandler/httpContext";
 import { TemplateData } from "../../../modules/templates/engine";
-import module from "../../../decorators/module";
+import { baseModule } from "../../../decorators/baseModule";
 
-@module
-export default class TestModuleB extends BaseModule {
+@baseModule
+export class TestModuleB extends BaseModule {
   @di<BaseTemplates>("BaseTemplates")
   private accessor _templates!: BaseTemplates;
 

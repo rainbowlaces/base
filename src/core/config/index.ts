@@ -3,7 +3,7 @@ import { ConfigObject } from "./types";
 import { merge } from "../../utils/recursion";
 import fs, { constants } from "fs/promises";
 
-export default class BaseConfig {
+export class BaseConfig {
   private static _config: ConfigObject = {};
   private static _templates: ConfigObject = {};
 

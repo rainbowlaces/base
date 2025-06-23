@@ -1,6 +1,6 @@
-import Tag from "../tag";
+import { Tag } from "../tag";
 
-export default class UnsafeTag extends Tag {
+export class UnsafeTag extends Tag {
   static tagName = "unsafe";
   unsafe = true; // This tag is unsafe and should not be sanitized
   value: unknown;

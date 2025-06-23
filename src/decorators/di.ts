@@ -1,6 +1,6 @@
-import BaseDi from "../core/baseDi";
+import { BaseDi } from "../core/baseDi";
 
-export default function di<T = string>(
+export function di<T = string>(
   key: string,
   ...args: unknown[]
 ): (

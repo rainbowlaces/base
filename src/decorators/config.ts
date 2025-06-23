@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import BaseModule from "../core/baseModule";
+import { BaseModule } from "../core/baseModule";
 
-export default function config<T>(
+export function config<T>(
   mapping?: string,
 ): (value: unknown, context: ClassFieldDecoratorContext) => void {
   return (value: unknown, context: ClassFieldDecoratorContext): unknown => {

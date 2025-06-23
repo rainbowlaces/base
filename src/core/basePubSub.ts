@@ -38,7 +38,7 @@ interface SubscriptionMatch {
   params?: BasePubSubArgs;
 }
 
-export default class BasePubSub {
+export class BasePubSub {
   private static subscriptions: Set<Subscription> = new Set<Subscription>();
   private static _inflightCount = 0;
 

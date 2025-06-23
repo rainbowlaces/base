@@ -7,11 +7,11 @@ import {
   SerializedLogMessage,
 } from "./types";
 import { LogMessage } from "./logMessage";
-import DefaultLogMessageRedactor, {
+import { LogMessageRedactorDefault,
   LogMessageRedactor,
   LogMessageRedactorConfig,
 } from "./logMessageRedactor";
-import DefaultLogMessageSerializer, {
+import { DefaultLogMessageSerializer,
   LogMessageSerializer,
   LogMessageSerializerConfig,
 } from "./logMessageSerializer";
@@ -33,7 +33,7 @@ type LoggerConfig = {
 /**
  * Represents a logger that can be used to log messages with different log levels.
  */
-export default class BaseLogger {
+export class BaseLogger {
   private static _logEmitter: EventEmitter = new EventEmitter();
   private static _inFlightLogs: number;
   private static _logLimitOverflow: boolean;
@@ -81,7 +81,7 @@ export default class BaseLogger {
       redaction: true,
       logFormatter: BaseLogger.formatter,
       logSerialiser: new DefaultLogMessageSerializer(),
-      logRedactor: new DefaultLogMessageRedactor(),
+      logRedactor: new LogMessageRedactorDefault(),
       async: false,
       ...config,
     };
@@ -91,7 +91,7 @@ export default class BaseLogger {
     BaseLogger.serializer =
       BaseLogger._config.logSerialiser || new DefaultLogMessageSerializer();
     BaseLogger.redactor =
-      BaseLogger._config.logRedactor || new DefaultLogMessageRedactor();
+      BaseLogger._config.logRedactor || new LogMessageRedactorDefault();
 
     BaseLogger.serializer.init(BaseLogger._config);
     BaseLogger.redactor.init(BaseLogger._config);

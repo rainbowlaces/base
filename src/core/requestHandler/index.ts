@@ -1,14 +1,14 @@
 import http from "http";
-import BaseLogger from "../logger";
-import di from "../../decorators/di";
-import BaseConfig from "../config";
-import BasePubSub from "../basePubSub";
+import { BaseLogger } from "../logger";
+import { di } from "../../decorators/di";
+import { BaseConfig } from "../config";
+import { BasePubSub } from "../basePubSub";
 import { delay } from "../../utils/async";
-import BaseError from "../baseErrors";
-import BaseRouter from "./baseRouter";
+import { BaseError } from "../baseErrors";
+import { BaseRouter } from "./baseRouter";
 import { BaseHttpContext } from "./httpContext";
 
-export default class BaseRequestHandler {
+export class BaseRequestHandler {
   private _server!: http.Server;
 
   @di<BaseLogger>("BaseLogger", "request_handler")

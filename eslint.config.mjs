@@ -20,6 +20,14 @@ export default [
           "varsIgnorePattern": "^_",
           "caughtErrorsIgnorePattern": "^_"
         }
+      ],
+      "no-restricted-exports": [
+        "error",
+        {
+          "restrictDefaultExports": {
+            "direct": true
+          }
+        }
       ]
     }
   },
@@ -27,6 +35,12 @@ export default [
     files: ['src/templates/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+    },
+  },
+  {
+    files: ['src/testApp/src/config/**/*.ts', 'eslint.config.mjs'],
+    rules: {
+      'no-restricted-exports': 'off',
     },
   },
 ];

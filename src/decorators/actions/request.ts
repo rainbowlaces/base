@@ -1,6 +1,6 @@
-import BaseModule from "../../core/baseModule";
+import { BaseModule } from "../../core/baseModule";
 import { BaseAction, BaseActionArgs } from "../../core/baseAction";
-import BasePubSub, { BasePubSubArgs } from "../../core/basePubSub";
+import { BasePubSub, BasePubSubArgs } from "../../core/basePubSub";
 
 function request(topic?: string) {
   return function (
@@ -28,4 +28,4 @@ function request(topic?: string) {
   };
 }
 
-export default request;
+export { request };

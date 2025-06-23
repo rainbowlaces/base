@@ -1,4 +1,4 @@
-import BaseContext from "./baseContext";
+import { BaseContext } from "./baseContext";
 import { BasePubSubArgs, Subscriber } from "./basePubSub";
 import { BaseHttpContext } from "./requestHandler/httpContext";
 

@@ -1,5 +1,5 @@
-import Base from "./core/base";
-import BaseModule from "./core/baseModule";
+import { Base } from "./core/base";
+import { BaseModule } from "./core/baseModule";
 import {
   html,
   LoadedElements,
@@ -12,8 +12,8 @@ import * as fileUtils from "./utils/file";
 import * as recursionUtils from "./utils/recursion";
 import * as stringUtils from "./utils/string";
 
-import BaseTemplates from "./modules/templates";
-import BaseStaticFiles from "./modules/static";
+import { BaseTemplates } from "./modules/templates";
+import { BaseStatic } from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
 import {
@@ -21,31 +21,32 @@ import {
   BaseHttpActionArgs,
   BaseAction,
 } from "./core/baseAction";
-import BaseContext from "./core/baseContext";
-import BaseRequest from "./core/requestHandler/baseRequest";
-import BaseResponse from "./core/requestHandler/baseResponse";
+import { BaseContext } from "./core/baseContext";
+import { BaseRequest } from "./core/requestHandler/baseRequest";
+import { BaseResponse } from "./core/requestHandler/baseResponse";
 import { BaseHttpContext } from "./core/requestHandler/httpContext";
 
-import request from "./decorators/actions/request";
-import global from "./decorators/actions/global";
-import init from "./decorators/actions/init";
+import { request } from "./decorators/actions/request";
+import { global } from "./decorators/actions/global";
+import { init } from "./decorators/actions/init";
 
-import config from "./decorators/config";
-import dependsOn from "./decorators/dependsOn";
-import di from "./decorators/di";
-import sub from "./decorators/sub";
-import BaseDi from "./core/baseDi";
+import { config } from "./decorators/config";
+import { dependsOn } from "./decorators/dependsOn";
+import { di } from "./decorators/di";
+import { sub } from "./decorators/sub";
+import { baseModule } from "./decorators/baseModule";
+import { BaseDi } from "./core/baseDi";
 import { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/types";
 
 // Add missing framework classes
-import BaseError from "./core/baseErrors";
-import BasePubSub, { BasePubSubArgs, Subscriber } from "./core/basePubSub";
-import BaseLogger from "./core/logger";
+import { BaseError } from "./core/baseErrors";
+import { BasePubSub, BasePubSubArgs, Subscriber } from "./core/basePubSub";
+import { BaseLogger } from "./core/logger";
 import { LogMessage } from "./core/logger/logMessage";
-import BaseConfig from "./core/config";
+import { BaseConfig } from "./core/config";
 import { ConfigObject } from "./core/config/types";
-import BaseRequestHandler from "./core/requestHandler";
-import BaseRouter from "./core/requestHandler/baseRouter";
+import { BaseRequestHandler } from "./core/requestHandler";
+import { BaseRouter } from "./core/requestHandler/baseRouter";
 import { BaseInitContext } from "./core/initContext";
 
 export const decorators = {
@@ -56,18 +57,32 @@ export const decorators = {
   init,
   sub,
   global,
+  baseModule,
 };
 
-export const utils = {
-  async: asyncUtils,
-  file: fileUtils,
-  recursion: recursionUtils,
-  string: stringUtils,
+// Export decorators directly
+export {
+  config,
+  request,
+  di,
+  dependsOn,
+  init,
+  sub,
+  global,
+  baseModule,
+};
+
+// Export utils directly
+export {
+  asyncUtils as async,
+  fileUtils as file,
+  recursionUtils as recursion,
+  stringUtils as string,
 };
 
 export {
   BaseTemplates,
-  BaseStaticFiles,
+  BaseStatic,
   BaseContext,
   BaseHttpContext,
   BaseRequest,
@@ -84,7 +99,7 @@ export {
 };
 
 export { LogLevel };
-export default Base;
+export { Base };
 export { BaseModule, html };
 export type {
   LoadedElements,

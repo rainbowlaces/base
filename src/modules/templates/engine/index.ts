@@ -1,7 +1,7 @@
 import { readdir } from "node:fs/promises";
 import { TemplateResult } from "./render";
-import Tag from "./tag";
-import tags from "./tags";
+import { Tag } from "./tag";
+import { tags } from "./tags";
 import path from "path";
 
 type Scalar = string | number | boolean | null;

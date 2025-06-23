@@ -1,6 +1,6 @@
-import BaseContext from "../baseContext";
-import BaseRequest from "./baseRequest";
-import BaseResponse from "./baseResponse";
+import { BaseContext } from "../baseContext";
+import { BaseRequest } from "./baseRequest";
+import { BaseResponse } from "./baseResponse";
 import * as http from "http";
 
 type HttpContextData = Record<string, unknown>;

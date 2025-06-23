@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import BaseModule from "../core/baseModule";
+import { BaseModule } from "../core/baseModule";
 
 interface Dependency { module?: string; action?: string }
 type Dependencies = Dependency[];
@@ -31,7 +31,7 @@ function validateDependencies(deps: string[]): Dependencies {
   return parsedDeps;
 }
 
-export default function dependsOn(dependencies: string | string[]) {
+export function dependsOn(dependencies: string | string[]) {
   return (
     target: any,
     context: ClassMethodDecoratorContext | ClassDecoratorContext,

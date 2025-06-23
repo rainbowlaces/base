@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from "../../../../modules/templates/engine";
 
-export default (d: any, t: any, e: any) => {
+export const pageTemplate = (d: any, t: any, e: any) => {
   return html` <!doctype html>
     <html lang="en">
       ${e.head({ title: d.title })}

@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import EventEmitter from "events";
-import BasePubSub, { BasePubSubArgs, Subscription } from "./basePubSub";
+import { BasePubSub, BasePubSubArgs, Subscription } from "./basePubSub";
 
 type TopicFunction = (
   id: string,
@@ -17,7 +17,7 @@ interface ModuleStatusArgs extends BasePubSubArgs {
   status: "error" | "done";
 }
 
-export default abstract class BaseContext<
+export abstract class BaseContext<
   T = Record<string, unknown>,
 > extends EventEmitter {
   private _id: string;

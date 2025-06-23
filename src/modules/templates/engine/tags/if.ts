@@ -1,6 +1,6 @@
-import Tag from "../tag";
+import { Tag } from "../tag";
 
-export default class IfTag extends Tag {
+export class IfTag extends Tag {
   static tagName = "if";
   condition = false;
 

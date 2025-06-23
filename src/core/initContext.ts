@@ -1,4 +1,4 @@
-import BaseContext from "./baseContext";
+import { BaseContext } from "./baseContext";
 
 type InitContextData = object;
 
