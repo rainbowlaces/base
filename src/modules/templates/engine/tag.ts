@@ -7,7 +7,7 @@ import { TemplateValue } from "./render";
 export default class Tag {
   closed: boolean;
   selfClosing: boolean;
-  unsafe: boolean = false; // For tags that should not be sanitized
+  unsafe = false; // For tags that should not be sanitized
   args: any[];
   content: string[];
   output: string;
@@ -37,9 +37,11 @@ export default class Tag {
   }
 
   // override in children
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   init() {}
 
   // override in children
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   open() {}
 
   // override in children

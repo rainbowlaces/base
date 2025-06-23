@@ -31,13 +31,13 @@ export default class BaseStatic extends BaseModule {
   accessor baseFsRoot!: string;
 
   @config<string>()
-  staticFsRoot: string = "/public";
+  staticFsRoot = "/public";
 
   @config<string>()
-  npmFsRoot: string = "";
+  npmFsRoot = "";
 
   @config<number>()
-  maxAge: number = 3600;
+  maxAge = 3600;
 
   @config<ModuleAccessFilter>()
   moduleAccessFilter: ModuleAccessFilter = [];

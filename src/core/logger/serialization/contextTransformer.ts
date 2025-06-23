@@ -4,18 +4,18 @@ import { ScalarSerializer } from "./scalarSerializer";
 import { TransformFunction, recursiveMap } from "../../../utils/recursion";
 import { ConstructorSerializer } from "./constructorSerializer";
 
-type ContextTransformerOptions = {
+interface ContextTransformerOptions {
   maxItems?: number;
   maxDepth?: number;
   maxLength?: number;
-};
+}
 
 export class ContextTransformer {
   private serializers: TypeSerializer<unknown>[] = [];
 
-  private maxItems: number = 100;
-  private maxDepth: number = 10;
-  private maxLength: number = 1024;
+  private maxItems = 100;
+  private maxDepth = 10;
+  private maxLength = 1024;
 
   constructor(config?: ContextTransformerOptions) {
     this.maxItems = config?.maxItems ?? this.maxItems;

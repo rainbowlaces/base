@@ -4,11 +4,11 @@ import { ContextTransformer } from "./serialization/contextTransformer";
 
 import { LogContext, SerializedLogMessage } from "./types";
 
-export type LogMessageSerializerConfig = {
+export interface LogMessageSerializerConfig {
   maxMessageLength?: number;
   maxContextDepth?: number;
   maxItemsPerLevel?: number;
-};
+}
 
 export interface LogMessageSerializer {
   init(config: LogMessageSerializerConfig): void;

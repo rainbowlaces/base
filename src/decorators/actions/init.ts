@@ -3,8 +3,8 @@ import BasePubSub, { BasePubSubArgs } from "../../core/basePubSub";
 import { BaseAction, BaseActionArgs } from "../../core/baseAction";
 
 export default function init() {
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  return (t: Function, context: ClassMethodDecoratorContext): void => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (t: (...args: any[]) => any, context: ClassMethodDecoratorContext): void => {
     if (context.kind !== "method") return;
 
     const target = t as BaseAction;
@@ -17,7 +17,7 @@ export default function init() {
         `/base/init`,
         async function (this: BaseModule, args: BasePubSubArgs) {
           if (!args.context) return;
-          await this.executeAction(target.name!, args as BaseActionArgs);
+          await this.executeAction(target.name, args as BaseActionArgs);
         }.bind(this as BaseModule),
       );
     });

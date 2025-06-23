@@ -51,7 +51,7 @@ export default class BaseLogger {
     });
   };
 
-  private _baseTags: Array<string> = [];
+  private _baseTags: string[] = [];
   private _namespace: string;
 
   private static serializer: LogMessageSerializer;
@@ -137,7 +137,7 @@ export default class BaseLogger {
       }
       BaseLogger._levels[out.level](BaseLogger.formatter(out));
       if (out.level === "FATAL") {
-        // eslint-disable-next-line no-process-exit
+         
         process.exit(1);
       }
     } catch (error) {
@@ -150,7 +150,7 @@ export default class BaseLogger {
    * @param namespace - The namespace for the logger.
    * @param baseTags - An optional array of base tags for the logger.
    */
-  constructor(namespace: string, baseTags: Array<string> = []) {
+  constructor(namespace: string, baseTags: string[] = []) {
     this._namespace = namespace;
     this._baseTags = baseTags;
   }
@@ -160,7 +160,7 @@ export default class BaseLogger {
    * @param message - The error message to log.
    * @param tags - Optional tags to associate with the error.
    */
-  fatal(message: string, tags: Array<string> = [], context?: LogContext) {
+  fatal(message: string, tags: string[] = [], context?: LogContext) {
     this.log(message, tags, LogLevel.FATAL, context);
   }
 
@@ -177,7 +177,7 @@ export default class BaseLogger {
    */
   error(
     message: string | Error,
-    tags: Array<string> = [],
+    tags: string[] = [],
     context?: LogContext,
   ) {
     if (message instanceof Error) {
@@ -196,7 +196,7 @@ export default class BaseLogger {
    * @param message - The warning message to log.
    * @param tags - Optional tags to associate with the warning.
    */
-  warn(message: string, tags: Array<string> = [], context?: LogContext) {
+  warn(message: string, tags: string[] = [], context?: LogContext) {
     this.log(message, tags, LogLevel.WARNING, context);
   }
 
@@ -206,7 +206,7 @@ export default class BaseLogger {
    * @param message - The debug message to log.
    * @param tags - Optional tags to associate with the debug message.
    */
-  debug(message: string, tags: Array<string> = [], context?: LogContext) {
+  debug(message: string, tags: string[] = [], context?: LogContext) {
     this.log(message, tags, LogLevel.DEBUG, context);
   }
 
@@ -215,7 +215,7 @@ export default class BaseLogger {
    * @param message - The message to be logged.
    * @param tags - Optional tags to categorize the log message.
    */
-  info(message: string, tags: Array<string> = [], context?: LogContext) {
+  info(message: string, tags: string[] = [], context?: LogContext) {
     this.log(message, tags, LogLevel.INFO, context);
   }
 
@@ -231,14 +231,14 @@ export default class BaseLogger {
    */
   async log(
     message: string,
-    messageTags: Array<string> = [],
+    messageTags: string[] = [],
     level: LogLevel = LogMessage.default,
     context: LogContext = {},
   ) {
     // If the log level is higher than the current log level, drop the message.
-    if (level > BaseLogger._config.logLevel!) return;
+    if (level > (BaseLogger._config.logLevel ?? LogLevel.ERROR)) return;
 
-    const tags: Array<string> = [...this._baseTags, ...messageTags];
+    const tags: string[] = [...this._baseTags, ...messageTags];
 
     if (level === LogLevel.FATAL) {
       return BaseLogger.outputLogMessage(
@@ -252,7 +252,7 @@ export default class BaseLogger {
     // we can reset the overflow flag.
     if (
       BaseLogger._logLimitOverflow &&
-      BaseLogger._inFlightLogs < BaseLogger._config.maxInFlightLogs! * 0.9
+      BaseLogger._inFlightLogs < (BaseLogger._config.maxInFlightLogs ?? 1000) * 0.9
     ) {
       BaseLogger._logLimitOverflow = false;
     }
@@ -260,7 +260,7 @@ export default class BaseLogger {
     // If the log buffer is full, drop the message and immediately log an error.
     if (
       BaseLogger._logLimitOverflow ||
-      BaseLogger._inFlightLogs > BaseLogger._config.maxInFlightLogs!
+      BaseLogger._inFlightLogs > (BaseLogger._config.maxInFlightLogs ?? 1000)
     ) {
       return BaseLogger.handleInternalError(
         new Error("Log queue full. Message dropped."),

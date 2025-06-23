@@ -2,7 +2,7 @@
 
 import BaseModule from "../core/baseModule";
 
-type Dependency = { module?: string; action?: string };
+interface Dependency { module?: string; action?: string }
 type Dependencies = Dependency[];
 
 function validateDependencies(deps: string[]): Dependencies {

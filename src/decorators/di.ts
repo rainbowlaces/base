@@ -10,7 +10,7 @@ export default function di<T = string>(
   return (
     value: { get: () => T; set: (value: T) => void },
     context: ClassAccessorDecoratorContext,
-  ): { get?: () => T; set?: (value: T) => void } | void => {
+  ): { get?: () => T; set?: (value: T) => void } | undefined => {
     if (context.kind !== "accessor") return;
 
     return {

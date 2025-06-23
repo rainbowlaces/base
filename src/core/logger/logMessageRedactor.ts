@@ -5,9 +5,9 @@ import {
 } from "../../utils/recursion";
 import { PatternMap, LogContext, SerializedLogMessage } from "./types";
 
-export type LogMessageRedactorConfig = {
+export interface LogMessageRedactorConfig {
   patterns?: PatternMap;
-};
+}
 
 export interface LogMessageRedactor {
   init(config: LogMessageRedactorConfig): void;

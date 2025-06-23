@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type RecursiveMapOptions = {
+interface RecursiveMapOptions {
   maxDepth?: number;
   maxItems?: number;
-};
+}
 
 export type TransformFunction = (value: unknown) => unknown;
 export type GetTransformerFunction = (
@@ -13,8 +13,8 @@ export function recursiveMap(
   input: unknown,
   options: RecursiveMapOptions = {},
   getTransformer: GetTransformerFunction = () => null,
-  currentDepth: number = 1,
-  seen: WeakMap<object, unknown> = new WeakMap(),
+  currentDepth = 1,
+  seen = new WeakMap<object, unknown>(),
 ): unknown {
   const { maxDepth = 10, maxItems = Infinity } = options;
   if (currentDepth > maxDepth) {

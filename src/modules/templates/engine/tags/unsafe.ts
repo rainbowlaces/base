@@ -2,7 +2,7 @@ import Tag from "../tag";
 
 export default class UnsafeTag extends Tag {
   static tagName = "unsafe";
-  unsafe: boolean = true; // This tag is unsafe and should not be sanitized
+  unsafe = true; // This tag is unsafe and should not be sanitized
   value: unknown;
 
   init() {

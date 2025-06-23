@@ -1,7 +1,7 @@
-export type LogError = {
+export interface LogError {
   message: string;
   stack?: string[];
-};
+}
 
 export type Scalar = string | number | boolean | null | undefined;
 
@@ -16,21 +16,21 @@ export type LogContext = Record<string, unknown>;
 
 export type PatternMap = Record<string, RegExp>;
 
-export type PatternList = Array<RegExp>;
+export type PatternList = RegExp[];
 
 export type SerializedLogContextData = Record<string, unknown>;
 
 /**
  * Represents a serialized log message.
  */
-export type SerializedLogMessage = {
+export interface SerializedLogMessage {
   timestamp: string;
   level: string;
   namespace: string;
   message: string;
-  tags: Array<string>;
+  tags: string[];
   context: LogContext;
-};
+}
 
 export enum LogLevel {
   FATAL = 1,
@@ -40,6 +40,6 @@ export enum LogLevel {
   DEBUG = 16,
 }
 
-export type LoggerFunction = (message: unknown, tags?: Array<string>) => void;
+export type LoggerFunction = (message: unknown, tags?: string[]) => void;
 
 export type LogFormatter = (message: SerializedLogMessage) => string;

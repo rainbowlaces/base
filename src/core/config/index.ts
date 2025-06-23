@@ -56,7 +56,7 @@ export default class BaseConfig {
 
     try {
       await fs.access(configFile, constants.R_OK);
-    } catch (error) {
+    } catch (_error) {
       return {};
     }
 
@@ -66,7 +66,7 @@ export default class BaseConfig {
   private static async loadTemplates(): Promise<void> {
     try {
       this._templates = await this.load("templates");
-    } catch (error) {
+    } catch (_error) {
       console.warn("No templates configuration found.");
     }
   }

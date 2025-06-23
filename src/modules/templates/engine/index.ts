@@ -10,10 +10,10 @@ export interface TemplateData {
   [key: string]: Scalar | Scalar[] | TemplateData | TemplateData[];
 }
 
-export type LoadedTags = { [key: string]: (...args: unknown[]) => Tag };
-export type LoadedElements = { [key: string]: ElementFunction };
+export type LoadedTags = Record<string, (...args: unknown[]) => Tag>;
+export type LoadedElements = Record<string, ElementFunction>;
 
-type LoadedTemplates = { [key: string]: TemplateFunction };
+type LoadedTemplates = Record<string, TemplateFunction>;
 type TemplateFunction = (
   data: TemplateData,
   tags: LoadedTags,
@@ -67,7 +67,7 @@ class Template {
     let elementFiles: string[] = [];
     try {
       elementFiles = await readdir(elementPath);
-    } catch (e) {
+    } catch (_e) {
       elementFiles = [];
     }
 

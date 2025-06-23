@@ -1,6 +1,6 @@
 import BaseContext from "./baseContext";
 
-interface InitContextData {}
+type InitContextData = object;
 
 export class BaseInitContext extends BaseContext<InitContextData> {
   constructor() {

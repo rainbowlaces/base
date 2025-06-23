@@ -3,6 +3,6 @@ import EachTag from "./each";
 import IfTag from "./if";
 import UnsafeTag from "./unsafe";
 
-const tags: Array<typeof Tag> = [EachTag, IfTag, EndTag, UnsafeTag];
+const tags: typeof Tag[] = [EachTag, IfTag, EndTag, UnsafeTag];
 
 export default tags;

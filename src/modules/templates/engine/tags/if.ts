@@ -2,7 +2,7 @@ import Tag from "../tag";
 
 export default class IfTag extends Tag {
   static tagName = "if";
-  condition: boolean = false;
+  condition = false;
 
   init() {
     [this.condition] = this.args;

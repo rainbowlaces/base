@@ -20,11 +20,11 @@ interface CookieOptions {
 export default class BaseResponse extends EventEmitter {
   private _res: http.ServerResponse;
 
-  private _statusCode: number = 200;
+  private _statusCode = 200;
   private _statusMessage?: string;
 
-  private _headersSent: boolean = false;
-  private _finished: boolean = false;
+  private _headersSent = false;
+  private _finished = false;
 
   private _headers: http.OutgoingHttpHeaders = {};
 
@@ -160,23 +160,26 @@ export default class BaseResponse extends EventEmitter {
   async download(
     data: Readable,
     fileName: string,
-    mimeType: string = "application/octet-stream",
+    mimeType = "application/octet-stream",
   ) {
     this.header("content-disposition", `attachment; filename=${fileName}`);
     return this.send(data, mimeType);
   }
 
-  async send(
+  async  send(
     data: string | Buffer | Readable,
-    mimeType: string = "text/plain; charset=utf-8",
+    mimeType = "text/plain; charset=utf-8",
   ) {
     this.header("content-type", mimeType);
     this.ensureHeadersSent();
     if (data instanceof Buffer || typeof data === "string")
       return this.end(data);
+    
+    // At this point, data must be a Readable stream
+    const stream = data as Readable;
     return new Promise<void>((resolve) => {
-      data.pipe(this.rawResponse);
-      data.on("end", () => {
+      stream.pipe(this.rawResponse);
+      stream.on("end", () => {
         this.end();
         resolve();
       });

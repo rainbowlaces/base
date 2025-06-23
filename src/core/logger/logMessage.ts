@@ -11,7 +11,7 @@ export class LogMessage {
 
   private _namespace: string;
   private _message: string;
-  private _tags: Array<string>;
+  private _tags: string[];
   private _level: LogLevel;
   private _context: LogContext;
   private _timestamp: string = new Date().toISOString();
@@ -26,7 +26,7 @@ export class LogMessage {
   /**
    * Gets the tags associated with the log message.
    */
-  get tags(): Array<string> {
+  get tags(): string[] {
     return this._tags;
   }
 
@@ -71,7 +71,7 @@ export class LogMessage {
   static create(
     message: string,
     namespace: string,
-    tags: Array<string> = [],
+    tags: string[] = [],
     level: LogLevel = LogMessage.default,
     context: LogContext,
   ): LogMessage {
@@ -89,7 +89,7 @@ export class LogMessage {
   constructor(
     message: string,
     namespace: string,
-    tags: Array<string> = [],
+    tags: string[] = [],
     level: LogLevel = LogMessage.default,
     context: LogContext,
   ) {

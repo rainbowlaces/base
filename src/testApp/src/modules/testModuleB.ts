@@ -14,6 +14,7 @@ export default class TestModuleB extends BaseModule {
   private accessor _templates!: BaseTemplates;
 
   @init()
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async init() {}
 
   @request("/get/bing/bang")

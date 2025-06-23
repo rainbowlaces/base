@@ -55,7 +55,7 @@ export function stringToSlug(contentName: string): string {
 export function truncate(
   str: string,
   length: number,
-  appendToEnd: string = "[TRUNCATED]",
+  appendToEnd = "[TRUNCATED]",
 ): string {
   if (!str) return "";
   if (str.length > length) {

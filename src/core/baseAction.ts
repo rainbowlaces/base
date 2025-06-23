@@ -11,7 +11,6 @@ export interface BaseActionArgs extends BasePubSubArgs {
 }
 
 export interface BaseAction extends Subscriber {
-  (): Promise<void>;
   (args?: BaseActionArgs): Promise<void>;
   dependsOn?: string[];
   action: true;

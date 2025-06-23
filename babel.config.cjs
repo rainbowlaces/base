@@ -7,8 +7,9 @@ module.exports = function (api) {
     ["@babel/plugin-proposal-decorators", { version: "2023-11" }],
     ["@babel/plugin-transform-class-properties"],
     ["@babel/plugin-transform-class-static-block"],
+    require("./babel/handle-imports.cjs"),
   ];
-  const serverPlugins = [require("./babel/handle-imports.cjs")];
+  const serverPlugins = ["@babel/plugin-syntax-import-attributes"];
   const clientPlugins = [];
 
   return {
@@ -16,7 +17,7 @@ module.exports = function (api) {
       [
         "@babel/preset-env",
         {
-          targets: isClient ? "last 2 versions" : { node: "20" },
+          targets: isClient ? "last 2 versions" : { node: "24" },
           modules: false,
         },
       ],

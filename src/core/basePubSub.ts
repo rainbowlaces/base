@@ -22,7 +22,7 @@ export interface BasePubSubArgs {
 
 type MatchedTopics = Map<string, BasePubSubArgs>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Subscriber = (args: BasePubSubArgs) => Promise<any | void>;
+export type Subscriber = (args: BasePubSubArgs) => Promise<any> | Promise<void>;
 
 export interface Subscription {
   topic: string;
@@ -40,13 +40,11 @@ interface SubscriptionMatch {
 
 export default class BasePubSub {
   private static subscriptions: Set<Subscription> = new Set<Subscription>();
-  private static _inflightCount: number = 0;
+  private static _inflightCount = 0;
 
   static get inFlight(): number {
     return this._inflightCount;
   }
-
-  constructor() {}
 
   static create(): BasePubSub {
     return new BasePubSub();
@@ -88,7 +86,7 @@ export default class BasePubSub {
   static sub(
     topic: string,
     handler: Subscriber,
-    once: boolean = false,
+    once = false,
   ): Subscription {
     const subscription: Subscription = {
       topic,

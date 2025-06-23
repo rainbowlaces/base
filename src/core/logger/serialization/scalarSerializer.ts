@@ -1,7 +1,7 @@
 import { Scalar, TypeSerializer, TypeSerializerConfig } from "../types";
 
 export class ScalarSerializer implements TypeSerializer<Scalar> {
-  private maxLength: number = 1024;
+  private maxLength = 1024;
 
   constructor(config: TypeSerializerConfig) {
     this.maxLength = (config.maxLength as number) ?? this.maxLength;

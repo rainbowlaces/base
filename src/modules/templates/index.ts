@@ -20,7 +20,7 @@ export default class BaseTemplates extends BaseModule {
   accessor baseFsRoot!: string;
 
   @config<string>()
-  private templateRoot: string = "templates";
+  private templateRoot = "templates";
 
   @init()
   async init() {

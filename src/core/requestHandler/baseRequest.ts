@@ -11,10 +11,10 @@ import BaseLogger from "../logger";
 import BaseConfig from "../config";
 import BaseError from "../baseErrors";
 
-export type ParsedForm<T> = {
+export interface ParsedForm<T> {
   fields: T;
   files: formidable.Files;
-};
+}
 
 export default class BaseRequest {
   private _req!: http.IncomingMessage;

@@ -15,6 +15,7 @@ export default class TestModuleA extends BaseModule {
 
   @init()
   @dependsOn("TestModuleB/init")
+  // eslint-disable-next-line @typescript-eslint/no-empty-function
   async init() {}
 
   @global()
