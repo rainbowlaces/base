@@ -16,7 +16,11 @@ import BaseTemplates from "./modules/templates";
 import BaseStaticFiles from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
-import { BaseActionArgs, BaseHttpActionArgs } from "./core/baseAction";
+import {
+  BaseActionArgs,
+  BaseHttpActionArgs,
+  BaseAction,
+} from "./core/baseAction";
 import BaseContext from "./core/baseContext";
 import BaseRequest from "./core/requestHandler/baseRequest";
 import BaseResponse from "./core/requestHandler/baseResponse";
@@ -31,6 +35,18 @@ import dependsOn from "./decorators/dependsOn";
 import di from "./decorators/di";
 import sub from "./decorators/sub";
 import BaseDi from "./core/baseDi";
+import { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/types";
+
+// Add missing framework classes
+import BaseError from "./core/baseErrors";
+import BasePubSub, { BasePubSubArgs, Subscriber } from "./core/basePubSub";
+import BaseLogger from "./core/logger";
+import { LogMessage } from "./core/logger/logMessage";
+import BaseConfig from "./core/config";
+import { ConfigObject } from "./core/config/types";
+import BaseRequestHandler from "./core/requestHandler";
+import BaseRouter from "./core/requestHandler/baseRouter";
+import { BaseInitContext } from "./core/initContext";
 
 export const decorators = {
   config,
@@ -57,6 +73,14 @@ export {
   BaseRequest,
   BaseResponse,
   BaseDi,
+  BaseError,
+  BasePubSub,
+  BaseLogger,
+  BaseConfig,
+  BaseRequestHandler,
+  BaseRouter,
+  BaseInitContext,
+  LogMessage,
 };
 
 export { LogLevel };
@@ -68,4 +92,12 @@ export type {
   TemplateData,
   BaseActionArgs,
   BaseHttpActionArgs,
+  BaseAction,
+  BasePubSubArgs,
+  Subscriber,
+  ConfigObject,
+  Constructor,
+  Scalar,
+  Instance,
+  BaseDiWrapper,
 };
