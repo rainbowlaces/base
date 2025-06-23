@@ -15,6 +15,11 @@ export class Base {
   private _fsRoot: string;
   private _libRoot: string;
 
+  static start(metaUrl: string) {
+    const base = new Base(metaUrl);
+    return base.init();
+  }
+  
   public get logger(): BaseLogger {
     return this._logger;
   }
