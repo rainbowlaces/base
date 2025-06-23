@@ -9,6 +9,9 @@ export class BaseDi {
   }
 
   static async autoload(root: string, ignore: string[] = []): Promise<void> {
+    if (BaseDi.matchesIgnorePattern(root, ignore)) {
+      return;
+    }
     console.log(`${root}:`);
     const fs = await import("fs/promises");
     const path = await import("path");
@@ -18,13 +21,7 @@ export class BaseDi {
       if (file.isDirectory()) {
         await this.autoload(filePath, ignore);
       } else if (file.isFile() && file.name.endsWith(".js")) {
-        if (
-          ignore.some((i) =>
-            i.endsWith("*")
-              ? file.name.startsWith(i.slice(0, -1))
-              : file.name === i,
-          )
-        ) {
+        if (BaseDi.matchesIgnorePattern(filePath, ignore)) {
           continue;
         }
 
@@ -97,6 +94,18 @@ export class BaseDi {
       throw new Error("Invalid value type");
     }
     BaseDi.instances.set(wrapper.key as string, wrapper);
+  }
+
+  static matchesIgnorePattern(filename: string, patterns: string[]): boolean {
+    return patterns.some((pattern) => {
+      try {
+        const urlPattern = new URLPattern({ pathname: pattern });
+        return urlPattern.test(filename);
+      } catch {
+        // Fallback to exact string match if pattern is invalid
+        return filename === pattern;
+      }
+    });
   }
 
   private static isInstance(value: unknown): value is Instance<never> {

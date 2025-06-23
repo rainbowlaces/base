@@ -106,7 +106,7 @@ export class BaseResponse extends EventEmitter {
       finalValue = "s:" + signature.sign(finalValue, secret);
     }
 
-    const cookieOptions: cookie.CookieSerializeOptions = {
+    const cookieOptions: cookie.SerializeOptions = {
       ...options,
       httpOnly: options.httpOnly ?? true,
       secure: options.secure ?? false,

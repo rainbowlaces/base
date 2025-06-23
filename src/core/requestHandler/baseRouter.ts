@@ -48,7 +48,9 @@ export class BaseRouter {
     const match = pattern.exec({ pathname: url });
     if (!match) return null;
 
-    const params: UrlParams = match.pathname.groups || {};
+    const params: UrlParams = Object.fromEntries(
+      Object.entries(match.pathname.groups || {}).filter(([_, value]) => value !== undefined)
+    ) as UrlParams;
 
     let target: RouteTarget = this.routes[route];
     if (typeof target === "function") {

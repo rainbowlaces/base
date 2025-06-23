@@ -1,20 +1,5 @@
 import { delay } from "../utils/async";
 
-// URLPattern type declaration for Node.js experimental support
-declare global {
-  class URLPattern {
-    constructor(pattern: { pathname: string });
-    exec(input: { pathname: string }): URLPatternResult | null;
-    test(input: { pathname: string }): boolean;
-  }
-
-  interface URLPatternResult {
-    pathname: {
-      groups: Record<string, string>;
-    };
-  }
-}
-
 export interface BasePubSubArgs {
   topic: string;
   [key: string]: unknown;

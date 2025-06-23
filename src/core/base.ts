@@ -19,7 +19,7 @@ export class Base {
     const base = new Base(metaUrl);
     return base.init();
   }
-  
+
   public get logger(): BaseLogger {
     return this._logger;
   }
@@ -69,8 +69,13 @@ export class Base {
     const autoLoad = config.autoload === undefined || config.autoload;
 
     if (autoLoad) {
-      await BaseDi.autoload(path.dirname(this._libRoot));
+      console.log("Autoloading core modules...");
+      await BaseDi.autoload(path.dirname(this._libRoot), ["*/testApp/*"]);
+      console.log("***");
+
+      console.log("Autoloading user modules...");
       await BaseDi.autoload(this._fsRoot, config.autoloadIgnore || []);
+      console.log("***");
     }
 
     this.initLogger();
