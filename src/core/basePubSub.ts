@@ -1,5 +1,19 @@
-import { Match, MatchResult, match } from "path-to-regexp";
 import { delay } from "../utils/async";
+
+// URLPattern type declaration for Node.js experimental support
+declare global {
+  class URLPattern {
+    constructor(pattern: { pathname: string });
+    exec(input: { pathname: string }): URLPatternResult | null;
+    test(input: { pathname: string }): boolean;
+  }
+
+  interface URLPatternResult {
+    pathname: {
+      groups: Record<string, string>;
+    };
+  }
+}
 
 export interface BasePubSubArgs {
   topic: string;
@@ -12,7 +26,7 @@ export type Subscriber = (args: BasePubSubArgs) => Promise<any | void>;
 
 export interface Subscription {
   topic: string;
-  match: ReturnType<typeof match>;
+  pattern: URLPattern;
   handler: Subscriber;
   once: boolean;
   matchedTopics: MatchedTopics;
@@ -79,7 +93,7 @@ export default class BasePubSub {
     const subscription: Subscription = {
       topic,
       handler,
-      match: match(topic, { decode: decodeURIComponent }),
+      pattern: new URLPattern({ pathname: topic }),
       once,
       matchedTopics: new Map<string, BasePubSubArgs>(),
     };
@@ -97,13 +111,11 @@ export default class BasePubSub {
             params: subscription.matchedTopics.get(topic),
           };
         }
-        const match: Match = subscription.match(topic);
+        const match = subscription.pattern.exec({ pathname: topic });
         return {
           subscription,
           match: !!match,
-          params: match
-            ? ((match as MatchResult).params as BasePubSubArgs)
-            : undefined,
+          params: match ? (match.pathname.groups as BasePubSubArgs) : undefined,
         };
       })
       .filter((m: SubscriptionMatch) => !!m.match);

@@ -1,4 +1,3 @@
-import { Key, pathToRegexp } from "path-to-regexp";
 import BaseConfig from "../config";
 import di from "../../decorators/di";
 
@@ -32,20 +31,16 @@ export default class BaseRouter {
     url = `/${url}`;
     const routes = Object.keys(this.routes);
     const route = routes.find((route) => {
-      const re = pathToRegexp(route);
-      return re.test(url);
+      const pattern = new URLPattern({ pathname: route });
+      return !!pattern.exec({ pathname: url });
     });
     if (!route) return null;
 
-    const paramMap: Key[] = [];
-    const re = pathToRegexp(route, paramMap);
-    const match = re.exec(url);
+    const pattern = new URLPattern({ pathname: route });
+    const match = pattern.exec({ pathname: url });
     if (!match) return null;
 
-    const params: UrlParams = {};
-    paramMap.forEach((param: Key, index: number) => {
-      params[param.name] = match[index + 1];
-    });
+    const params: UrlParams = match.pathname.groups || {};
 
     let target: RouteTarget = this.routes[route];
     if (typeof target === "function") {
