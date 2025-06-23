@@ -49,17 +49,6 @@ import { BaseRequestHandler } from "./core/requestHandler";
 import { BaseRouter } from "./core/requestHandler/baseRouter";
 import { BaseInitContext } from "./core/initContext";
 
-export const decorators = {
-  config,
-  request,
-  di,
-  dependsOn,
-  init,
-  sub,
-  global,
-  baseModule,
-};
-
 // Export decorators directly
 export {
   config,
