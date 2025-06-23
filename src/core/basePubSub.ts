@@ -83,6 +83,14 @@ export class BasePubSub {
     });
   }
 
+  private static createURLPattern(topic: string): URLPattern {
+    try {
+      return new URLPattern({ pathname: topic });
+    } catch (err) {
+      throw new Error(`Invalid topic pattern: ${topic}. ${err}`);
+    }
+  }
+
   static sub(
     topic: string,
     handler: Subscriber,
@@ -91,7 +99,7 @@ export class BasePubSub {
     const subscription: Subscription = {
       topic,
       handler,
-      pattern: new URLPattern({ pathname: topic }),
+      pattern: BasePubSub.createURLPattern(topic),
       once,
       matchedTopics: new Map<string, BasePubSubArgs>(),
     };

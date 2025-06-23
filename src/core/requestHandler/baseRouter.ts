@@ -25,18 +25,26 @@ export class BaseRouter {
     this.defaultRoute = this._config.get<string>("defaultRoute", "");
   }
 
+  private static createURLPattern(route: string): URLPattern {
+    try {
+      return new URLPattern({ pathname: route });
+    } catch (err) {
+      throw new Error(`Invalid route pattern: ${route}. ${err}`);
+    }
+  }
+
   private selectRoute(
     url: string,
   ): { path: string; target: string; params: UrlParams } | null {
     url = `/${url}`;
     const routes = Object.keys(this.routes);
     const route = routes.find((route) => {
-      const pattern = new URLPattern({ pathname: route });
+      const pattern =  BaseRouter.createURLPattern(route);
       return !!pattern.exec({ pathname: url });
     });
     if (!route) return null;
 
-    const pattern = new URLPattern({ pathname: route });
+    const pattern =  BaseRouter.createURLPattern(route);
     const match = pattern.exec({ pathname: url });
     if (!match) return null;
 
