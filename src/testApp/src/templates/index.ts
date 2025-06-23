@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from "../../../modules/templates/engine";
 
-export const indexTemplate = (d: any, t: any, e: any) => html`
+export default (d: any, t: any, e: any) => html`
   <h1>Template Engine Test Examples</h1>
 
   <!-- Test 1: If tag with true condition -->

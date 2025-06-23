@@ -32,9 +32,10 @@ export default [
     }
   },
   {
-    files: ['src/templates/**/*.ts'],
+    files: ['src/testApp/src/templates/**/*.ts'],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
+      'no-restricted-exports': 'off',
     },
   },
   {

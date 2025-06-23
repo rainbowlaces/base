@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { html } from "../../../../modules/templates/engine";
 
-export const formTemplate = (d: any, t: any, e: any) =>
+export default (d: any, t: any, e: any) =>
   html` ${e.page({
     context: d.context,
     title: d.title,
