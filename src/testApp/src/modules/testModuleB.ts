@@ -17,7 +17,7 @@ export class TestModuleB extends BaseModule {
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async init() {}
 
-  @request("/get/bing/bang")
+  @request("/get/bing/bang/:id")
   async handleTestAction(args?: BaseActionArgs) {
     this.logger.info("Handling test bang action");
     const ctx = args?.context as unknown as BaseHttpContext;

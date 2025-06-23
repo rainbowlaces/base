@@ -18,7 +18,7 @@ function request(topic?: string) {
 
     context.addInitializer(function () {
       BasePubSub.sub(
-        `/request/:id${topic || "/:path*"}`,
+        `/request/:__id${topic || "/:path*"}`,
         async function (this: BaseModule, args: BasePubSubArgs) {
           if (!args.context) return;
           await this.executeAction(target.name, args as BaseActionArgs);
