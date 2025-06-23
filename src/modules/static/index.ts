@@ -251,7 +251,9 @@ export default class BaseStatic extends BaseModule {
 
     // Generate ETag
     const hash = crypto.createHash("sha1");
-    hash.update(data);
+
+    // Ensure the argument matches BinaryLike
+    hash.update(typeof data === "string" ? data : new Uint8Array(data));
     const etag = hash.digest("hex");
 
     if (ctx.req.header("if-none-match") === etag) {
