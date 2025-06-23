@@ -6,7 +6,9 @@ import { BaseActionArgs } from "../../../core/baseAction";
 import BaseTemplates from "../../../modules/templates";
 import di from "../../../decorators/di";
 import global from "../../../decorators/actions/global";
+import module from "../../../decorators/module";
 
+@module
 export default class TestModuleA extends BaseModule {
   @di("BaseTemplates")
   private accessor _templates!: BaseTemplates;

@@ -14,7 +14,7 @@ export default class BaseRequestHandler {
   @di<BaseLogger>("BaseLogger", "request_handler")
   private accessor _logger!: BaseLogger;
 
-  @di<BaseConfig>("BaseConfig", "request_handler")
+  @di<BaseConfig>("BaseConfig", "base")
   private accessor _config!: BaseConfig;
 
   @di<BasePubSub>("BasePubSub")

@@ -6,7 +6,9 @@ import BaseTemplates from "../../../modules/templates";
 import di from "../../../decorators/di";
 import { BaseHttpContext } from "../../../core/requestHandler/httpContext";
 import { TemplateData } from "../../../modules/templates/engine";
+import module from "../../../decorators/module";
 
+@module
 export default class TestModuleB extends BaseModule {
   @di<BaseTemplates>("BaseTemplates")
   private accessor _templates!: BaseTemplates;

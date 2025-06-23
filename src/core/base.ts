@@ -8,24 +8,13 @@ import BaseStatic from "../modules/static";
 import BaseTemplates from "../modules/templates";
 import { BaseInitContext } from "./initContext";
 import BaseRequestHandler from "./requestHandler";
+import { getRegisteredModules } from "../decorators/module";
 
 export default class Base {
   private _logger!: BaseLogger;
 
-  private _config!: BaseConfig;
-  private _bus!: BasePubSub;
-  private _requestHandler!: BaseRequestHandler;
-
   private _fsRoot: string;
   private _libRoot: string;
-
-  public get bus(): BasePubSub {
-    return this._bus;
-  }
-
-  public get config(): BaseConfig {
-    return this._config;
-  }
 
   public get logger(): BaseLogger {
     return this._logger;
@@ -61,17 +50,25 @@ export default class Base {
   }
 
   private initRequestHandler() {
-    this._requestHandler = new BaseRequestHandler();
-    BaseDi.register(this._requestHandler);
+    BaseDi.register(new BaseRequestHandler());
   }
 
   private initPubSub() {
-    this._bus = new BasePubSub();
-    BaseDi.register(this._bus);
+    BaseDi.register(new BasePubSub());
   }
 
   async init() {
     await this.initConfig();
+
+    const config = BaseConfig.getNamespace("base");
+
+    const autoLoad = config.autoload === undefined || config.autoload;
+
+    if (autoLoad) {
+      await BaseDi.autoload(this._libRoot);
+      await BaseDi.autoload(this._fsRoot, config.autoloadIgnore || []);
+    }
+
     this.initLogger();
     this.initPubSub();
     this.initRequestHandler();
@@ -81,7 +78,17 @@ export default class Base {
     this.addModule(BaseStatic);
     this.addModule(BaseTemplates);
 
-    this._bus.pub("/base/init", { context: new BaseInitContext() });
+    const registeredModules = getRegisteredModules();
+    for (const ModuleClass of registeredModules) {
+      this.addModule(ModuleClass);
+    }
+
+    const bus = BaseDi.create().resolve<BasePubSub>("BasePubSub");
+    if (!bus) throw new Error("BasePubSub is not registered.");
+
+    bus.pub("/base/init", { context: new BaseInitContext() });
+
+    this.go();
   }
 
   addModule<T extends BaseModule>(Module: new () => T) {
@@ -90,6 +97,10 @@ export default class Base {
   }
 
   async go() {
-    await this._requestHandler.go();
+    const requestHandler =
+      BaseDi.create().resolve<BaseRequestHandler>("BaseRequestHandler");
+    if (!requestHandler)
+      throw new Error("BaseRequestHandler is not registered.");
+    await requestHandler.go();
   }
 }

@@ -7,6 +7,34 @@ export default class BaseDi {
     return new this();
   }
 
+  static async autoload(root: string, ignore: string[] = []): Promise<void> {
+    const fs = await import("fs/promises");
+    const path = await import("path");
+    const files = await fs.readdir(root, { withFileTypes: true });
+    for (const file of files) {
+      const filePath = path.join(root, file.name);
+      if (file.isDirectory()) {
+        await this.autoload(filePath, ignore);
+      } else if (file.isFile() && file.name.endsWith(".js")) {
+        if (
+          ignore.some((i) =>
+            i.endsWith("*")
+              ? file.name.startsWith(i.slice(0, -1))
+              : file.name === i,
+          )
+        ) {
+          continue;
+        }
+
+        try {
+          await import(filePath);
+        } catch (error) {
+          console.warn(`Failed to import ${filePath}:`, error);
+        }
+      }
+    }
+  }
+
   resolve<T>(key: string | Constructor<T>, ...args: unknown[]): T | null {
     if (BaseDi.isConstructor(key)) {
       key = key.name;
