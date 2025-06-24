@@ -7,6 +7,7 @@ import { di } from "../../../decorators/di";
 import { BaseHttpContext } from "../../../core/requestHandler/httpContext";
 import { TemplateData } from "../../../modules/templates/engine";
 import { baseModule } from "../../../decorators/baseModule";
+import { BasePubSub } from "../../../core/basePubSub";
 
 @baseModule
 export class TestModuleB extends BaseModule {
@@ -14,8 +15,11 @@ export class TestModuleB extends BaseModule {
   private accessor _templates!: BaseTemplates;
 
   @init()
-  // eslint-disable-next-line @typescript-eslint/no-empty-function
-  async init() {}
+  async init() {
+    // Test publishing an event during initialization
+    const pubsub = BasePubSub.create();
+    await pubsub.pub("/test/module/event", { source: "TestModuleB", message: "Module initialized" });
+  }
 
   @request("/get/bing/bang/:id")
   async handleTestAction(args?: BaseActionArgs) {
@@ -23,6 +27,15 @@ export class TestModuleB extends BaseModule {
     const ctx = args?.context as unknown as BaseHttpContext;
 
     ctx.data.email = ctx.req.url.searchParams.get("email");
+
+    // Test publishing a user created event with URL parameter
+    const pubsub = BasePubSub.create();
+    const userId = ctx.req.url.pathname.split('/').pop();
+    await pubsub.pub(`/user/${userId}/created`, { 
+      userId, 
+      email: ctx.data.email,
+      source: "TestModuleB" 
+    });
 
     ctx.res.html(this._templates.render("index", ctx.data as TemplateData));
   }
