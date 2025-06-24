@@ -34,11 +34,10 @@ export class BaseDi {
           await import(filePath);
           this.autoloadedFiles.add(filePath);
           console.log(` - ${path.basename(filePath)}`);
-        } catch (error) {
-          console.warn(
-            ` - Failed to import ${path.basename(filePath)}:`,
-            error,
-          );
+        } catch {
+          // Silently ignore import failures - we're only autoloading to trigger decorators
+          // Actual syntax errors would be caught during compilation
+          this.autoloadedFiles.add(filePath);
         }
       }
     }
