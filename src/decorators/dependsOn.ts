@@ -5,40 +5,44 @@ import { BaseModule } from "../core/baseModule";
 interface Dependency { module?: string; action?: string }
 type Dependencies = Dependency[];
 
-function validateDependencies(deps: string[]): Dependencies {
-  const dependencyRegex = /^([^/]*)(\/.*)?$/;
-  const parsedDeps = [];
+// Type-safe constructor reference
+type ModuleConstructor<T extends BaseModule = BaseModule> = new (...args: any[]) => T;
 
-  for (const dep of deps) {
-    const match = dep.match(dependencyRegex);
-    if (!match) {
-      throw new Error(`Invalid dependency: ${dep}`);
-    }
-
-    const [, module, action] = match;
-    if (!action) {
-      throw new Error(`Action name is required in dependency: ${dep}`);
-    }
-
-    const newDep = {
-      module: module || undefined,
-      action: action ? action.slice(1) : undefined,
-    };
-
-    parsedDeps.push(newDep);
-  }
-
-  return parsedDeps;
-}
-
-export function dependsOn(dependencies: string | string[]) {
+// Type-safe overloads only
+export function dependsOn<T extends BaseModule>(
+  actionName: keyof T,
+  moduleClass: ModuleConstructor<T>
+): any;
+export function dependsOn(actionName: string): any; // Same-module dependency (no slash required)
+export function dependsOn<T extends BaseModule>(
+  actionName: keyof T | string,
+  moduleClass?: ModuleConstructor<T>
+) {
   return (
     target: any,
     context: ClassMethodDecoratorContext | ClassDecoratorContext,
   ) => {
-    const deps: Dependencies = validateDependencies(
-      Array.isArray(dependencies) ? dependencies : [dependencies],
-    );
+    let deps: Dependencies;
+
+    if (moduleClass && typeof actionName === "string") {
+      // Type-safe cross-module dependency: @dependsOn("init", TestModuleB)
+      deps = [{
+        module: moduleClass.name,
+        action: actionName
+      }];
+    } else if (typeof actionName === "string" && !moduleClass) {
+      // Same-module dependency: @dependsOn("actionName") - clean and simple!
+      deps = [{
+        module: undefined,
+        action: actionName
+      }];
+    } else {
+      throw new Error(
+        `Invalid @dependsOn usage. Use either:\n` +
+        `- @dependsOn("actionName", ModuleClass) for cross-module dependencies\n` +
+        `- @dependsOn("actionName") for same-module dependencies`
+      );
+    }
 
     context.addInitializer(function () {
       if (context.kind !== "method") return;

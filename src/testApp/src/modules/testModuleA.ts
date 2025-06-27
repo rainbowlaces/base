@@ -9,6 +9,7 @@ import { global } from "../../../decorators/actions/global";
 import { baseModule } from "../../../decorators/baseModule";
 import { sub } from "../../../decorators/sub";
 import { BasePubSubArgs } from "../../../core/basePubSub";
+import { TestModuleB } from "./testModuleB";
 
 @baseModule
 export class TestModuleA extends BaseModule {
@@ -16,7 +17,7 @@ export class TestModuleA extends BaseModule {
   private accessor _templates!: BaseTemplates;
 
   @init()
-  @dependsOn("TestModuleB/init")
+  @dependsOn("init", TestModuleB)
   // eslint-disable-next-line @typescript-eslint/no-empty-function
   async init() {}
 
@@ -36,5 +37,19 @@ export class TestModuleA extends BaseModule {
   @sub("/user/*/created")
   async handleUserCreated(args: BasePubSubArgs) {
     this.logger.info("TestModuleA: User created event received:", [JSON.stringify(args)]);
+  }
+
+  // Test method to verify type safety - using valid method name
+  @init()
+  @dependsOn("init", TestModuleB) // This is valid and type-safe
+  async testTypeSafety() {
+    // This demonstrates type-safe cross-module dependencies
+  }
+
+  // Test same-module dependency
+  @init()
+  @dependsOn("init") // Same-module dependency - clean and simple!
+  async anotherInitMethod() {
+    this.logger.info("Another init method called");
   }
 }
