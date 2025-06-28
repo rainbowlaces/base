@@ -6,6 +6,7 @@ npm-debug.log*
 _old
 .clinic
 __pycache__
+_test.dist
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
