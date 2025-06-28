@@ -2,9 +2,8 @@ import { Base } from "./core/base";
 import { BaseModule } from "./core/baseModule";
 import {
   html,
-  LoadedElements,
-  LoadedTags,
-  TemplateData,
+  type LoadedElements,
+  type LoadedTags,
 } from "./modules/templates/engine";
 
 import * as asyncUtils from "./utils/async";
@@ -17,9 +16,10 @@ import { BaseStatic } from "./modules/static";
 
 import { LogLevel } from "./core/logger/types";
 import {
-  BaseActionArgs,
-  BaseHttpActionArgs,
-  BaseAction,
+  type BaseActionArgs,
+  type BaseHttpActionArgs,
+  type BaseAction,
+  type ActionOptions,
 } from "./core/baseAction";
 import { BaseContext } from "./core/baseContext";
 import { BaseRequest } from "./core/requestHandler/baseRequest";
@@ -27,24 +27,24 @@ import { BaseResponse } from "./core/requestHandler/baseResponse";
 import { BaseHttpContext } from "./core/requestHandler/httpContext";
 
 import { request } from "./decorators/actions/request";
-import { global } from "./decorators/actions/global";
 import { init } from "./decorators/actions/init";
 
 import { config } from "./decorators/config";
 import { dependsOn } from "./decorators/dependsOn";
 import { di } from "./decorators/di";
+import { register } from "./decorators/register";
 import { sub } from "./decorators/sub";
 import { baseModule } from "./decorators/baseModule";
 import { BaseDi } from "./core/baseDi";
-import { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/types";
+import { type Constructor, type Scalar, type Instance, type BaseDiWrapper } from "./core/types";
 
 // Add missing framework classes
 import { BaseError } from "./core/baseErrors";
-import { BasePubSub, BasePubSubArgs, Subscriber } from "./core/basePubSub";
+import { BasePubSub, type BasePubSubArgs, type Subscriber } from "./core/basePubSub";
 import { BaseLogger } from "./core/logger";
 import { LogMessage } from "./core/logger/logMessage";
 import { BaseConfig } from "./core/config";
-import { ConfigObject } from "./core/config/types";
+import { type ConfigObject } from "./core/config/types";
 import { BaseRequestHandler } from "./core/requestHandler";
 import { BaseRouter } from "./core/requestHandler/baseRouter";
 import { BaseInitContext } from "./core/initContext";
@@ -54,10 +54,10 @@ export {
   config,
   request,
   di,
+  register,
   dependsOn,
   init,
   sub,
-  global,
   baseModule,
 };
 
@@ -93,10 +93,10 @@ export { BaseModule, html };
 export type {
   LoadedElements,
   LoadedTags,
-  TemplateData,
   BaseActionArgs,
   BaseHttpActionArgs,
   BaseAction,
+  ActionOptions,
   BasePubSubArgs,
   Subscriber,
   ConfigObject,

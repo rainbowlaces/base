@@ -6,6 +6,7 @@ export class EachTag extends Tag {
   templateFunction: (item: unknown) => string = () => "";
 
   init() {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     [this.iterable, this.templateFunction] = this.args;
     this.selfClosing = true;
   }

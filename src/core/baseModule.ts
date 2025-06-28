@@ -1,11 +1,10 @@
 import { BaseLogger } from "./logger";
 import { camelToLowerUnderscore } from "../utils/string";
 import { BaseConfig } from "./config";
-import { BasePubSub } from "./basePubSub";
+import { type BasePubSub } from "./basePubSub";
 import { di } from "../decorators/di";
-import { BaseAction, BaseActionArgs } from "./baseAction";
-import { BaseDi } from "./baseDi";
-import { BaseContext } from "./baseContext";
+import { type BaseAction, type BaseActionArgs } from "./baseAction";
+import { type BaseContext } from "./baseContext";
 
 export abstract class BaseModule {
   private _namespace: string;
@@ -41,17 +40,20 @@ export abstract class BaseModule {
   }
 
   get dependsOn() {
+     
     return (this.constructor as typeof BaseModule).dependsOn;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private isAction(action: any): action is BaseAction {
     if (typeof action !== "function") return false;
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!(action as BaseAction).action) return false;
     return true;
   }
 
   getAction(name: string): BaseAction | undefined {
+     
     const action = this[name as keyof this];
     return this.isAction(action) ? action : undefined;
   }
@@ -79,20 +81,8 @@ export abstract class BaseModule {
       return;
     }
 
-    const globalActions =
-      BaseDi.create().resolve<Set<string>>(`${target.type}/globalActions`) ||
-      new Set();
-    let dependencies = [];
-    if (!target.isGlobal) {
-      dependencies = [
-        ...(target.dependsOn || []),
-        ...Array.from(globalActions),
-      ];
-    } else {
-      dependencies = [
-        ...(target.dependsOn || []).filter((dep) => globalActions.has(dep)),
-      ];
-    }
+    // For now, use only explicit dependencies (no global action injection)
+    const dependencies = target.dependsOn ?? [];
 
     this.logger.debug(`Deps for action: ${dependencies.join(", ")}`, [
       ctx.id,

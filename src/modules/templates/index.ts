@@ -1,6 +1,6 @@
 import fsPath from "path";
 import { BaseModule } from "../../core/baseModule";
-import { Template, TemplateData } from "./engine";
+import { Template } from "./engine";
 import fs from "node:fs/promises";
 
 import { di } from "../../decorators/di";
@@ -32,6 +32,7 @@ export class BaseTemplates extends BaseModule {
       this._template = new Template(this.templateRoot);
       await this._template.init();
     } catch (e) {
+       
       const err = e as NodeError;
       if (err.code === "ENOENT") {
         this.logger.warn(
@@ -47,7 +48,8 @@ export class BaseTemplates extends BaseModule {
     }
   }
 
-  public render(template: string, data?: TemplateData): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Templates need to accept any data structure
+  public render(template: string, data?: any): string {
     if (!this._template)
       throw new Error(
         `Template engine not initialized. Does template path exist? ${this.templateRoot}`,

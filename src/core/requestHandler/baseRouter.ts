@@ -1,4 +1,5 @@
-import { BaseConfig } from "../config";
+import { type BaseConfig } from "../config";
+import { register } from "../../decorators/register";
 import { di } from "../../decorators/di";
 
 type UrlParams = Record<string, string>;
@@ -6,12 +7,18 @@ type RouteHandler = (params: UrlParams) => string;
 type RouteTarget = string | RouteHandler;
 type Routes = Record<string, RouteTarget>;
 
+@register()
 export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
 
   @di<BaseConfig>("BaseConfig", "base_router")
   private accessor _config!: BaseConfig;
+
+  constructor() {
+    this.routes = this._config.get<Routes>("routes", {});
+    this.defaultRoute = this._config.get("defaultRoute", "");
+  }
 
   private cleanPath(path: string): string {
     return path
@@ -20,16 +27,11 @@ export class BaseRouter {
       .join("/");
   }
 
-  constructor() {
-    this.routes = this._config.get<Routes>("routes", {});
-    this.defaultRoute = this._config.get<string>("defaultRoute", "");
-  }
-
   private static createURLPattern(route: string): URLPattern {
     try {
       return new URLPattern({ pathname: route });
     } catch (err) {
-      throw new Error(`Invalid route pattern: ${route}. ${err}`);
+      throw new Error(`Invalid route pattern: ${route}. ${String(err)}`);
     }
   }
 
@@ -49,7 +51,7 @@ export class BaseRouter {
     if (!match) return null;
 
     const params: UrlParams = Object.fromEntries(
-      Object.entries(match.pathname.groups || {}).filter(([_, value]) => value !== undefined)
+      Object.entries(match.pathname.groups).filter(([_, value]) => value !== undefined)
     ) as UrlParams;
 
     let target: RouteTarget = this.routes[route];

@@ -1,11 +1,11 @@
-import { html } from "../../../../modules/templates/engine";
+import { html } from "../../../../src/index";
 
-export default (d: any, t: any, e: any) =>
+export default (d: any, _t: any, e: any) =>
   html` ${e.page({
     context: d.context,
     title: d.title,
     page: html`
-      <form action="${d.action || ""}" method="${d.method || "post"}">
+      <form action="${d.action ?? ""}" method="${d.method ?? "post"}">
         ${d.fields}
         <div>
           <button type="submit">${d.button}</button>

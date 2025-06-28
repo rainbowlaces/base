@@ -1,10 +1,12 @@
 import { BaseContext } from "../baseContext";
 import { BaseRequest } from "./baseRequest";
 import { BaseResponse } from "./baseResponse";
-import * as http from "http";
+import type * as http from "http";
+import { register } from "../../decorators/register";
 
 type HttpContextData = Record<string, unknown>;
 
+@register()
 export class BaseHttpContext extends BaseContext<HttpContextData> {
   private _req: BaseRequest;
   private _res: BaseResponse;
@@ -28,6 +30,21 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
     this._res.on("error", () => {
       this.error();
     });
+
+    // Trigger RFA coordination flow
+    void this._coordinateAndRun().catch((error: unknown) => {
+      console.error("HTTP context coordination failed:", error);
+      // For HTTP contexts, respond with 404 or 501
+      if (!this._res.headersSent) {
+        this._res.statusCode(404);
+        void this._res.send("Not Found");
+      }
+      this.error();
+    });
+  }
+
+  protected getContextType(): string {
+    return "http";
   }
 
   get topic(): string {

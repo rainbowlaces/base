@@ -1,8 +1,10 @@
-import { LogContext, LogLevel } from "./types";
+import { type LogContext, LogLevel } from "./types";
+import { register } from "../../decorators/register";
 
 /**
  * Represents a log message.
  */
+@register()
 export class LogMessage {
   /**
    * The default log level.

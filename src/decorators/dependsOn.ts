@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BaseModule } from "../core/baseModule";
+import { type BaseModule } from "../core/baseModule";
 
 interface Dependency { module?: string; action?: string }
 type Dependencies = Dependency[];
@@ -8,14 +8,19 @@ type Dependencies = Dependency[];
 // Type-safe constructor reference
 type ModuleConstructor<T extends BaseModule = BaseModule> = new (...args: any[]) => T;
 
-// Type-safe overloads only
+// Extract method names from a class type (excludes properties, getters, etc.)
+type MethodNames<T> = {
+  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
+}[keyof T];
+
+// Type-safe overloads
 export function dependsOn<T extends BaseModule>(
-  actionName: keyof T,
+  actionName: MethodNames<T>,
   moduleClass: ModuleConstructor<T>
 ): any;
-export function dependsOn(actionName: string): any; // Same-module dependency (no slash required)
+export function dependsOn(actionName: string): any; // Same-module dependency
 export function dependsOn<T extends BaseModule>(
-  actionName: keyof T | string,
+  actionName: MethodNames<T> | string,
   moduleClass?: ModuleConstructor<T>
 ) {
   return (
@@ -26,6 +31,7 @@ export function dependsOn<T extends BaseModule>(
 
     if (moduleClass && typeof actionName === "string") {
       // Type-safe cross-module dependency: @dependsOn("init", TestModuleB)
+      // Now actionName is constrained to be a method name of T
       deps = [{
         module: moduleClass.name,
         action: actionName
@@ -46,11 +52,12 @@ export function dependsOn<T extends BaseModule>(
 
     context.addInitializer(function () {
       if (context.kind !== "method") return;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       target.dependsOn = deps.map((dep) => {
-        if (!dep.module) {
-          dep.module = (this as BaseModule).constructor.name;
-        }
-        return `${dep.module}${dep.action ? "/" + dep.action : ""}`;
+        // For cross-module dependencies, dep.module is already set to the target module name
+        // For same-module dependencies, use the current module name
+        const moduleName = dep.module ?? (this as BaseModule).constructor.name;
+        return `${moduleName}${dep.action ? "/" + dep.action : ""}`;
       });
     });
   };

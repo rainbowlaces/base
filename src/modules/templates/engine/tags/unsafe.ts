@@ -6,7 +6,8 @@ export class UnsafeTag extends Tag {
   value: unknown;
 
   init() {
-    [this.value as unknown] = this.args;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    [this.value] = this.args;
     this.selfClosing = true;
   }
 

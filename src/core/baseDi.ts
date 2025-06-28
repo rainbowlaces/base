@@ -1,4 +1,4 @@
-import { BaseDiWrapper, Constructor, Instance, Scalar } from "./types";
+import { type BaseDiWrapper, type Constructor, type Instance, type Scalar } from "./types";
 
 export class BaseDi {
   private static instances = new Map<string, BaseDiWrapper<unknown>>();
@@ -35,7 +35,7 @@ export class BaseDi {
           this.autoloadedFiles.add(filePath);
           console.log(` - ${path.basename(filePath)}`);
         } catch (err) {
-          console.error(` - FAILED: ${path.basename(filePath)} - ${err}`);
+          console.error(` - FAILED: ${path.basename(filePath)}`, err);
           this.autoloadedFiles.add(filePath);
         }
       }
@@ -46,19 +46,26 @@ export class BaseDi {
     if (BaseDi.isConstructor(key)) {
       key = key.name;
     }
-    const wrapper = BaseDi.instances.get(key as string) as BaseDiWrapper<T>;
+    const wrapper = BaseDi.instances.get(key as string) as BaseDiWrapper<T> | undefined;
     if (!wrapper) return null;
 
+    // Handle different types of registrations
+    if (wrapper.type === "scalar") {
+      return wrapper.value as T;
+    }
+    
     if (wrapper.singleton) return wrapper.value as T;
+    
     if (wrapper.type === "constructor")
       return new (wrapper.value as Constructor<T>)(...args);
 
-    throw new Error(`Invalid type for key ${key}`);
+    const keyStr = typeof key === "string" ? key : key.name;
+    throw new Error(`Invalid type for key ${keyStr}`);
   }
 
-  static register(
-    value: Constructor<unknown> | Instance<unknown> | Scalar,
-    wrapper: string | BaseDiWrapper<unknown> = {},
+  static register<T>(
+    value: Constructor<T> | Instance<T> | Scalar,
+    wrapper: string | Partial<BaseDiWrapper<T>> = {},
   ): void {
     if (typeof wrapper === "string") {
       wrapper = { key: wrapper };
@@ -67,7 +74,7 @@ export class BaseDi {
     if (BaseDi.isConstructor(value)) {
       wrapper = {
         singleton: false,
-        key: (value as Constructor<unknown>).name,
+        key: (value as Constructor<T>).name,
         ...wrapper,
         type: "constructor",
         value,
@@ -91,7 +98,7 @@ export class BaseDi {
     } else {
       throw new Error("Invalid value type");
     }
-    BaseDi.instances.set(wrapper.key as string, wrapper);
+    BaseDi.instances.set(wrapper.key as string, wrapper as BaseDiWrapper<unknown>);
   }
 
   static matchesIgnorePattern(filename: string, patterns: string[]): boolean {

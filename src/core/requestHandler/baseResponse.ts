@@ -1,9 +1,10 @@
-import * as http from "http";
+import type * as http from "http";
 import { BaseError } from "../baseErrors";
-import { Readable } from "stream";
+import { type Readable } from "stream";
+import { register } from "../../decorators/register";
 import { di } from "../../decorators/di";
-import { BaseConfig } from "../config";
-import { BaseLogger } from "../logger";
+import { type BaseConfig } from "../config";
+import { type BaseLogger } from "../logger";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
@@ -17,6 +18,7 @@ interface CookieOptions {
   sameSite?: boolean | "lax" | "strict" | "none";
 }
 
+@register()
 export class BaseResponse extends EventEmitter {
   private _res: http.ServerResponse;
 
@@ -74,7 +76,7 @@ export class BaseResponse extends EventEmitter {
   statusCode(code: number): void;
   statusCode(code?: number): void | number {
     if (code === undefined) return this._statusCode;
-    this._statusCode = code ?? this._statusCode;
+    this._statusCode = code;
   }
 
   statusMessage(): string;
@@ -99,10 +101,10 @@ export class BaseResponse extends EventEmitter {
   }
 
   cookie(name: string, value: string, options: CookieOptions = {}) {
-    const secret = this._config.get<string>("cookieSecret", "");
+    const secret = this._config.get("cookieSecret", "");
     let finalValue = value;
 
-    if (secret) {
+    if (secret.length > 0) {
       finalValue = "s:" + signature.sign(finalValue, secret);
     }
 
@@ -173,7 +175,7 @@ export class BaseResponse extends EventEmitter {
     this.header("content-type", mimeType);
     this.ensureHeadersSent();
     if (data instanceof Buffer || typeof data === "string")
-      return this.end(data);
+      { this.end(data); return; }
     
     // At this point, data must be a Readable stream
     const stream = data as Readable;

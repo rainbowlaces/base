@@ -1,24 +1,42 @@
-import { BaseModule } from "../../core/baseModule";
-import { BasePubSub, BasePubSubArgs } from "../../core/basePubSub";
-import { BaseAction, BaseActionArgs } from "../../core/baseAction";
+import { type BaseModule } from "../../core/baseModule";
+import { BasePubSub, type BasePubSubArgs } from "../../core/basePubSub";
+import { type BaseAction, type BaseActionArgs, type ActionOptions } from "../../core/baseAction";
 
-export function init() {
+export function init(options: Omit<ActionOptions, "topic"> = {}) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return (t: (...args: any[]) => any, context: ClassMethodDecoratorContext): void => {
-    if (context.kind !== "method") return;
-
     const target = t as BaseAction;
     target.action = true;
     target.type = "init";
-    target.isGlobal = false;
+    target.phase = options.phase ?? 0;
 
     context.addInitializer(function () {
+      const module = this as BaseModule;
+      const moduleName = module.constructor.name;
+      const actionName = target.name;
+
+      // RFA subscription - respond to Request for Action
       BasePubSub.sub(
-        `/base/init`,
-        async function (this: BaseModule, args: BasePubSubArgs) {
+        `/context/init/:contextId/rfa`,
+        async function (args: BasePubSubArgs) {
+          const rfaPayload = (args as unknown) as { contextId: string; contextType: string };
+          // Respond with Intent to Handle (ITH)
+          const ithTopic = `/context/${rfaPayload.contextId}/ith`;
+          void BasePubSub.create().pub(ithTopic, {
+            module: moduleName,
+            action: actionName,
+            phase: target.phase
+          });
+        }
+      );
+
+      // Execution subscription - handle the actual action execution
+      BasePubSub.sub(
+        `/context/execute/${moduleName}/${actionName}`,
+        async function (args: BasePubSubArgs) {
           if (!args.context) return;
-          await this.executeAction(target.name, args as BaseActionArgs);
-        }.bind(this as BaseModule),
+          await module.executeAction(target.name, args as BaseActionArgs);
+        }
       );
     });
   };

@@ -1,27 +1,25 @@
 import { readdir } from "node:fs/promises";
 import { TemplateResult } from "./render";
-import { Tag } from "./tag";
+import { type Tag } from "./tag";
 import { tags } from "./tags";
 import path from "path";
 
-type Scalar = string | number | boolean | null;
-
-export interface TemplateData {
-  [key: string]: Scalar | Scalar[] | TemplateData | TemplateData[];
-}
+// Removed restrictive TemplateData type - templates now accept any data
 
 export type LoadedTags = Record<string, (...args: unknown[]) => Tag>;
 export type LoadedElements = Record<string, ElementFunction>;
 
 type LoadedTemplates = Record<string, TemplateFunction>;
 type TemplateFunction = (
-  data: TemplateData,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Templates need to accept any data structure
+  data: any,
   tags: LoadedTags,
   elements: LoadedElements,
 ) => TemplateResult;
 
 type ElementFunction = (
-  data: TemplateData,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Templates need to accept any data structure
+  data: any,
   tags?: LoadedTags,
   elements?: LoadedElements,
 ) => TemplateResult;
@@ -46,6 +44,7 @@ class Template {
     await this.loadTags();
   }
 
+  // eslint-disable-next-line @typescript-eslint/naming-convention
   public registerTag(TagClass: typeof Tag): void {
     this._tags[TagClass.tagName] = (...args: unknown[]) => {
       const tag = new TagClass(...args);
@@ -57,7 +56,8 @@ class Template {
 
   private async loadTags() {
     // register tags
-    tags.forEach((TagClass: typeof Tag) => this.registerTag(TagClass));
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    tags.forEach((TagClass: typeof Tag) => { this.registerTag(TagClass); });
   }
 
   private async loadElements() {
@@ -77,7 +77,8 @@ class Template {
       if (path.extname(file) === ".js") {
         const elementName = path.basename(file).replace(".js", "");
         const elem = await this.loadElement(elementName);
-        this._elements[elementName] = (data: TemplateData): TemplateResult => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Templates need to accept any data structure
+        this._elements[elementName] = (data: any): TemplateResult => {
           return elem(data, this._tags, this._elements);
         };
       }
@@ -86,6 +87,7 @@ class Template {
 
   private async loadElement(element: string): Promise<ElementFunction> {
     const p = path.resolve(path.join(this.root, "elements", `${element}.js`));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return import(p).then((element) => element.default as ElementFunction);
   }
 
@@ -104,6 +106,7 @@ class Template {
 
   private async loadTemplate(template: string): Promise<TemplateFunction> {
     const p = path.resolve(path.join(this.root, `${template}.js`));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     return import(p).then((template) => template.default as TemplateFunction);
   }
 
@@ -111,7 +114,8 @@ class Template {
     return this._elements[element];
   }
 
-  public render(templateName: string, data: TemplateData): string {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Templates need to accept any data structure
+  public render(templateName: string, data: any): string {
     const result = this._templates[templateName](
       data,
       this._tags,

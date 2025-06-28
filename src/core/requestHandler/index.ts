@@ -1,13 +1,15 @@
 import http from "http";
-import { BaseLogger } from "../logger";
+import { type BaseLogger } from "../logger";
+import { register } from "../../decorators/register";
 import { di } from "../../decorators/di";
-import { BaseConfig } from "../config";
-import { BasePubSub } from "../basePubSub";
+import { type BaseConfig } from "../config";
+import { type BasePubSub } from "../basePubSub";
 import { delay } from "../../utils/async";
-import { BaseError } from "../baseErrors";
-import { BaseRouter } from "./baseRouter";
+import { type BaseError } from "../baseErrors";
+import { type BaseRouter } from "./baseRouter";
 import { BaseHttpContext } from "./httpContext";
 
+@register()
 export class BaseRequestHandler {
   private _server!: http.Server;
 
@@ -20,15 +22,15 @@ export class BaseRequestHandler {
   @di<BasePubSub>("BasePubSub")
   private accessor _bus!: BasePubSub;
 
-  private accessor _router: BaseRouter;
+  @di<BaseRouter>("BaseRouter")
+  private accessor _router!: BaseRouter;
 
   constructor() {
-    this._server = http.createServer(this.handleRequest.bind(this));
-    this._router = new BaseRouter();
+    this._server = http.createServer((req, res) => void this.handleRequest(req, res));
   }
 
   async go() {
-    const port = this._config.get("port", process.env.PORT || 3000);
+    const port = this._config.get("port", process.env.PORT ?? 3000);
     this._server.listen(port, () => {
       this._logger.info(`Server listening on port ${port}`);
     });
@@ -45,7 +47,7 @@ export class BaseRequestHandler {
 
     this._logger.info(`New request: ${ctx.topic}`, [ctx.id]);
 
-    this._bus.pub(ctx.topic, { context: ctx });
+    void this._bus.pub(ctx.topic, { context: ctx });
 
     await delay(this._config.get<number>("requestTimeout", 5000));
 
@@ -53,14 +55,14 @@ export class BaseRequestHandler {
 
     this._logger.warn("Request timed out.", [ctx.id]);
     ctx.res.statusCode(408);
-    ctx.res.send("Request timed out.");
+    void ctx.res.send("Request timed out.");
   }
 
   private async handleRequest(
     req: http.IncomingMessage,
     res: http.ServerResponse,
   ) {
-    const _url = new URL(req.url || "", `http://example.com`);
+    const _url = new URL(req.url ?? "", `http://example.com`);
     const rw = this._router.handleRoute(_url.pathname);
 
     if (rw.rewrite) {

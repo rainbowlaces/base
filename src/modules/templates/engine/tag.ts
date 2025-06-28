@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { nanoid } from "nanoid";
-import { Template, TemplateResult } from ".";
+import { type Template, TemplateResult } from ".";
 import sanitizeHtml from "sanitize-html";
-import { TemplateValue } from "./render";
+import { type TemplateValue } from "./render";
 
 export class Tag {
   closed: boolean;
@@ -92,7 +92,10 @@ export class Tag {
     }
 
     // Primitive or string: sanitize only if not from literal
-    const raw = String(v ?? "");
+    const raw = v == null ? "" : 
+      typeof v === "string" || typeof v === "number" || typeof v === "boolean" ? 
+        String(v) : 
+        "[object Object]";
     const content = tv.fromLiteral ? raw : this.sanitize(raw);
     this.inside(content);
     return null;

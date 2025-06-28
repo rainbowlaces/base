@@ -1,6 +1,6 @@
-import { html } from "../../../../modules/templates/engine";
+import { html } from "../../../../src/index";
 
-export default (d: any, t: any, e: any) => {
+export default (d: any, _t: any, e: any) => {
   return html` <!doctype html>
     <html lang="en">
       ${e.head({ title: d.title })}

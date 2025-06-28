@@ -1,21 +1,22 @@
 import { EventEmitter } from "events";
 import {
-  LogContext,
-  LogFormatter,
+  type LogContext,
+  type LogFormatter,
   LogLevel,
-  LoggerFunction,
-  SerializedLogMessage,
+  type LoggerFunction,
+  type SerializedLogMessage,
 } from "./types";
 import { LogMessage } from "./logMessage";
 import { LogMessageRedactorDefault,
-  LogMessageRedactor,
-  LogMessageRedactorConfig,
+  type LogMessageRedactor,
+  type LogMessageRedactorConfig,
 } from "./logMessageRedactor";
 import { DefaultLogMessageSerializer,
-  LogMessageSerializer,
-  LogMessageSerializerConfig,
+  type LogMessageSerializer,
+  type LogMessageSerializerConfig,
 } from "./logMessageSerializer";
 import { delay } from "../../utils/async";
+import { register } from "../../decorators/register";
 
 type LoggerMap = Record<string, LoggerFunction>;
 
@@ -33,6 +34,7 @@ type LoggerConfig = {
 /**
  * Represents a logger that can be used to log messages with different log levels.
  */
+@register()
 export class BaseLogger {
   private static _logEmitter: EventEmitter = new EventEmitter();
   private static _inFlightLogs: number;
@@ -40,13 +42,16 @@ export class BaseLogger {
 
   private static formatter: LogFormatter = (message: SerializedLogMessage) => {
     const seen = new WeakSet();
-    return JSON.stringify(message, (key, value) => {
+    return JSON.stringify(message, (_key, value) => {
       if (typeof value === "object" && value !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         if (seen.has(value)) {
           return "[Circular]";
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         seen.add(value);
       }
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       return value;
     });
   };
@@ -63,11 +68,18 @@ export class BaseLogger {
    * Map of log levels to corresponding console functions.
    */
   private static _levels: LoggerMap = {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     [LogLevel[LogLevel.FATAL]]: console.error,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     [LogLevel[LogLevel.ERROR]]: console.error,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     [LogLevel[LogLevel.WARNING]]: console.warn,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     [LogLevel[LogLevel.INFO]]: console.log,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     [LogLevel[LogLevel.DEBUG]]: console.debug,
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    [LogLevel[LogLevel.TRACE]]: console.debug,
   };
 
   /**
@@ -111,7 +123,7 @@ export class BaseLogger {
   }
 
   private static handleInternalError(error: Error, context: LogContext = {}) {
-    BaseLogger._levels["ERROR"](
+    BaseLogger._levels.ERROR(
       BaseLogger.formatter({
         timestamp: new Date().toISOString(),
         level: "ERROR",
@@ -241,9 +253,9 @@ export class BaseLogger {
     const tags: string[] = [...this._baseTags, ...messageTags];
 
     if (level === LogLevel.FATAL) {
-      return BaseLogger.outputLogMessage(
+      BaseLogger.outputLogMessage(
         LogMessage.create(message, this._namespace, tags, level, context),
-      );
+      ); return;
     }
 
     if (BaseLogger._config.async) await delay();
@@ -262,10 +274,10 @@ export class BaseLogger {
       BaseLogger._logLimitOverflow ||
       BaseLogger._inFlightLogs > (BaseLogger._config.maxInFlightLogs ?? 1000)
     ) {
-      return BaseLogger.handleInternalError(
+      BaseLogger.handleInternalError(
         new Error("Log queue full. Message dropped."),
         { message, tags, level: LogLevel[level], context },
-      );
+      ); return;
     }
 
     const logMessage = LogMessage.create(
@@ -273,7 +285,7 @@ export class BaseLogger {
       this._namespace,
       tags,
       level,
-      context as LogContext,
+      context,
     );
 
     let serializedMessage;
@@ -283,12 +295,12 @@ export class BaseLogger {
         serializedMessage = BaseLogger.redactor.redact(serializedMessage);
       }
     } catch (error) {
-      return BaseLogger.handleInternalError(error as Error, {
+      BaseLogger.handleInternalError(error as Error, {
         message,
         tags,
         level: LogLevel[level],
         context,
-      });
+      }); return;
     }
 
     if (BaseLogger._config.async) {

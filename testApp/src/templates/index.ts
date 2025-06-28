@@ -1,4 +1,4 @@
-import { html } from "../../../modules/templates/engine";
+import { html } from "../../../src/index";
 
 export default (d: any, t: any, e: any) => html`
   <h1>Template Engine Test Examples</h1>

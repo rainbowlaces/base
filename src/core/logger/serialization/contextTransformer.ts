@@ -1,8 +1,9 @@
-import { TypeSerializer, LogContext } from "../types";
+import { type TypeSerializer, type LogContext } from "../types";
 import { ErrorSerializer } from "./errorSerializer";
 import { ScalarSerializer } from "./scalarSerializer";
-import { TransformFunction, recursiveMap } from "../../../utils/recursion";
+import { type TransformFunction, recursiveMap } from "../../../utils/recursion";
 import { ConstructorSerializer } from "./constructorSerializer";
+import { register } from "../../../decorators/register";
 
 interface ContextTransformerOptions {
   maxItems?: number;
@@ -10,8 +11,9 @@ interface ContextTransformerOptions {
   maxLength?: number;
 }
 
+@register()
 export class ContextTransformer {
-  private serializers: TypeSerializer<unknown>[] = [];
+  private serializers: TypeSerializer[] = [];
 
   private maxItems = 100;
   private maxDepth = 10;

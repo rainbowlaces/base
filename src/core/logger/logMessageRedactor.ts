@@ -1,9 +1,10 @@
 import {
-  GetTransformerFunction,
-  TransformFunction,
+  type GetTransformerFunction,
+  type TransformFunction,
   recursiveMap,
 } from "../../utils/recursion";
-import { PatternMap, LogContext, SerializedLogMessage } from "./types";
+import { type PatternMap, type LogContext, type SerializedLogMessage } from "./types";
+import { register } from "../../decorators/register";
 
 export interface LogMessageRedactorConfig {
   patterns?: PatternMap;
@@ -17,6 +18,7 @@ export interface LogMessageRedactor {
 /**
  * Class responsible for redacting sensitive information from log messages.
  */
+@register()
 export class LogMessageRedactorDefault implements LogMessageRedactor {
   private patterns: PatternMap = {
     email: /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}/,
@@ -36,16 +38,19 @@ export class LogMessageRedactorDefault implements LogMessageRedactor {
 
   init(config: LogMessageRedactorConfig): void {
     this.patterns = { ...config.patterns, ...this.patterns };
-    Object.keys(this.patterns).forEach(
-      (key) =>
-        (this.patterns[key] = new RegExp(this.patterns[key].source, "gu")),
-    );
+    Object.keys(this.patterns).forEach((key) => {
+      const pattern = this.patterns[key];
+      this.patterns[key] = new RegExp(
+        pattern instanceof RegExp ? pattern.source : pattern,
+        "gu"
+      );
+    });
   }
 
   public redact(serializedMessage: SerializedLogMessage): SerializedLogMessage {
     return {
       ...serializedMessage,
-      message: this.redactValue(serializedMessage.message) as string,
+      message: this.redactValue(serializedMessage.message),
       context: this.redactContext(serializedMessage.context),
     };
   }

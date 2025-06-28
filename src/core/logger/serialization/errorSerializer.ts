@@ -1,5 +1,7 @@
-import { LogError, TypeSerializer, TypeSerializerConfig } from "../types";
+import { type LogError, type TypeSerializer, type TypeSerializerConfig } from "../types";
+import { register } from "../../../decorators/register";
 
+@register()
 export class ErrorSerializer implements TypeSerializer<Error> {
   config: TypeSerializerConfig = {};
 

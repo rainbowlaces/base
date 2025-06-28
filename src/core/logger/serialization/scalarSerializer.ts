@@ -1,5 +1,7 @@
-import { Scalar, TypeSerializer, TypeSerializerConfig } from "../types";
+import { register } from "../../../decorators/register";
+import { type Scalar, type TypeSerializer, type TypeSerializerConfig } from "../types";
 
+@register()
 export class ScalarSerializer implements TypeSerializer<Scalar> {
   private maxLength = 1024;
 

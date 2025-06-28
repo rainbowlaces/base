@@ -2,7 +2,7 @@ import { Tag, EndTag } from "./tag";
 
 export class TemplateValue {
   constructor(
-    readonly value: unknown | Tag | TemplateResult,
+    readonly value: unknown,
     readonly fromLiteral = false,
   ) {}
 

@@ -1,4 +1,5 @@
 import { delay } from "../utils/async";
+import { register } from "../decorators/register";
 
 export interface BasePubSubArgs {
   topic: string;
@@ -23,6 +24,7 @@ interface SubscriptionMatch {
   params?: BasePubSubArgs;
 }
 
+@register()
 export class BasePubSub {
   private static subscriptions: Set<Subscription> = new Set<Subscription>();
   private static _inflightCount = 0;
@@ -41,7 +43,7 @@ export class BasePubSub {
     await Promise.all(
       BasePubSub.filterSubs(topic).map(async (m: SubscriptionMatch) => {
         await delay();
-        const fullArgs = { ...args, ...(m.params || {}), topic };
+        const fullArgs = { ...args, ...(m.params ?? {}), topic };
         m.subscription
           .handler(fullArgs)
           .catch(BasePubSub.handleError.bind(this));
@@ -64,7 +66,7 @@ export class BasePubSub {
 
   static async once(topic: string) {
     return new Promise<void>((resolve) => {
-      this.sub(topic, async () => resolve(), true);
+      this.sub(topic, async () => { resolve(); }, true);
     });
   }
 
@@ -72,7 +74,8 @@ export class BasePubSub {
     try {
       return new URLPattern({ pathname: topic });
     } catch (err) {
-      throw new Error(`Invalid topic pattern: ${topic}. ${err}`);
+       
+      throw new Error(`Invalid topic pattern: ${topic}.`, err as Error);
     }
   }
 
@@ -106,6 +109,7 @@ export class BasePubSub {
         return {
           subscription,
           match: !!match,
+           
           params: match ? (match.pathname.groups as BasePubSubArgs) : undefined,
         };
       })

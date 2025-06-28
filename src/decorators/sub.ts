@@ -1,8 +1,7 @@
-import { BasePubSub, Subscriber } from "../core/basePubSub";
+import { BasePubSub, type Subscriber } from "../core/basePubSub";
 
 export function sub(topic: string) {
   return (target: Subscriber, context: ClassMethodDecoratorContext): void => {
-    if (context.kind !== "method") return;
     context.addInitializer(function () {
       // 'this' here refers to the class instance when the initializer runs
       BasePubSub.sub(topic, target.bind(this));

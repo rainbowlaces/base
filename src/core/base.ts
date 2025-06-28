@@ -3,14 +3,17 @@ import { BaseConfig } from "./config";
 import { getDirname } from "../utils/file";
 import { BaseDi } from "./baseDi";
 import { BasePubSub } from "./basePubSub";
-import { BaseModule } from "./baseModule";
+import { type BaseModule } from "./baseModule";
 import { BaseInitContext } from "./initContext";
 import { BaseRequestHandler } from "./requestHandler";
 import { getRegisteredModules } from "../decorators/baseModule";
 import path from "node:path";
+import { di } from "../decorators/di";
 
 export class Base {
-  private _logger!: BaseLogger;
+
+  @di<BaseLogger>(BaseLogger, "base")
+  private accessor _logger!: BaseLogger;
 
   private _fsRoot: string;
   private _libRoot: string;
@@ -44,13 +47,10 @@ export class Base {
     process.on("unhandledRejection", (reason, promise) => {
       this.logger.fatal("Unhandled Rejection", [], { promise, reason });
     });
-
-    BaseDi.register(BaseLogger);
   }
 
   private async initConfig() {
     await BaseConfig.init(this._fsRoot, process.env.NODE_ENV);
-    BaseDi.register(BaseConfig);
   }
 
   private initRequestHandler() {
@@ -63,9 +63,12 @@ export class Base {
 
   async init() {
     await this.initConfig();
+    
+    this.initLogger();
 
     const config = BaseConfig.getNamespace("base");
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const autoLoad = config.autoload === undefined || config.autoload;
 
     if (autoLoad) {
@@ -74,31 +77,31 @@ export class Base {
       console.log("***");
 
       console.log("Autoloading user modules...");
-      await BaseDi.autoload(this._fsRoot, config.autoloadIgnore || []);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      await BaseDi.autoload(this._fsRoot, config.autoloadIgnore ?? []);
       console.log("***");
     }
 
-    this.initLogger();
     this.initPubSub();
     this.initRequestHandler();
 
     BaseDi.register(this);
 
     const registeredModules = getRegisteredModules();
-    for (const ModuleClass of registeredModules) {
-      this.addModule(ModuleClass);
+    for (const moduleClass of registeredModules) {
+      this.addModule(moduleClass);
     }
 
     const bus = BaseDi.create().resolve<BasePubSub>("BasePubSub");
     if (!bus) throw new Error("BasePubSub is not registered.");
 
-    bus.pub("/base/init", { context: new BaseInitContext() });
+    void bus.pub("/base/init", { context: new BaseInitContext() });
 
-    this.go();
+    void this.go();
   }
 
-  addModule<T extends BaseModule>(Module: new () => T) {
-    const module = new Module();
+  addModule<T extends BaseModule>(moduleConstructor: new () => T) {
+    const module = new moduleConstructor();
     BaseDi.register(module);
   }
 

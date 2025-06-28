@@ -5,6 +5,7 @@ export class IfTag extends Tag {
   condition = false;
 
   init() {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     [this.condition] = this.args;
     this.selfClosing = false; // Make sure this is a block tag
   }

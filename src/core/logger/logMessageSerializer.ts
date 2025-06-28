@@ -1,8 +1,9 @@
 import { truncate } from "../../utils/string";
-import { LogMessage } from "./logMessage";
+import { type LogMessage } from "./logMessage";
 import { ContextTransformer } from "./serialization/contextTransformer";
+import { register } from "../../decorators/register";
 
-import { LogContext, SerializedLogMessage } from "./types";
+import { type LogContext, type SerializedLogMessage } from "./types";
 
 export interface LogMessageSerializerConfig {
   maxMessageLength?: number;
@@ -15,6 +16,7 @@ export interface LogMessageSerializer {
   serialize(logMessage: LogMessage): SerializedLogMessage;
 }
 
+@register()
 export class DefaultLogMessageSerializer
   implements LogMessageSerializer
 {

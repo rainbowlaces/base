@@ -6,9 +6,10 @@ import formidable from "formidable";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
+import { register } from "../../decorators/register";
 import { di } from "../../decorators/di";
-import { BaseLogger } from "../logger";
-import { BaseConfig } from "../config";
+import { type BaseLogger } from "../logger";
+import { type BaseConfig } from "../config";
 import { BaseError } from "../baseErrors";
 
 export interface ParsedForm<T> {
@@ -16,6 +17,7 @@ export interface ParsedForm<T> {
   files: formidable.Files;
 }
 
+@register()
 export class BaseRequest {
   private _req!: http.IncomingMessage;
   private _method: string;
@@ -32,7 +34,7 @@ export class BaseRequest {
   constructor(ctxId: string, req: http.IncomingMessage) {
     this._ctxId = ctxId;
     this._req = req;
-    this._method = (req.method || "").toLowerCase();
+    this._method = (req.method ?? "").toLowerCase();
     if (!http.METHODS.includes(this._method.toUpperCase())) {
       this._logger.error(
         `Invalid HTTP method: ${this._method}`,
@@ -42,7 +44,7 @@ export class BaseRequest {
       throw new BaseError(`Invalid HTTP method: ${this._method}`);
     }
     this._headers = req.headersDistinct;
-    this._url = new URL(req.url || "", `http://${req.headers.host}`);
+    this._url = new URL(req.url ?? "", `http://${req.headers.host}`);
   }
 
   get url(): URL {
@@ -72,18 +74,18 @@ export class BaseRequest {
   }
 
   cookie(name: string): string | undefined {
-    const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") || "");
+    const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") ?? "");
     const raw = cookies[name];
-    if (raw && raw.substring(0, 2) === "s:") {
-      const secret = this._config.get<string>("cookieSecret", "");
-      if (secret) {
+    if (raw?.startsWith("s:")) {
+      const secret = this._config.get("cookieSecret", "");
+      if (secret.length > 0) {
         const unsignedValue = signature.unsign(raw.slice(2), secret);
         if (unsignedValue !== false) {
           return unsignedValue;
         }
       }
     }
-    return undefined;
+    return raw;
   }
 
   allHeaders(): NodeJS.Dict<string[]>;
@@ -101,7 +103,7 @@ export class BaseRequest {
       let totalLength = 0;
       let bodyTooLarge = false;
 
-      this._req.on("data", (chunk) => {
+      this._req.on("data", (chunk: Buffer) => {
         totalLength += chunk.length;
         if (totalLength > this._config.get<number>("maxBodySize", 5e6)) {
           this._req.destroy();
@@ -125,7 +127,7 @@ export class BaseRequest {
           { err },
         );
         reject(
-          new BaseError("Error occurred during body parsing", err as Error),
+          new BaseError("Error occurred during body parsing", err),
         );
       });
     });
@@ -157,7 +159,7 @@ export class BaseRequest {
         "formEncoding",
         "utf-8" as formidable.BufferEncoding,
       ),
-      uploadDir: this._config.get<string>(
+      uploadDir: this._config.get(
         "uploadDir",
         path.resolve(path.join(os.tmpdir(), "uploads")),
       ),
