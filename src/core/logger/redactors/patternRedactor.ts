@@ -1,5 +1,5 @@
 import { BaseDi } from "../../di/baseDi";
-import { LoggerConfig, LogObjectTransformer } from "../types";
+import { type LoggerConfig, type LogObjectTransformer } from "../types";
 
 /**
  * An abstract base class for redactor plugins that operate on simple string patterns.
@@ -10,19 +10,19 @@ export abstract class PatternRedactor implements LogObjectTransformer {
   public abstract readonly priority: number;
   protected abstract readonly patternName: string;
   protected abstract readonly defaultPattern: RegExp;
-  private _pattern: RegExp | undefined;
+  #pattern: RegExp | undefined;
 
   private get pattern(): RegExp {
-    if (!this._pattern) {
+    if (!this.#pattern) {
       const fullLoggerConfig = BaseDi.resolve<LoggerConfig>('Config.BaseLogger');
       const configuredPattern = fullLoggerConfig.patterns?.[this.patternName];
       
-      this._pattern = new RegExp(
+      this.#pattern = new RegExp(
         configuredPattern ?? this.defaultPattern,
         'gui'
       );
     }
-    return this._pattern;
+    return this.#pattern;
   }
 
   public canTransform(value: unknown): value is string {

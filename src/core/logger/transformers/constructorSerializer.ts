@@ -1,6 +1,7 @@
 import { logSerializer } from "../decorators/logSerializer";
-import { LogObjectTransformer } from "../types";
+import { type LogObjectTransformer } from "../types";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Constructor = new (...args: any[]) => any;
 
 /**

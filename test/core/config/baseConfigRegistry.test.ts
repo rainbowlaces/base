@@ -38,8 +38,7 @@ test('BaseConfigRegistry', (t) => {
     // Clean up before each test
     await BaseDi.teardown();
     // Clear the static providers array
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (BaseConfigRegistry as any).providers = [];
+    BaseConfigRegistry.clearProviders();
   });
 
   t.test('BaseConfigProvider abstract class', (t) => {
@@ -92,9 +91,8 @@ test('BaseConfigRegistry', (t) => {
       const provider = new TestProvider('test', 50);
       BaseConfigRegistry.register(provider);
       
-      // Access private static providers array to verify registration
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const providers = (BaseConfigRegistry as any).providers;
+      // Access providers array to verify registration
+      const providers = BaseConfigRegistry.getProviders();
       assert.strictEqual(providers.length, 1);
       assert.strictEqual(providers[0], provider);
     });
@@ -118,8 +116,7 @@ test('BaseConfigRegistry', (t) => {
       BaseConfigRegistry.register(provider1);
       BaseConfigRegistry.register(provider2);
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const providers = (BaseConfigRegistry as any).providers;
+      const providers = BaseConfigRegistry.getProviders();
       assert.strictEqual(providers.length, 2);
       assert.strictEqual(providers[0], provider1);
       assert.strictEqual(providers[1], provider2);
@@ -266,13 +263,12 @@ test('BaseConfigRegistry', (t) => {
     t.test('should register each namespace with DI container', () => {
       // Mock BaseDi.register to capture registrations
       const originalRegister = BaseDi.register.bind(BaseDi);
-      const registrations: Array<{ value: any; options: any }> = [];
+      const registrations: { value: unknown; options: string | Partial<import('../../../src/core/di/types').BaseDiWrapper<unknown>> | undefined }[] = [];
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      BaseDi.register = ((value: any, options?: any) => {
+      BaseDi.register = (value: unknown, options?: string | Partial<import('../../../src/core/di/types').BaseDiWrapper<unknown>>) => {
         registrations.push({ value, options });
-        return originalRegister(value, options);
-      }) as any;
+        originalRegister(value, options);
+      };
       
       class TestProvider extends BaseConfigProvider {
         constructor() {
@@ -295,18 +291,26 @@ test('BaseConfigRegistry', (t) => {
       assert.strictEqual(registrations.length, 2);
       
       // Check Module1 registration
-      const module1Registration = registrations.find(r => r.options?.key === 'Config.Module1');
+      const module1Registration = registrations.find(r => 
+        typeof r.options === 'object' && 'key' in r.options && r.options.key === 'Config.Module1'
+      );
       assert.ok(module1Registration);
       assert.deepStrictEqual(module1Registration.value, { setting1: 'value1' });
-      assert.strictEqual(module1Registration.options.singleton, true);
-      assert.strictEqual(module1Registration.options.type, 'scalar');
+      if (typeof module1Registration.options === 'object') {
+        assert.strictEqual(module1Registration.options.singleton, true);
+        assert.strictEqual(module1Registration.options.type, 'scalar');
+      }
       
       // Check Module2 registration
-      const module2Registration = registrations.find(r => r.options?.key === 'Config.Module2');
+      const module2Registration = registrations.find(r => 
+        typeof r.options === 'object' && 'key' in r.options && r.options.key === 'Config.Module2'
+      );
       assert.ok(module2Registration);
       assert.deepStrictEqual(module2Registration.value, { setting2: 'value2' });
-      assert.strictEqual(module2Registration.options.singleton, true);
-      assert.strictEqual(module2Registration.options.type, 'scalar');
+      if (typeof module2Registration.options === 'object') {
+        assert.strictEqual(module2Registration.options.singleton, true);
+        assert.strictEqual(module2Registration.options.type, 'scalar');
+      }
       
       // Restore original register
       BaseDi.register = originalRegister;

@@ -1,5 +1,5 @@
 import { BaseDi } from "../../di/baseDi";
-import { LoggerConfig, LogObjectTransformer } from "../types";
+import { type LoggerConfig, type LogObjectTransformer } from "../types";
 import { logSerializer } from "../decorators/logSerializer";
 
 export interface ScalarSerializerConfig {

@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-import { type BaseAppConfig, BaseConfigProvider, config, LogLevel } from "../../../src";
+import { type BaseAppConfig, BaseConfigProvider, config, LogLevel } from "../../src";
 
 @config()
 export class AppConfig extends BaseConfigProvider {

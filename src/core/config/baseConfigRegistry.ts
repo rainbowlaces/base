@@ -16,6 +16,14 @@ export class BaseConfigRegistry {
     this.providers.push(provider);
   }
 
+  static clearProviders(): void {
+    this.providers = [];
+  }
+
+  static getProviders(): BaseConfigProvider[] {
+    return [...this.providers];
+  }
+
   public readonly env: string;
   public readonly config: BaseAppConfig = {};
 

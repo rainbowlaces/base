@@ -27,5 +27,5 @@
         "lib": ["ESNext"], 
     }, 
     "include": [ "src/**/*.ts", "test/**/*.ts", "testApp/**/*.ts" ],
-    "exclude": [ "node_modules" ]
+    "exclude": [ "node_modules", "old", "old/**/*", "old/**/*.ts" ]
 }

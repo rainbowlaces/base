@@ -22,7 +22,7 @@ export class Base {
   private libRoot: string;
 
   @di<BaseLogger>(BaseLogger, "base")
-  private accessor logger: BaseLogger;
+  private accessor logger!: BaseLogger;
 
   static start(metaUrl: string) {
     const base = new Base(metaUrl);

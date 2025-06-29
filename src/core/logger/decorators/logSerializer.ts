@@ -1,5 +1,5 @@
 import { registerDi } from "../../di/baseDi";
-import { LogObjectTransformer } from "../types";
+import { type LogObjectTransformer } from "../types";
 
 export function logSerializer() {
   return (target: new () => LogObjectTransformer,  context: ClassDecoratorContext) => {

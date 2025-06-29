@@ -10,7 +10,7 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
 
 // --- Server Build ---
 build({
-  entryPoints: await glob(['./src/**/*.ts', './testApp/**/*.ts'], { ignore: './testApp/src/components/**' }),
+  entryPoints: await glob(['./src/**/*.ts', './testApp/**/*.ts'], { ignore: ['./testApp/src/components/**'] }),
   outdir: 'dist',
   platform: 'node',
   target: 'node24',

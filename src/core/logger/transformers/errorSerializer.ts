@@ -1,5 +1,5 @@
 import { logSerializer } from "../decorators/logSerializer";
-import { LogObjectTransformer } from "../types";
+import { type LogObjectTransformer } from "../types";
 
 /**
  * A serializer plugin for Error objects.
@@ -20,7 +20,7 @@ export class ErrorSerializer implements LogObjectTransformer {
    * Transforms an Error into a serializable object.
    */
   public transform(value: Error): unknown {
-    const error = value as Error;
+    const error = value;
     return {
       message: error.message,
       name: error.name,

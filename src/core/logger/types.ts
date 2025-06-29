@@ -1,6 +1,6 @@
 // Logger types and enums
 
-import { BaseClassConfig } from "../config/types";
+import { type BaseClassConfig } from "../config/types";
 
 export enum LogLevel {
   FATAL = 1,

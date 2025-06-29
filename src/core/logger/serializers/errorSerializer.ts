@@ -13,13 +13,19 @@ export class ErrorSerializer implements LogObjectTransformer {
   }
 
   public transform(error: Error): Record<string, unknown> {
-    return {
-      // Include any enumerable properties first
-      ...error,
-      // Then override with non-enumerable properties
+    const result: Record<string, unknown> = {
       name: error.name,
       message: error.message,
       stack: error.stack
     };
+
+    // Include any enumerable properties
+    for (const key in error) {
+      if (Object.prototype.hasOwnProperty.call(error, key)) {
+        result[key] = (error as unknown as Record<string, unknown>)[key];
+      }
+    }
+
+    return result;
   }
 }

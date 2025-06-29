@@ -10,7 +10,7 @@ export default [
       "_**/**",
       "babel.config.cjs",
       "__**/**",
-      "src/core/logger/**",
+      "old/**"
     ],
   },
   eslint.configs.recommended,
@@ -101,6 +101,11 @@ export default [
         {
           selector: "typeLike",
           format: ["PascalCase"],
+        },
+        // Enum members should be UPPER_CASE
+        {
+          selector: "enumMember",
+          format: ["UPPER_CASE"],
         },
         // Parameters with _ prefix are allowed to be unused
         {
