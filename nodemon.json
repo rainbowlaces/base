@@ -1,5 +1,5 @@
 {
-    "watch": ["src"],
+    "watch": ["src","testApp/src"],
     "ext": "ts,json",
-    "exec": "npm run build && npm run start:dev"
+    "exec": "npm run build:clean && npm run start:dev"
 }

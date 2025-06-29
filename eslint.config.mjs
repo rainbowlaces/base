@@ -121,6 +121,10 @@ export default [
           modifiers: ["requiresQuotes"],
           format: null,
         },
+        {
+          selector: "property",
+          format: ["camelCase", "PascalCase"],
+        },
       ],
       "no-restricted-syntax": [
         "error",

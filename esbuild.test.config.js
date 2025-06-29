@@ -22,8 +22,7 @@ esbuild.build({
   // Key Setting: Sourcemaps are enabled.
   // This ensures stack traces in test failures point to the
   // original TypeScript source code, not the compiled JavaScript.
-  sourcemap: 'inline',
-  
+  sourcemap: 'inline',  
   platform: 'node',
   format: 'esm',
 }).then(() => {
