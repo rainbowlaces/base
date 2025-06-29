@@ -1,6 +1,12 @@
-// ConfigObject allows any type of value for flexibility in configuration
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type ConfigObject = Record<string, any>;
+// The global application configuration interface
+// Modules will extend this using declaration merging
 
-// Helper type for unknown config values that need to be type-asserted
-export type UnknownConfigValue = unknown;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BaseAppConfig {
+  // Intentionally empty. Modules will add their own config here.
+}
+
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BaseClassConfig {
+  // Intentionally empty. Modules will extends add their own config here.
+}
