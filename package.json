@@ -21,7 +21,7 @@
     "lint:fix": "eslint 'src/**/*.ts' 'test/**/*.ts' --fix",
     "clean:test": "rm -rf _test.dist",
     "build:test": "node esbuild.test.config.js",
-    "test:run": "node --test '_test.dist/test/**/*.js'",
+    "test:run": "node --enable-source-maps --test '_test.dist/test/**/*.js'",
     "test": "npm run clean:test && npm run build:test && npm run test:run",
     "full": "npm run lint && npm run tsc && npm run build && npm run test",
     "push": "npm run full && npm publish --access=public",

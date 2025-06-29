@@ -15,6 +15,13 @@ export class BaseConfig {
   }
 
   public async setup(): Promise<void> {
-    BaseConfig.config = BaseDi.resolve(BaseConfigRegistry, BaseDi.resolve<string>("env"));
+    let env: string;
+    try {
+      env = BaseDi.resolve<string>("env");
+    } catch {
+      // Default to 'default' environment if not registered
+      env = 'default';
+    }
+    BaseConfig.config = BaseDi.resolve(BaseConfigRegistry, env);
   }
 }

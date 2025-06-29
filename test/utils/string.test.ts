@@ -13,7 +13,7 @@ import {
   isKebabCase,
   stringToSlug,
   truncate
-} from '../../src/utils/string.js';
+} from '../../src/utils/string';
 
 test('kebabToUpperCamel function', (t) => {
   t.test('should convert multi-word kebab-case to UpperCamelCase', () => {

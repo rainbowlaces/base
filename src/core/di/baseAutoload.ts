@@ -1,19 +1,24 @@
+import { type FileSystem, NodeFileSystem } from "../../utils/fileSystem";
+
 // eslint-disable-next-line @typescript-eslint/no-extraneous-class
 export class BaseAutoload {
   private static autoloadedFiles = new Set<string>();
 
-  static async autoload(root: string, ignore: string[] = []): Promise<void> {
+  static async autoload(
+    root: string,
+    ignore: string[] = [],
+    fileSystem: FileSystem = new NodeFileSystem()
+  ): Promise<void> {
     if (BaseAutoload.matchesIgnorePattern(root, ignore)) {
       return;
     }
     console.log(`${root}:`);
-    const fs = await import("fs/promises");
     const path = await import("path");
-    const files = await fs.readdir(root, { withFileTypes: true });
+    const files = await fileSystem.readdir(root, { withFileTypes: true });
     for (const file of files) {
       const filePath = path.join(root, file.name);
       if (file.isDirectory()) {
-        await BaseAutoload.autoload(filePath, ignore);
+        await BaseAutoload.autoload(filePath, ignore, fileSystem);
       } else if (file.isFile() && file.name.endsWith(".js")) {
         if (BaseAutoload.matchesIgnorePattern(filePath, ignore)) {
           continue;
@@ -40,7 +45,9 @@ export class BaseAutoload {
     return patterns.some((pattern) => {
       try {
         const urlPattern = new URLPattern({ pathname: pattern });
-        return urlPattern.test(filename);
+        // URLPattern.test() expects a full URL or URL components object
+        // For file paths, we need to test against the pathname component
+        return urlPattern.test({ pathname: filename });
       } catch {
         // Fallback to exact string match if pattern is invalid
         return filename === pattern;

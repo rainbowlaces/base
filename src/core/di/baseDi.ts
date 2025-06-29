@@ -81,7 +81,7 @@ export class BaseDi {
       }
       
       if (wrapper.type !== "constructor") {
-          throw new Error(`Cannot resolve non-constructor type '${keyStr}' that was not already cached.`);
+          throw new Error(`Cannot resolve non-constructor type '${wrapper.type}' that was not already cached.`);
       }
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
@@ -113,11 +113,12 @@ export class BaseDi {
     const phases = new Map<number, string[]>();
     
     for (const registration of BaseDi.registrations.values()) {
+        if (!registration.key) continue; // Skip registrations without keys
         const phase = registration.phase ?? 100;
         if (!phases.has(phase)) {
             phases.set(phase, []);
         }
-        phases.get(phase)!.push(registration.key!);
+        phases.get(phase)!.push(registration.key);
     }
     
     const sortedPhaseNumbers = Array.from(phases.keys()).sort((a, b) => b - a);
@@ -128,10 +129,15 @@ export class BaseDi {
 
       const phasePromises = itemsInPhase.map(async (name) => {
         if (BaseDi.instances.has(name)) {
-          const instance = BaseDi.instances.get(name) as DiTeardown;
-          if (typeof instance.teardown === 'function') {
+          const instance = BaseDi.instances.get(name);
+          if (instance && typeof (instance as DiTeardown).teardown === 'function') {
             console.log(` - Tearing down: ${name}`);
-            await instance.teardown();
+            try {
+              await (instance as DiTeardown).teardown();
+            } catch (error) {
+              console.error(` - Teardown failed for ${name}:`, error);
+              // Continue with other teardowns despite this failure
+            }
           }
         }
       });
@@ -155,6 +161,12 @@ export class BaseDi {
   }
 
   private static isScalar(value: unknown): value is Scalar {
-    return !BaseDi.isInstance(value) && !BaseDi.isConstructor(value);
+    return typeof value === "number" || 
+           typeof value === "string" || 
+           typeof value === "boolean" || 
+           typeof value === "bigint" || 
+           typeof value === "symbol" ||
+           value === null ||
+           value === undefined;
   }
 }

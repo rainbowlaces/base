@@ -4,7 +4,7 @@ import {
   recursiveMap,
   merge,
   type GetTransformerFunction
-} from '../../src/utils/recursion.js';
+} from '../../src/utils/recursion';
 
 test('recursiveMap function', (t) => {
   t.test('should handle primitive values', () => {

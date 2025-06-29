@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unsafe-assignment
 const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
 
-// --- Server Build & Asset Copy ---
+// --- Server Build ---
 build({
   entryPoints: await glob(['./src/**/*.ts', './testApp/**/*.ts'], { ignore: './testApp/src/components/**' }),
   outdir: 'dist',
@@ -30,7 +30,7 @@ build({
 }).catch(() => process.exit(1));
 
 
-// --- Client Build: Bundle it up ---
+// --- Client Build and asset copy: Bundle it up ---
 build({
     entryPoints: ['./testApp/src/components/something.ts'],
     bundle: true,

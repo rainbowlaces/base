@@ -21,6 +21,7 @@ export { BaseHttpContext } from "./core/requestHandler/httpContext";
 // DI exports
 export { BaseDi } from "./core/di/baseDi";
 export { BaseAutoload } from "./core/di/baseAutoload";
+export { BaseInitializer } from "./core/di/baseInitializer";
 
 // Module exports
 export { BaseTemplates } from "./modules/templates";

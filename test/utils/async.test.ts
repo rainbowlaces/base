@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { delay, asyncMap, asyncFilter } from '../../src/utils/async.js';
+import { delay, asyncMap, asyncFilter } from '../../src/utils/async';
 
 test('delay function', (t) => {
   t.test('should resolve immediately with no timeout', async () => {
