@@ -206,10 +206,10 @@ export default [
           modifiers: ["destructured"],
           format: null,
         },
-        // Object literal properties can be snake_case or camelCase
+        // Object literal properties can be snake_case, camelCase, or PascalCase
         {
           selector: "objectLiteralProperty",
-          format: ["snake_case", "camelCase"],
+          format: ["snake_case", "camelCase", "PascalCase"],
         },
         // Allow any format for properties that require quotes (includes kebab-case)
         {

@@ -2,27 +2,12 @@ import { delay } from "../../utils/async";
 import { registerDi } from "../di/decorators/registerDi";
 import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types";
 
-@registerDi()
+@registerDi({ singleton: true })
 export class BasePubSub {
   private static instance?: BasePubSub;
 
   private subscriptions: Set<Subscription> = new Set<Subscription>();
   private inflightCount = 0;
-
-  /**
-   * Get or create a singleton instance of BasePubSub
-   */
-  static create(): BasePubSub {
-    BasePubSub.instance ??= new BasePubSub();
-    return BasePubSub.instance;
-  }
-
-  /**
-   * Static subscription method for convenience
-   */
-  static sub(topic: string, handler: Subscriber, once = false): Subscription {
-    return BasePubSub.create().sub(topic, handler, once);
-  }
 
   get inFlight(): number {
     return this.inflightCount;

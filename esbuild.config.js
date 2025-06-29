@@ -32,7 +32,7 @@ build({
 
 // --- Client Build and asset copy: Bundle it up ---
 build({
-    entryPoints: ['./testApp/src/components/something.ts'],
+    entryPoints: ['./testApp/src/components/loader.ts'],
     bundle: true,
     outfile: './dist/testApp/src/public/bundle.js',
     format: 'esm',
