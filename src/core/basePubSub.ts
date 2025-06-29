@@ -1,5 +1,5 @@
 import { delay } from "../utils/async";
-import { register } from "../decorators/register";
+import { registerDi } from "./di/decorators/registerDi";
 
 export interface BasePubSubArgs {
   topic: string;
@@ -24,7 +24,7 @@ interface SubscriptionMatch {
   params?: BasePubSubArgs;
 }
 
-@register()
+@registerDi()
 export class BasePubSub {
   private static subscriptions: Set<Subscription> = new Set<Subscription>();
   private static _inflightCount = 0;

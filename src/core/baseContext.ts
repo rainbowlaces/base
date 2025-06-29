@@ -1,7 +1,7 @@
 import { nanoid } from "nanoid";
 import { EventEmitter } from "events";
 import { BasePubSub, type BasePubSubArgs, type Subscription } from "./basePubSub";
-import { BaseDi } from "./baseDi";
+import { BaseDi } from "./di/baseDi";
 import { type BaseModule } from "./baseModule";
 
 type TopicFunction = (

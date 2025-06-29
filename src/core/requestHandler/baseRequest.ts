@@ -6,10 +6,10 @@ import formidable from "formidable";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
-import { register } from "../../decorators/register";
-import { di } from "../../decorators/di";
-import { type BaseLogger } from "../logger";
-import { type BaseConfig } from "../config";
+import { registerDi } from "../di/decorators/registerDi";
+import { di } from "../di/decorators/di";
+import { type BaseLogger } from "../logger/baseLogger";
+import { type BaseConfig } from "../config/baseConfig";
 import { BaseError } from "../baseErrors";
 
 export interface ParsedForm<T> {
@@ -17,7 +17,7 @@ export interface ParsedForm<T> {
   files: formidable.Files;
 }
 
-@register()
+@registerDi()
 export class BaseRequest {
   private _req!: http.IncomingMessage;
   private _method: string;

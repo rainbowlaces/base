@@ -1,10 +1,10 @@
 import type * as http from "http";
 import { BaseError } from "../baseErrors";
 import { type Readable } from "stream";
-import { register } from "../../decorators/register";
-import { di } from "../../decorators/di";
-import { type BaseConfig } from "../config";
-import { type BaseLogger } from "../logger";
+import { registerDi } from "../di/decorators/registerDi";
+import { di } from "../di/decorators/di";
+import { type BaseConfig } from "../config/baseConfig";
+import { type BaseLogger } from "../logger/baseLogger";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
@@ -18,7 +18,7 @@ interface CookieOptions {
   sameSite?: boolean | "lax" | "strict" | "none";
 }
 
-@register()
+@registerDi()
 export class BaseResponse extends EventEmitter {
   private _res: http.ServerResponse;
 

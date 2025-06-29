@@ -1,15 +1,15 @@
 import http from "http";
-import { type BaseLogger } from "../logger";
-import { register } from "../../decorators/register";
-import { di } from "../../decorators/di";
-import { type BaseConfig } from "../config";
+import { type BaseLogger } from "../logger/baseLogger";
+import { registerDi } from "../di/decorators/registerDi";
+import { di } from "../di/decorators/di";
+import { type BaseConfig } from "../config/baseConfig";
 import { type BasePubSub } from "../basePubSub";
 import { delay } from "../../utils/async";
 import { type BaseError } from "../baseErrors";
 import { type BaseRouter } from "./baseRouter";
 import { BaseHttpContext } from "./httpContext";
 
-@register()
+@registerDi()
 export class BaseRequestHandler {
   private _server!: http.Server;
 
@@ -37,12 +37,14 @@ export class BaseRequestHandler {
   }
 
   private async handleContext(ctx: BaseHttpContext) {
-    ctx.res.on("done", () => {
+    ctx.res.once("done", () => {
       this._logger.info("Request done.", [ctx.id]);
+      ctx.res.removeAllListeners("error");
     });
 
-    ctx.res.on("error", (err: BaseError) => {
+    ctx.res.once("error", (err: BaseError) => {
       this._logger.warn(err.message, [ctx.id], { err });
+      ctx.res.removeAllListeners("done");
     });
 
     this._logger.info(`New request: ${ctx.topic}`, [ctx.id]);

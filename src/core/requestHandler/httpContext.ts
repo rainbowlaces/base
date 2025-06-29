@@ -2,11 +2,11 @@ import { BaseContext } from "../baseContext";
 import { BaseRequest } from "./baseRequest";
 import { BaseResponse } from "./baseResponse";
 import type * as http from "http";
-import { register } from "../../decorators/register";
+import { registerDi } from "../di/decorators/registerDi";
 
 type HttpContextData = Record<string, unknown>;
 
-@register()
+@registerDi()
 export class BaseHttpContext extends BaseContext<HttpContextData> {
   private _req: BaseRequest;
   private _res: BaseResponse;

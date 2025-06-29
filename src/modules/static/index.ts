@@ -1,6 +1,6 @@
 import { init } from "../../decorators/actions/init";
 import { BaseModule } from "../../core/baseModule";
-import { di } from "../../decorators/di";
+import { di } from "../../core/di/decorators/di";
 import path from "path";
 import { loadFile } from "../../utils/file";
 import { request } from "../../decorators/actions/request";
@@ -13,7 +13,6 @@ import crypto from "crypto";
 
 import type * as fs from "fs";
 import mime from "mime-types";
-import { config } from "../../decorators/config";
 
 interface NodeError extends Error {
   code?: string;
@@ -24,10 +23,8 @@ export class BaseStatic extends BaseModule {
   @di("fsRoot")
   accessor baseFsRoot!: string;
 
-  @config<string>()
+  // TODO: These will be configured via typed config system
   staticFsRoot = "/public";
-
-  @config<number>()
   maxAge = 3600;
 
   @init()

@@ -1,9 +1,9 @@
-import { register } from "../decorators/register";
+import { registerDi } from "./di/decorators/registerDi";
 import { BaseContext } from "./baseContext";
 
 type InitContextData = object;
 
-@register()
+@registerDi()
 export class BaseInitContext extends BaseContext<InitContextData> {
   constructor() {
     super(

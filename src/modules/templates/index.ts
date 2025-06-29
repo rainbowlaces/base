@@ -3,9 +3,8 @@ import { BaseModule } from "../../core/baseModule";
 import { Template } from "./engine";
 import fs from "node:fs/promises";
 
-import { di } from "../../decorators/di";
+import { di } from "../../core/di/decorators/di";
 import { init } from "../../decorators/actions/init";
-import { config } from "../../decorators/config";
 import { baseModule } from "../../decorators/baseModule";
 
 interface NodeError extends Error {
@@ -19,7 +18,7 @@ export class BaseTemplates extends BaseModule {
   @di("fsRoot")
   accessor baseFsRoot!: string;
 
-  @config<string>()
+  // TODO: This will be configured via typed config system
   private templateRoot = "templates";
 
   @init()

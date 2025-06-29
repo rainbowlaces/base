@@ -1,46 +1,37 @@
-import { BaseLogger } from "./logger";
-import { camelToLowerUnderscore } from "../utils/string";
-import { BaseConfig } from "./config";
-import { type BasePubSub } from "./basePubSub";
-import { di } from "../decorators/di";
+import { BaseLogger } from "./logger/baseLogger";
 import { type BaseAction, type BaseActionArgs } from "./baseAction";
 import { type BaseContext } from "./baseContext";
+import { type BaseClassConfig } from "./config/types";
+import { BaseDi } from "./di/baseDi";
 
-export abstract class BaseModule {
-  private _namespace: string;
-
+export abstract class BaseModule<T extends BaseClassConfig> {
   private static dependsOn: string[] = [];
 
-  @di<BasePubSub>("BasePubSub")
-  private accessor _bus!: BasePubSub;
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  private _logger!: BaseLogger;
+  protected readonly config: T;
 
-  private _logger: BaseLogger;
-  private _config: BaseConfig;
-
-  constructor() {
-    this._namespace = camelToLowerUnderscore(this.constructor.name);
-    this._logger = new BaseLogger(this._namespace);
-    this._config = new BaseConfig(this._namespace);
-
+  constructor(config: T) {
+    const logger = BaseDi.create().resolve<BaseLogger>(
+      BaseLogger,
+      this.namespace
+    );
+    if (!logger)
+      throw new Error(`Logger not found for module! ${this.namespace}`);
+    this._logger = logger;
     this._logger.info("Loaded");
-
-    if (!this.dependsOn.length) return;
+    this.config = config;
   }
 
   protected get logger() {
     return this._logger;
   }
 
-  protected get config() {
-    return this._config;
-  }
-
-  protected get namespace() {
-    return this._namespace;
+  public get namespace(): string {
+    return this.constructor.name;
   }
 
   get dependsOn() {
-     
     return (this.constructor as typeof BaseModule).dependsOn;
   }
 
@@ -53,7 +44,6 @@ export abstract class BaseModule {
   }
 
   getAction(name: string): BaseAction | undefined {
-     
     const action = this[name as keyof this];
     return this.isAction(action) ? action : undefined;
   }
@@ -76,7 +66,7 @@ export abstract class BaseModule {
     if (this.contextIsDoneOrError(ctx)) {
       this.logger.warn(
         `Context state: ${ctx.state}. Skipping ${target.name}.`,
-        [fullName],
+        [fullName]
       );
       return;
     }
@@ -98,7 +88,7 @@ export abstract class BaseModule {
     if (this.contextIsDoneOrError(ctx)) {
       this.logger.warn(
         `Context state: ${ctx.state}. Skipping ${target.name}.`,
-        [fullName],
+        [fullName]
       );
       return;
     }
