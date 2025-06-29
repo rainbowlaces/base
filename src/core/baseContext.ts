@@ -1,8 +1,9 @@
 import { nanoid } from "nanoid";
 import { EventEmitter } from "events";
-import { BasePubSub, type BasePubSubArgs, type Subscription } from "./basePubSub";
+import { BasePubSub } from "./pubsub/basePubSub";
 import { BaseDi } from "./di/baseDi";
 import { type BaseModule } from "./baseModule";
+import { type BasePubSubArgs, type Subscription } from "./pubsub/types";
 
 type TopicFunction = (
   id: string,
@@ -22,32 +23,32 @@ interface ModuleStatusArgs extends BasePubSubArgs {
 export abstract class BaseContext<
   T = Record<string, unknown>,
 > extends EventEmitter {
-  private _id: string;
-  private _created: number = Date.now();
-  private _actionLog: Set<string> = new Set<string>();
-  private _topicFunction: TopicFunction;
+  #id: string;
+  #created: number = Date.now();
+  #actionLog: Set<string> = new Set<string>();
+  #topicFunction: TopicFunction;
 
    
-  private _data: T = {} as T;
+  #data: T = {} as T;
 
-  private _state: ContextState = "pending";
+  #state: ContextState = "pending";
   
   // RFA (Request for Action) properties
-  private _phaseMap = new Map<number, Set<string>>();
-  private _rfaSubscription?: Subscription;
+  #phaseMap = new Map<number, Set<string>>();
+  #rfaSubscription?: Subscription;
 
-  static _registry: FinalizationRegistry<Subscription> =
+  static #registry: FinalizationRegistry<Subscription> =
     new FinalizationRegistry<Subscription>((sub: Subscription) =>
       { BasePubSub.unsub(sub); },
     );
 
   constructor(topicFunction: TopicFunction) {
     super();
-    this._id = nanoid();
-    this._topicFunction = topicFunction;
+    this.#id = nanoid();
+    this.#topicFunction = topicFunction;
 
     const sub = BasePubSub.sub(
-      topicFunction(this._id, ":module", ":action", ":status"),
+      topicFunction(this.#id, ":module", ":action", ":status"),
       async (args: BasePubSubArgs) => {
          
         const modArgs = args as ModuleStatusArgs;
@@ -56,12 +57,12 @@ export abstract class BaseContext<
           this.error();
           return this.emit("dependencyError", dep);
         }
-        this._actionLog.add(dep);
+        this.#actionLog.add(dep);
         this.start();
         return this.emit("dependencyDone", dep);
       },
     );
-    BaseContext._registry.register(this, sub);
+    BaseContext.#registry.register(this, sub);
   }
 
   // Abstract method for context type detection (RFA topic generation)
@@ -70,21 +71,21 @@ export abstract class BaseContext<
   // RFA/ITH coordination flow
   protected async _coordinateAndRun(): Promise<void> {
     const contextType = this.getContextType();
-    const rfaTopic = `/context/${contextType}/${this._id}/rfa`;
-    const ithTopic = `/context/${this._id}/ith`;
+    const rfaTopic = `/context/${contextType}/${this.#id}/rfa`;
+    const ithTopic = `/context/${this.#id}/ith`;
 
     // Set up ITH response listener
-    this._rfaSubscription = BasePubSub.sub(
+    this.#rfaSubscription = BasePubSub.sub(
       ithTopic,
       async (args: BasePubSubArgs) => {
          
         const payload = (args as unknown) as { module: string; action: string; phase: number };
         const actionId = `${payload.module}/${payload.action}`;
         
-        if (!this._phaseMap.has(payload.phase)) {
-          this._phaseMap.set(payload.phase, new Set());
+        if (!this.#phaseMap.has(payload.phase)) {
+          this.#phaseMap.set(payload.phase, new Set());
         }
-        const phaseActions = this._phaseMap.get(payload.phase);
+        const phaseActions = this.#phaseMap.get(payload.phase);
         if (phaseActions) {
           phaseActions.add(actionId);
         }
@@ -92,22 +93,22 @@ export abstract class BaseContext<
     );
 
     // Publish RFA
-    void BasePubSub.create().pub(rfaTopic, { contextId: this._id, contextType });
+    void BasePubSub.create().pub(rfaTopic, { contextId: this.#id, contextType });
 
     // Wait for ITH responses with timeout
     await new Promise<void>((resolve) => {
       setTimeout(() => {
         // Cleanup subscription
-        if (this._rfaSubscription) {
-          BasePubSub.unsub(this._rfaSubscription);
-          this._rfaSubscription = undefined;
+        if (this.#rfaSubscription) {
+          BasePubSub.unsub(this.#rfaSubscription);
+          this.#rfaSubscription = undefined;
         }
         resolve();
       }, 50); // 50ms timeout as specified in RFA.md
     });
 
     // Fast-fail validation
-    if (this._phaseMap.size === 0) {
+    if (this.#phaseMap.size === 0) {
       const error = new Error(`No handlers were found for ${contextType} context`);
       this.error();
       throw error;
@@ -122,10 +123,10 @@ export abstract class BaseContext<
 
   // Sequential phase execution
   private async _runPhases(): Promise<void> {
-    const sortedPhases = Array.from(this._phaseMap.keys()).sort((a, b) => a - b);
+    const sortedPhases = Array.from(this.#phaseMap.keys()).sort((a, b) => a - b);
 
     for (const phase of sortedPhases) {
-      const actionsInPhase = this._phaseMap.get(phase) ?? new Set();
+      const actionsInPhase = this.#phaseMap.get(phase) ?? new Set();
       
       // Execute all actions in this phase
       const phasePromises = Array.from(actionsInPhase).map(actionId => {
@@ -151,7 +152,7 @@ export abstract class BaseContext<
       await Promise.all(phasePromises);
 
       // Check for errors
-      if (this._state === "error") {
+      if (this.#state === "error") {
         return;
       }
     }
@@ -161,24 +162,25 @@ export abstract class BaseContext<
 
   // Validate phase dependencies to prevent paradoxes
   private _validatePhases(): void {
-    const di = BaseDi.create();
-    
     // Build a map of action to phase for quick lookup
     const actionToPhaseMap = new Map<string, number>();
-    for (const [phase, actions] of this._phaseMap.entries()) {
+    for (const [phase, actions] of this.#phaseMap.entries()) {
       for (const actionId of actions) {
         actionToPhaseMap.set(actionId, phase);
       }
     }
 
     // Check each action's dependencies
-    for (const [phase, actions] of this._phaseMap.entries()) {
+    for (const [phase, actions] of this.#phaseMap.entries()) {
       for (const actionId of actions) {
         const [moduleName, actionName] = actionId.split('/');
         
         try {
           // Resolve the module instance to get action metadata
-          const module = di.resolve<BaseModule>(moduleName);
+          const module = BaseDi.resolve<BaseModule<unknown>>(moduleName);
+          if (!module) {
+            throw new Error(`Failed to resolve module '${moduleName}'`);
+          }
           if (!module) {
             throw new Error(`Could not resolve module '${moduleName}' for phase validation`);
           }
@@ -223,54 +225,54 @@ export abstract class BaseContext<
 
   actionDone(module: string, action: string) {
     void BasePubSub.create().pub(
-      this._topicFunction(this._id, module, action, "done"),
+      this.#topicFunction(this.#id, module, action, "done"),
     );
   }
 
   actionError(module: string, action: string) {
     void BasePubSub.create().pub(
-      this._topicFunction(this._id, module, action, "error"),
+      this.#topicFunction(this.#id, module, action, "error"),
     );
   }
 
   get id(): string {
-    return this._id;
+    return this.#id;
   }
 
   get age(): number {
-    return Date.now() - this._created;
+    return Date.now() - this.#created;
   }
 
   get created(): number {
-    return this._created;
+    return this.#created;
   }
 
   get state(): ContextState {
-    return this._state;
+    return this.#state;
   }
 
   get data(): T {
-    return this._data;
+    return this.#data;
   }
 
   done() {
-    if (this._state === "error") return;
-    this._state = "done";
+    if (this.#state === "error") return;
+    this.#state = "done";
   }
 
   error() {
-    if (this._state === "done") return;
-    this._state = "error";
+    if (this.#state === "done") return;
+    this.#state = "error";
   }
 
   start() {
-    if (this._state === "done") return;
-    if (this._state === "error") return;
-    this._state = "running";
+    if (this.#state === "done") return;
+    if (this.#state === "error") return;
+    this.#state = "running";
   }
 
   private matchDependencies(dependencies: string[]): boolean {
-    return dependencies.every((dep) => this._actionLog.has(dep));
+    return dependencies.every((dep) => this.#actionLog.has(dep));
   }
 
   public async waitFor(dependencies: string[]): Promise<void> {

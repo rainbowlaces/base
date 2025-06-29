@@ -1,36 +1,14 @@
-import { delay } from "../utils/async";
-import { registerDi } from "./di/decorators/registerDi";
-
-export interface BasePubSubArgs {
-  topic: string;
-  [key: string]: unknown;
-}
-
-type MatchedTopics = Map<string, BasePubSubArgs>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Subscriber = (args: BasePubSubArgs) => Promise<any> | Promise<void>;
-
-export interface Subscription {
-  topic: string;
-  pattern: URLPattern;
-  handler: Subscriber;
-  once: boolean;
-  matchedTopics: MatchedTopics;
-}
-
-interface SubscriptionMatch {
-  subscription: Subscription;
-  match: boolean;
-  params?: BasePubSubArgs;
-}
+import { delay } from "../../utils/async";
+import { registerDi } from "../di/decorators/registerDi";
+import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types";
 
 @registerDi()
 export class BasePubSub {
   private static subscriptions: Set<Subscription> = new Set<Subscription>();
-  private static _inflightCount = 0;
+  private static inflightCount = 0;
 
   static get inFlight(): number {
-    return this._inflightCount;
+    return this.inflightCount;
   }
 
   static create(): BasePubSub {
@@ -38,7 +16,7 @@ export class BasePubSub {
   }
 
   async pub(topic: string, args?: Partial<BasePubSubArgs>): Promise<void> {
-    BasePubSub._inflightCount += 1;
+    BasePubSub.inflightCount += 1;
     await delay();
     await Promise.all(
       BasePubSub.filterSubs(topic).map(async (m: SubscriptionMatch) => {
@@ -51,7 +29,7 @@ export class BasePubSub {
           BasePubSub.subscriptions.delete(m.subscription);
       }),
     );
-    BasePubSub._inflightCount -= 1;
+    BasePubSub.inflightCount -= 1;
   }
 
   static unsub(topic: string | Subscription): void {

@@ -1,8 +1,8 @@
 export class BaseError<T extends Error = Error> extends Error {
-  private _wrappedError?: T;
+  #wrappedError?: T;
 
   get wrappedError(): T | undefined {
-    return this._wrappedError;
+    return this.#wrappedError;
   }
 
   constructor(messageOrError: string | T, wrappedError?: T) {
@@ -25,18 +25,18 @@ export class BaseError<T extends Error = Error> extends Error {
   private initializeFromString(message: string, error?: T): void {
     this.message = message;
     if (error instanceof Error) {
-      this._wrappedError = error;
+      this.#wrappedError = error;
     }
   }
 
   private initializeFromError(error: T): void {
     this.message = error.message;
-    this._wrappedError = error;
+    this.#wrappedError = error;
   }
 
   private updateStack(): void {
-    if (this._wrappedError?.stack) {
-      this.stack = `${this.stack}\nCaused by:\n${this._wrappedError.stack}`;
+    if (this.#wrappedError?.stack) {
+      this.stack = `${this.stack}\nCaused by:\n${this.#wrappedError.stack}`;
     }
   }
 }

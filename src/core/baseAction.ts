@@ -1,5 +1,5 @@
 import { type BaseContext } from "./baseContext";
-import { type BasePubSubArgs, type Subscriber } from "./basePubSub";
+import { type BasePubSubArgs, type Subscriber } from "./pubsub/basePubSub";
 import { type BaseHttpContext } from "./requestHandler/httpContext";
 
 export interface BaseHttpActionArgs extends BasePubSubArgs {

@@ -1,4 +1,5 @@
-import { BasePubSub, type Subscriber } from "../core/basePubSub";
+import { BasePubSub } from "../basePubSub";
+import { type Subscriber } from "../types";
 
 export function sub(topic: string) {
   return (target: Subscriber, context: ClassMethodDecoratorContext): void => {

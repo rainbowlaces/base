@@ -1,5 +1,5 @@
 import { type BaseModule } from "../../core/baseModule";
-import { BasePubSub, type BasePubSubArgs } from "../../core/basePubSub";
+import { BasePubSub, type BasePubSubArgs } from "../../core/pubsub/basePubSub";
 import { type BaseAction, type BaseActionArgs, type ActionOptions } from "../../core/baseAction";
 
 export function init(options: Omit<ActionOptions, "topic"> = {}) {

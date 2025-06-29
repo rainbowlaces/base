@@ -1,31 +1,30 @@
-import { BaseLogger } from "./logger/baseLogger";
+// import { BaseLogger } from "./logger/baseLogger";
 import { type BaseAction, type BaseActionArgs } from "./baseAction";
 import { type BaseContext } from "./baseContext";
-import { type BaseClassConfig } from "./config/types";
-import { BaseDi } from "./di/baseDi";
+// import { BaseDi } from "./di/baseDi";
 
-export abstract class BaseModule<T extends BaseClassConfig> {
+export abstract class BaseModule {
   private static dependsOn: string[] = [];
 
   // eslint-disable-next-line @typescript-eslint/naming-convention
-  private _logger!: BaseLogger;
-  protected readonly config: T;
+  // private _logger!: BaseLogger;
+  // protected readonly config: T;
 
-  constructor(config: T) {
-    const logger = BaseDi.create().resolve<BaseLogger>(
-      BaseLogger,
-      this.namespace
-    );
-    if (!logger)
-      throw new Error(`Logger not found for module! ${this.namespace}`);
-    this._logger = logger;
-    this._logger.info("Loaded");
-    this.config = config;
-  }
+  // constructor(config: T) {
+  //   const logger = BaseDi.create().resolve<BaseLogger>(
+  //     BaseLogger,
+  //     this.namespace
+  //   );
+  //   if (!logger)
+  //     throw new Error(`Logger not found for module! ${this.namespace}`);
+  //   this._logger = logger;
+  //   this._logger.info("Loaded");
+  //   this.config = config;
+  // }
 
-  protected get logger() {
-    return this._logger;
-  }
+  // protected get logger() {
+  //   return this._logger;
+  // }
 
   public get namespace(): string {
     return this.constructor.name;
@@ -74,33 +73,33 @@ export abstract class BaseModule<T extends BaseClassConfig> {
     // For now, use only explicit dependencies (no global action injection)
     const dependencies = target.dependsOn ?? [];
 
-    this.logger.debug(`Deps for action: ${dependencies.join(", ")}`, [
-      ctx.id,
-      fullName,
-    ]);
+    // this.logger.debug(`Deps for action: ${dependencies.join(", ")}`, [
+    //   ctx.id,
+    //   fullName,
+    // ]);
 
     if (dependencies.length) {
       await ctx.waitFor(dependencies);
     }
 
-    this.logger.debug(`All deps. complete.`, [ctx.id, fullName]);
+    // this.logger.debug(`All deps. complete.`, [ctx.id, fullName]);
 
     if (this.contextIsDoneOrError(ctx)) {
-      this.logger.warn(
-        `Context state: ${ctx.state}. Skipping ${target.name}.`,
-        [fullName]
-      );
+      // this.logger.warn(
+      //   `Context state: ${ctx.state}. Skipping ${target.name}.`,
+      //   [fullName]
+      // );
       return;
     }
 
-    this.logger.debug(`Handling action ${target.name}`);
+    // this.logger.debug(`Handling action ${target.name}`);
 
     try {
       await target.apply(this, [args]);
       ctx.actionDone(this.constructor.name, target.name);
-      this.logger.debug(`Action DONE`, [fullName]);
-    } catch (e) {
-      this.logger.error(`Action ERROR`, [fullName], { error: e });
+      // this.logger.debug(`Action DONE`, [fullName]);
+    } catch  {
+      // this.logger.error(`Action ERROR`, [fullName], { error: e });
       ctx.actionError(this.constructor.name, target.name);
     }
   }

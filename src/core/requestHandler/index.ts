@@ -3,7 +3,7 @@ import { type BaseLogger } from "../logger/baseLogger";
 import { registerDi } from "../di/decorators/registerDi";
 import { di } from "../di/decorators/di";
 import { type BaseConfig } from "../config/baseConfig";
-import { type BasePubSub } from "../basePubSub";
+import { type BasePubSub } from "../pubsub/basePubSub";
 import { delay } from "../../utils/async";
 import { type BaseError } from "../baseErrors";
 import { type BaseRouter } from "./baseRouter";
