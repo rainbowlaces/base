@@ -1,107 +1,51 @@
-import { Base } from "./core/base";
-import { BaseModule } from "./core/baseModule";
-import {
-  html,
-  type LoadedElements,
-  type LoadedTags,
-} from "./modules/templates/engine";
+// Core exports
+export { Base } from "./core/base";
+export { BaseModule } from "./core/baseModule";
+export { LogLevel } from "./core/logger/types";
+export { BaseContext } from "./core/baseContext";
+export { BaseError } from "./core/baseErrors";
+export { BasePubSub } from "./core/basePubSub";
+export { BaseLogger } from "./core/logger/baseLogger";
+export { LogMessage } from "./core/logger/logMessage";
+export { BaseConfig } from "./core/config/baseConfig";
+export { BaseRequestHandler } from "./core/requestHandler";
+export { BaseRouter } from "./core/requestHandler/baseRouter";
+export { BaseInitContext } from "./core/initContext";
+export { BaseConfigProvider, BaseConfigRegistry } from "./core/config/baseConfigRegistry";
 
-import * as asyncUtils from "./utils/async";
-import * as fileUtils from "./utils/file";
-import * as recursionUtils from "./utils/recursion";
-import * as stringUtils from "./utils/string";
+// Request handler exports
+export { BaseRequest } from "./core/requestHandler/baseRequest";
+export { BaseResponse } from "./core/requestHandler/baseResponse";
+export { BaseHttpContext } from "./core/requestHandler/httpContext";
 
-import { BaseTemplates } from "./modules/templates";
-import { BaseStatic } from "./modules/static";
+// DI exports
+export { BaseDi } from "./core/di/baseDi";
+export { BaseAutoload } from "./core/di/baseAutoload";
 
-import { LogLevel } from "./core/logger/types";
-import {
-  type BaseActionArgs,
-  type BaseHttpActionArgs,
-  type BaseAction,
-  type ActionOptions,
-} from "./core/baseAction";
-import { BaseContext } from "./core/baseContext";
-import { BaseRequest } from "./core/requestHandler/baseRequest";
-import { BaseResponse } from "./core/requestHandler/baseResponse";
-import { BaseHttpContext } from "./core/requestHandler/httpContext";
+// Module exports
+export { BaseTemplates } from "./modules/templates";
+export { BaseStatic } from "./modules/static";
+export { html } from "./modules/templates/engine";
 
-import { request } from "./decorators/actions/request";
-import { init } from "./decorators/actions/init";
+// Decorator exports
+export { config } from "./core/config/decorators/config";
+export { request } from "./decorators/actions/request";
+export { init } from "./decorators/actions/init";
+export { di } from "./core/di/decorators/di";
+export { registerDi as register } from "./core/di/decorators/registerDi";
+export { dependsOn } from "./decorators/dependsOn";
+export { sub } from "./decorators/sub";
+export { baseModule } from "./decorators/baseModule";
 
-import { config } from "./decorators/config";
-import { dependsOn } from "./decorators/dependsOn";
-import { di } from "./decorators/di";
-import { register } from "./decorators/register";
-import { sub } from "./decorators/sub";
-import { baseModule } from "./decorators/baseModule";
-import { BaseDi } from "./core/baseDi";
-import { type Constructor, type Scalar, type Instance, type BaseDiWrapper } from "./core/types";
+// Utils exports
+export * as async from "./utils/async";
+export * as file from "./utils/file";
+export * as recursion from "./utils/recursion";
+export * as string from "./utils/string";
 
-// Add missing framework classes
-import { BaseError } from "./core/baseErrors";
-import { BasePubSub, type BasePubSubArgs, type Subscriber } from "./core/basePubSub";
-import { BaseLogger } from "./core/logger";
-import { LogMessage } from "./core/logger/logMessage";
-import { BaseConfig } from "./core/config";
-import { type ConfigObject } from "./core/config/types";
-import { BaseRequestHandler } from "./core/requestHandler";
-import { BaseRouter } from "./core/requestHandler/baseRouter";
-import { BaseInitContext } from "./core/initContext";
-
-// Export decorators directly
-export {
-  config,
-  request,
-  di,
-  register,
-  dependsOn,
-  init,
-  sub,
-  baseModule,
-};
-
-// Export utils directly
-export {
-  asyncUtils as async,
-  fileUtils as file,
-  recursionUtils as recursion,
-  stringUtils as string,
-};
-
-export {
-  BaseTemplates,
-  BaseStatic,
-  BaseContext,
-  BaseHttpContext,
-  BaseRequest,
-  BaseResponse,
-  BaseDi,
-  BaseError,
-  BasePubSub,
-  BaseLogger,
-  BaseConfig,
-  BaseRequestHandler,
-  BaseRouter,
-  BaseInitContext,
-  LogMessage,
-};
-
-export { LogLevel };
-export { Base };
-export { BaseModule, html };
-export type {
-  LoadedElements,
-  LoadedTags,
-  BaseActionArgs,
-  BaseHttpActionArgs,
-  BaseAction,
-  ActionOptions,
-  BasePubSubArgs,
-  Subscriber,
-  ConfigObject,
-  Constructor,
-  Scalar,
-  Instance,
-  BaseDiWrapper,
-};
+// Type exports
+export type { LoadedElements, LoadedTags } from "./modules/templates/engine";
+export type { BaseActionArgs, BaseHttpActionArgs, BaseAction, ActionOptions } from "./core/baseAction";
+export type { BasePubSubArgs, Subscriber } from "./core/basePubSub";
+export type { BaseAppConfig } from "./core/config/types";
+export type { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/di/types";
