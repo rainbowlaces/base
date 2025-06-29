@@ -1,63 +1,68 @@
-import { registerDi } from "../di/decorators/registerDi";
-import { di } from "../di/decorators/di";
 import { LogMessage } from "./logMessage";
 import { type LogContext, LogLevel, type SerializedLogMessage, LoggerConfig, LogObjectTransformer } from "./types";
-import { diByTag } from "../di/baseDi";
 import { camelToLowerUnderscore } from "../../utils/string";
+import { type Console } from "./console";
+import { registerDi } from "../di/decorators/registerDi";
+import { di } from "../di/decorators/di";
+import { diByTag } from "../di/baseDi";
 
 /**
- * BaseLogger provides a DI-driven, extensible logging solution.
+ * BaseLogger provides a flexible, testable logging solution.
 */
-@registerDi()
 export class BaseLogger {
-  // --- Injected Dependencies ---
-
-  /**
-   * The logger's configuration object.
-   * Injected from the DI container, sourced from the main application config.
-   */
-  @di<LoggerConfig>("Config.BaseLogger")
-  private accessor _config!: LoggerConfig;
-
-  /**
-   * An array of all registered serializer plugins.
-   * Injected by the DI container by looking for the 'Logger:Serializer' tag.
-   */
-  @diByTag<LogObjectTransformer>("Logger:Serializer")
-  private accessor _serializers!: LogObjectTransformer[];
-
-  /**
-   * An array of all registered redactor plugins.
-   * Injected by the DI container by looking for the 'Logger:Redactor' tag.
-   */
-  @diByTag<LogObjectTransformer>("Logger:Redactor")
-  private accessor _redactors!: LogObjectTransformer[];
-
   // --- Private Properties ---
 
   private readonly _namespace: string;
   private readonly _baseTags: string[];
+  private readonly _config: LoggerConfig;
+  private readonly _console: Console;
+  private readonly _serializers: LogObjectTransformer[];
+  private readonly _redactors: LogObjectTransformer[];
 
   /**
-   * Map of log levels to their corresponding console output functions.
+   * Get the console method for a specific log level.
    */
-  private static readonly _levelMap: Record<string, (message?: any, ...optionalParams: any[]) => void> = {
-    [LogLevel[LogLevel.FATAL]]: console.error,
-    [LogLevel[LogLevel.ERROR]]: console.error,
-    [LogLevel[LogLevel.WARNING]]: console.warn,
-    [LogLevel[LogLevel.INFO]]: console.log,
-    [LogLevel[LogLevel.DEBUG]]: console.debug,
-    [LogLevel[LogLevel.TRACE]]: console.trace,
-  };
+  private _getConsoleMethod(level: string): (message?: any, ...optionalParams: any[]) => void {
+    switch (level) {
+      case LogLevel[LogLevel.FATAL]:
+      case LogLevel[LogLevel.ERROR]:
+        return this._console.error.bind(this._console);
+      case LogLevel[LogLevel.WARNING]:
+        return this._console.warn.bind(this._console);
+      case LogLevel[LogLevel.INFO]:
+        return this._console.log.bind(this._console);
+      case LogLevel[LogLevel.DEBUG]:
+        return this._console.debug.bind(this._console);
+      case LogLevel[LogLevel.TRACE]:
+        return this._console.trace.bind(this._console);
+      default:
+        return this._console.log.bind(this._console);
+    }
+  }
 
 
   /**
    * Creates a new Logger instance.
    * @param namespace The namespace for this logger instance (e.g., the module name).
+   * @param config The logger configuration.
+   * @param console The console abstraction for output.
+   * @param serializers Array of serializer plugins.
+   * @param redactors Array of redactor plugins.
    * @param baseTags An optional array of tags to apply to all messages from this logger.
    */
-  constructor(namespace: string, baseTags: string[] = []) {    
+  constructor(
+    namespace: string,
+    config: LoggerConfig,
+    console: Console,
+    serializers: LogObjectTransformer[] = [],
+    redactors: LogObjectTransformer[] = [],
+    baseTags: string[] = []
+  ) {    
     this._namespace = camelToLowerUnderscore(namespace);
+    this._config = config;
+    this._console = console;
+    this._serializers = serializers;
+    this._redactors = redactors;
     this._baseTags = baseTags;
   }
 
@@ -106,10 +111,11 @@ export class BaseLogger {
 
     try {
         const output = this._format(logMessage);
-        BaseLogger._levelMap[logMessage.level](output);
+        const consoleMethod = this._getConsoleMethod(logMessage.level);
+        consoleMethod(output);
     } catch(err) {
         // If formatting fails, log a raw error to avoid losing the original message entirely.
-        console.error("--- LOGGER FORMATTING ERROR ---", err, "--- ORIGINAL MESSAGE ---", logMessage);
+        this._console.error("--- LOGGER FORMATTING ERROR ---", err, "--- ORIGINAL MESSAGE ---", logMessage);
     }
 
 
@@ -168,16 +174,33 @@ private _applyTransformers(value: any, transformers: LogObjectTransformer[]): an
             if (seen.has(val)) return '[CircularReference]';
             seen.add(val);
 
+            // Check if there's a transformer for this object FIRST
+            const objTransformer = sortedTransformers.find(t => t.canTransform(val));
+            if (objTransformer) {
+                // Transform the object, then recurse into the result
+                const transformed = objTransformer.transform(val);
+                if (typeof transformed === 'object' && transformed !== null) {
+                    // Now recurse into the transformed object's properties
+                    const result = Array.isArray(transformed) ? [] : {};
+                    for (const key in transformed) {
+                        if (Object.prototype.hasOwnProperty.call(transformed, key)) {
+                            (result as Record<string, any>)[key] = recurse((transformed as any)[key]);
+                        }
+                    }
+                    return result;
+                } else {
+                    return transformed;
+                }
+            }
+
+            // No transformer for this object, so recurse into its children
             const result = Array.isArray(val) ? [] : {};
             for (const key in val) {
                 if (Object.prototype.hasOwnProperty.call(val, key)) {
                     (result as Record<string, any>)[key] = recurse(val[key]);
                 }
             }
-            // Return the object with its children transformed first.
-            // Then, check if any transformer wants to transform the object itself.
-            const objTransformer = sortedTransformers.find(t => t.canTransform(result));
-            return objTransformer ? objTransformer.transform(result) : result;
+            return result;
         }
 
         // For primitives, find ALL applicable transformers and chain their results.
@@ -190,4 +213,37 @@ private _applyTransformers(value: any, transformers: LogObjectTransformer[]): an
 
     return recurse(value);
 }
+}
+
+/**
+ * DI-compatible factory for BaseLogger that resolves dependencies from the DI container.
+ * Use this in production code where DI is available.
+ */
+@registerDi()
+export class BaseLoggerFactory {
+  @di<LoggerConfig>("Config.BaseLogger")
+  private accessor _config!: LoggerConfig;
+
+  @di<Console>("NodeConsole")
+  private accessor _console!: Console;
+
+  @diByTag<LogObjectTransformer>("Logger:Serializer")
+  private accessor _serializers!: LogObjectTransformer[];
+
+  @diByTag<LogObjectTransformer>("Logger:Redactor")
+  private accessor _redactors!: LogObjectTransformer[];
+
+  /**
+   * Creates a new BaseLogger instance with dependencies resolved from DI.
+   */
+  public create(namespace: string, baseTags: string[] = []): BaseLogger {
+    return new BaseLogger(
+      namespace,
+      this._config,
+      this._console,
+      this._serializers,
+      this._redactors,
+      baseTags
+    );
+  }
 }
