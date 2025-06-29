@@ -1,115 +1,131 @@
-import { BaseLogger } from "../core/logger";
-import { BaseConfig } from "./config";
-import { getDirname } from "../utils/file";
-import { BaseDi } from "./baseDi";
-import { BasePubSub } from "./basePubSub";
-import { type BaseModule } from "./baseModule";
-import { BaseInitContext } from "./initContext";
-import { BaseRequestHandler } from "./requestHandler";
-import { getRegisteredModules } from "../decorators/baseModule";
 import path from "node:path";
-import { di } from "../decorators/di";
+import { getDirname } from "../utils/file";
+import { type BaseClassConfig } from "./config/types";
+import { BaseAutoload, BaseDi, BaseInitializer, di } from "./di/baseDi";
+import { BaseLogger } from "./logger/baseLogger";
+
+interface BaseMainConfig extends BaseClassConfig {
+  port?: number;
+  autoloadIgnore?: string[];
+  autoload?: boolean;
+}
+
+declare module "./config/types" {
+  interface BaseAppConfig {
+    Base?: BaseMainConfig;
+  }
+}
 
 export class Base {
 
-  @di<BaseLogger>(BaseLogger, "base")
-  private accessor _logger!: BaseLogger;
+  private fsRoot: string;
+  private libRoot: string;
 
-  private _fsRoot: string;
-  private _libRoot: string;
+  @di<BaseLogger>(BaseLogger, "base")
+  private accessor logger: BaseLogger;
 
   static start(metaUrl: string) {
     const base = new Base(metaUrl);
     return base.init();
   }
 
-  public get logger(): BaseLogger {
-    return this._logger;
-  }
-
   constructor(metaUrl: string) {
-    this._fsRoot = getDirname(metaUrl);
-    this._libRoot = getDirname(import.meta.url);
-    BaseDi.register(this._fsRoot, "fsRoot");
-    BaseDi.register(this._libRoot, "libRoot");
+    this.fsRoot = getDirname(metaUrl);
+    this.libRoot = getDirname(import.meta.url);
+    
+    BaseDi.register(this.fsRoot, "fsRoot");
+    BaseDi.register(this.libRoot, "libRoot");
     BaseDi.register(process.env.NODE_ENV, "env");
   }
 
-  private initLogger() {
-    BaseLogger.init(BaseConfig.getNamespace("logger"));
-
-    this._logger = new BaseLogger("base");
-
-    process.on("uncaughtException", (err) => {
-      this.logger.fatal("Uncaught Exception", [], { err });
-    });
-
-    process.on("unhandledRejection", (reason, promise) => {
-      this.logger.fatal("Unhandled Rejection", [], { promise, reason });
-    });
-  }
-
-  private async initConfig() {
-    await BaseConfig.init(this._fsRoot, process.env.NODE_ENV);
-  }
-
-  private initRequestHandler() {
-    BaseDi.register(new BaseRequestHandler());
-  }
-
-  private initPubSub() {
-    BaseDi.register(new BasePubSub());
+  get config(): BaseMainConfig {
+    return BaseDi.resolve<BaseMainConfig>("Config.Base");
   }
 
   async init() {
-    await this.initConfig();
+    const corePath = path.dirname(this.libRoot);
+    console.log("Autoloading core library...", corePath);
+    await BaseAutoload.autoload(corePath);
+    console.log("***\n");
+
+    console.log("Autoloading user code...", this.fsRoot);
+    await BaseAutoload.autoload(this.fsRoot, []);
+    console.log("***\n");
+
+    await BaseInitializer.run();
+
+    this.logger.info("Base system initialized 12345 n51de e20 1aj", ["e20 1aj"], { thing: "e20 1aj", anotherThing: "12345" });
+  }
+
+  // private initLogger() {
+  //   BaseLogger.init(BaseConfig.getNamespace("logger"));
+
+  //   this._logger = new BaseLogger("base");
+
+  //   process.on("uncaughtException", (err) => {
+  //     this.logger.fatal("Uncaught Exception", [], { err });
+  //   });
+
+  //   process.on("unhandledRejection", (reason, promise) => {
+  //     this.logger.fatal("Unhandled Rejection", [], { promise, reason });
+  //   });
+  // }
+
+  // private async initConfig() {
+  //   await BaseConfig.init();
+  // }
+
+  // private initRequestHandler() {
+  //   BaseDi.register(new BaseRequestHandler());
+  // }
+
+  // private initPubSub() {
+  //   BaseDi.register(new BasePubSub());
+  // }
+
+  // async init() {
+
+
+  //   await this.initConfig();
     
-    this.initLogger();
+  //   this.initLogger();
 
-    const config = BaseConfig.getNamespace("base");
+  //   const config = BaseConfig.getNamespace<{ autoload?: boolean }>("base");
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const autoLoad = config.autoload === undefined || config.autoload;
+  //   // Check if autoload should have been disabled (for future optimization)
+  //   const autoLoad = config.autoload === undefined || config.autoload;
+  //   if (!autoLoad) {
+  //     console.log("WARNING: autoload is disabled in config, but we had to run it anyway for the new config system");
+  //   }
 
-    if (autoLoad) {
-      console.log("Autoloading core modules...");
-      await BaseDi.autoload(path.dirname(this._libRoot), ["*/testApp/*"]);
-      console.log("***");
+  //   this.initPubSub();
+  //   this.initRequestHandler();
 
-      console.log("Autoloading user modules...");
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      await BaseDi.autoload(this._fsRoot, config.autoloadIgnore ?? []);
-      console.log("***");
-    }
+  //   BaseDi.register(this);
 
-    this.initPubSub();
-    this.initRequestHandler();
+  //   const registeredModules = getRegisteredModules();
+  //   for (const moduleClass of registeredModules) {
+  //     this.addModule(moduleClass);
+  //   }
 
-    BaseDi.register(this);
+  //   const bus = BaseDi.create().resolve<BasePubSub>("BasePubSub");
+  //   if (!bus) throw new Error("BasePubSub is not registered.");
 
-    const registeredModules = getRegisteredModules();
-    for (const moduleClass of registeredModules) {
-      this.addModule(moduleClass);
-    }
+  //   void bus.pub("/base/init", { context: new BaseInitContext() });
 
-    const bus = BaseDi.create().resolve<BasePubSub>("BasePubSub");
-    if (!bus) throw new Error("BasePubSub is not registered.");
+  //   void this.go();
+  // }
 
-    void bus.pub("/base/init", { context: new BaseInitContext() });
+  // addModule<T extends BaseModule>(moduleConstructor: new () => T) {
+  //   const module = new moduleConstructor();
+  //   BaseDi.register(module);
+  // }
 
-    void this.go();
-  }
-
-  addModule<T extends BaseModule>(moduleConstructor: new () => T) {
-    const module = new moduleConstructor();
-    BaseDi.register(module);
-  }
-
-  async go() {
-    const requestHandler =
-      BaseDi.create().resolve<BaseRequestHandler>("BaseRequestHandler");
-    if (!requestHandler)
-      throw new Error("BaseRequestHandler is not registered.");
-    await requestHandler.go();
-  }
+  // async go() {
+  //   const requestHandler =
+  //     BaseDi.create().resolve<BaseRequestHandler>("BaseRequestHandler");
+  //   if (!requestHandler)
+  //     throw new Error("BaseRequestHandler is not registered.");
+  //   await requestHandler.go();
+  // }
 }
