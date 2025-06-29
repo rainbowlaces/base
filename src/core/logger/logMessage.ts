@@ -1,10 +1,10 @@
 import { type LogContext, LogLevel } from "./types";
-import { register } from "../../decorators/register";
+import { registerDi } from "../di/decorators/registerDi";
 
 /**
  * Represents a log message.
  */
-@register()
+@registerDi()
 export class LogMessage {
   /**
    * The default log level.

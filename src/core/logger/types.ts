@@ -1,5 +1,7 @@
 // Logger types and enums
 
+import { BaseClassConfig } from "../config/types";
+
 export enum LogLevel {
   FATAL = 1,
   ERROR = 2,
@@ -40,3 +42,35 @@ export interface TypeSerializer<T = unknown> {
 export type PatternMap = Record<string, string | RegExp>;
 
 export type Scalar = string | number | boolean | null | undefined;
+
+export interface LogObjectTransformer {
+  readonly priority: number;
+
+  /**
+   * Determines if this transformer can handle the given value.
+   * @param value The value to check.
+   * @returns True if the transformer can handle the value, false otherwise.
+   */
+  canTransform(value: unknown): boolean;
+
+  /**
+   * Transforms the given value.
+   * @param value The value to transform.
+   * @returns The transformed value.
+   */
+  transform(value: unknown): unknown;
+}
+
+export interface LoggerConfig extends BaseClassConfig {
+  logLevel?: LogLevel;
+  redaction?: boolean;
+  patterns?: PatternMap;
+  maxMessageLength?: number;
+}
+
+// Declaration merging to add the logger config to the global app config type.
+declare module "../config/types" {
+  interface BaseAppConfig {
+    BaseLogger?: LoggerConfig;
+  }
+}
