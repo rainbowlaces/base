@@ -12,7 +12,6 @@ export class BaseAutoload {
     if (BaseAutoload.matchesIgnorePattern(root, ignore)) {
       return;
     }
-    console.log(`${root}:`);
     const path = await import("path");
     const files = await fileSystem.readdir(root, { withFileTypes: true });
     for (const file of files) {
@@ -32,9 +31,8 @@ export class BaseAutoload {
         try {
           await import(filePath);
           BaseAutoload.autoloadedFiles.add(filePath);
-          console.log(` - ${path.basename(filePath)}`);
         } catch (err) {
-          console.error(` - FAILED: ${path.basename(filePath)}`, err);
+          console.error(`FAILED AUTOLOAD: ${path.basename(filePath)}`, err);
           BaseAutoload.autoloadedFiles.add(filePath);
         }
       }
@@ -45,11 +43,8 @@ export class BaseAutoload {
     return patterns.some((pattern) => {
       try {
         const urlPattern = new URLPattern({ pathname: pattern });
-        // URLPattern.test() expects a full URL or URL components object
-        // For file paths, we need to test against the pathname component
         return urlPattern.test({ pathname: filename });
       } catch {
-        // Fallback to exact string match if pattern is invalid
         return filename === pattern;
       }
     });

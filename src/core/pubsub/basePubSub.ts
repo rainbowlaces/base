@@ -5,7 +5,7 @@ import { registerDi } from "../di/decorators/registerDi";
 import { BaseLogger } from "../logger/baseLogger";
 import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types";
 
-@registerDi({ singleton: true, teardown: true })
+@registerDi({ singleton: true, teardown: true, phase: 20 })
 export class BasePubSub {
   private static instance?: BasePubSub;
 

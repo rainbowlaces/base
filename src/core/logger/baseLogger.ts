@@ -9,6 +9,7 @@ import { diByTag } from "../di/baseDi";
 /**
  * BaseLogger provides a flexible, testable logging solution.
 */
+@registerDi()
 export class BaseLogger {
   // --- Private Properties ---
 

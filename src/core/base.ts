@@ -44,13 +44,8 @@ export class Base {
 
   async init() {
     const corePath = path.dirname(this.libRoot);
-    console.log("Autoloading core library...", corePath);
     await BaseAutoload.autoload(corePath);
-    console.log("***\n");
-
-    console.log("Autoloading user code...", this.fsRoot);
-    await BaseAutoload.autoload(this.fsRoot, []);
-    console.log("***\n");
+    await BaseAutoload.autoload(this.fsRoot, ["*/public/*"]);
 
     await BaseInitializer.run();
 

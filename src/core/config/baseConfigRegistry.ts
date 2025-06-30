@@ -48,8 +48,6 @@ export class BaseConfigRegistry {
 
             // Register it as a scalar/value. It's just an object, not a class to be constructed.
             BaseDi.register(moduleConfig, { key: diKey, singleton: true, type: "scalar" });
-            
-            console.log(`Registered config for ${diKey}`); // A bit of logging never hurts.
         }
     }
   }

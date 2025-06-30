@@ -1,4 +1,3 @@
-
 import { type BaseDiWrapper, type Constructor, type Instance, type Scalar, type DiTeardown } from "./types";
 import { BaseInitializer } from "./baseInitializer";
 
@@ -55,6 +54,7 @@ export class BaseDi {
       throw new Error("Invalid value type for DI registration");
     }
     
+    console.log(`DI: Registered ${wrapper.type} '${wrapper.key}' (singleton: ${wrapper.singleton})`);
     BaseDi.registrations.set(wrapper.key as string, wrapper as BaseDiWrapper<unknown>);
   }
 
