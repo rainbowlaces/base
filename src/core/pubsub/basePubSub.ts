@@ -1,13 +1,19 @@
 import { delay } from "../../utils/async";
+import { BaseError } from "../baseErrors";
+import { di } from "../di/baseDi";
 import { registerDi } from "../di/decorators/registerDi";
+import { BaseLogger } from "../logger/baseLogger";
 import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types";
 
-@registerDi({ singleton: true })
+@registerDi({ singleton: true, teardown: true })
 export class BasePubSub {
   private static instance?: BasePubSub;
 
   private subscriptions: Set<Subscription> = new Set<Subscription>();
   private inflightCount = 0;
+
+  @di<BaseLogger>(BaseLogger, "PubSub")
+  private accessor logger!: BaseLogger;
 
   get inFlight(): number {
     return this.inflightCount;
@@ -18,7 +24,6 @@ export class BasePubSub {
     await delay();
     await Promise.all(
       this.filterSubs(topic).map(async (m: SubscriptionMatch) => {
-        await delay();
         const fullArgs = { ...args, ...(m.params ?? {}), topic };
         m.subscription
           .handler(fullArgs)
@@ -92,7 +97,13 @@ export class BasePubSub {
       .filter((m: SubscriptionMatch) => !!m.match);
   }
 
-  private handleError(err: Error): void {
-    console.error(err);
+  async teardown(): Promise<void> {
+    this.logger.info("BasePubSub teardown started.");
+    this.subscriptions.clear();
+    this.logger.info('BasePubSub teardown complete.');
+  }
+
+  private handleError(error: Error): void {
+    this.logger.error("Error in pubsub handler:", [], { error: new BaseError(error.message, error) });
   }
 }
