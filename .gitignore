@@ -119,3 +119,6 @@ old/requestHandler/types.ts
 old/testApp/src/modules/testModuleA.ts
 old/testApp/src/modules/testModuleB.ts
 old/testApp/src/public/test.html
+LEARNINGS.md
+.gitignore
+TODO.md
