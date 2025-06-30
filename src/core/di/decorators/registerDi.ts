@@ -21,6 +21,13 @@ export function registerDi<T = unknown>(
       options = keyOrOptions ?? {};
     }
 
+    // Validate that phase can only be used with singletons
+    if (options.phase !== undefined && options.singleton !== true) {
+      throw new Error(
+        `Configuration Error: The class '${context.name}' was registered with 'phase: ${options.phase}' but 'singleton' is not set to true. Phase ordering only makes sense for singleton services that are initialized during startup.`
+      );
+    }
+
     const wrapper: Partial<BaseDiWrapper<T>> = {
       key: options.key ?? target.name,
       singleton: options.singleton ?? false,
@@ -31,22 +38,26 @@ export function registerDi<T = unknown>(
     BaseDi.register(target, wrapper);
     
     if (options.setup === true) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (typeof (target.prototype).setup !== "function") {
+      // Validate that setup requires singleton: true
+      if (options.singleton !== true) {
         throw new Error(
-          `Configuration Error: The class '${context.name}' was registered with 'setup: true' but does not have a 'setup(): Promise<void>' method.`
+          `Configuration Error: The class '${context.name}' was registered with 'setup: true' but 'singleton' is not set to true. Setup/teardown only works with singleton: true services.`
         );
       }
+      
+      // Note: setup method is now optional - if it doesn't exist, we'll use delay() as no-op
       BaseInitializer.register(context.name as string, options.phase ?? 100);
     }
     
     if (options.teardown === true) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        if (typeof (target.prototype).teardown !== 'function') {
-          throw new Error(
-            `Configuration Error: The class '${context.name}' was registered with 'teardown: true' but does not have a 'teardown(): Promise<void>' method.`
-          );
-        }
+      // Validate that teardown requires singleton: true
+      if (options.singleton !== true) {
+        throw new Error(
+          `Configuration Error: The class '${context.name}' was registered with 'teardown: true' but 'singleton' is not set to true. Setup/teardown only works with singleton: true services.`
+        );
+      }
+      
+      // Note: teardown method is now optional - if it doesn't exist, we'll use delay() as no-op
     }
   };
 }

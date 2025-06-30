@@ -5,7 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert";
 import { BaseConfig } from "../../../src/core/config/baseConfig";
 import { BaseConfigRegistry, BaseConfigProvider } from "../../../src/core/config/baseConfigRegistry";
-import { config } from "../../../src/core/config/decorators/config";
+import { provider } from "../../../src/core/config/decorators/provider";
 import { BaseDi } from "../../../src/core/di/baseDi";
 import { BaseInitializer } from "../../../src/core/di/baseInitializer";
 import { registerDi } from "../../../src/core/di/decorators/registerDi";
@@ -45,7 +45,7 @@ test("Config System Integration Tests", (t) => {
     
     // Manually register services since they have decorators
     // In real apps this would happen automatically during module loading
-    BaseDi.register(BaseConfig, { phase: 10 });
+    BaseDi.register(BaseConfig, { singleton: true, phase: 10 });
     BaseInitializer.register('BaseConfig', 10);
     BaseDi.register(BaseConfigRegistry);
   });
@@ -53,7 +53,7 @@ test("Config System Integration Tests", (t) => {
   t.test("Complete Configuration Lifecycle", (t) => {
     t.test("should handle end-to-end configuration flow", async () => {
       // Step 1: Create config providers with decorators
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class DefaultDatabaseConfig extends BaseConfigProvider {
         get config() {
@@ -70,7 +70,7 @@ test("Config System Integration Tests", (t) => {
         }
       }
 
-      @config('production')
+      @provider('production')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class ProductionDatabaseConfig extends BaseConfigProvider {
         get config() {
@@ -86,7 +86,7 @@ test("Config System Integration Tests", (t) => {
         }
       }
 
-      @config('test', 50)
+      @provider('test', 50)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestApiConfig extends BaseConfigProvider {
         get config() {
@@ -132,7 +132,7 @@ test("Config System Integration Tests", (t) => {
 
   t.test("Multi-Environment Configuration", (t) => {
     t.test("should handle environment-specific overrides", async () => {
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class DefaultConfig extends BaseConfigProvider {
         get config() {
@@ -149,7 +149,7 @@ test("Config System Integration Tests", (t) => {
         }
       }
 
-      @config('development', 20) // Higher priority
+      @provider('development', 20) // Higher priority
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class DevelopmentConfig extends BaseConfigProvider {
         get config() {
@@ -164,7 +164,7 @@ test("Config System Integration Tests", (t) => {
         }
       }
 
-      @config('development', 10) // Lower priority
+      @provider('development', 10) // Lower priority
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class DevelopmentExtraConfig extends BaseConfigProvider {
         get config() {
@@ -200,7 +200,7 @@ test("Config System Integration Tests", (t) => {
   t.test("Service Injection Configuration", (t) => {
     t.test("should inject merged config objects into services", async () => {
       // Create config providers
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class ServiceConfig extends BaseConfigProvider {
         get config() {
@@ -266,7 +266,7 @@ test("Config System Integration Tests", (t) => {
 
   t.test("Error Handling and Edge Cases", (t) => {
     t.test("should handle missing environment gracefully", async () => {
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class BasicConfig extends BaseConfigProvider {
         get config() {
@@ -289,7 +289,7 @@ test("Config System Integration Tests", (t) => {
     });
 
     t.test("should handle empty config providers", async () => {
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class EmptyConfig extends BaseConfigProvider {
         get config() {
@@ -311,7 +311,7 @@ test("Config System Integration Tests", (t) => {
     });
 
     t.test("should handle config providers with undefined properties", async () => {
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class UndefinedConfig extends BaseConfigProvider {
         get config() {

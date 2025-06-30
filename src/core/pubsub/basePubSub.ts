@@ -2,17 +2,17 @@ import { delay } from "../../utils/async";
 import { BaseError } from "../baseErrors";
 import { di } from "../di/baseDi";
 import { registerDi } from "../di/decorators/registerDi";
-import { BaseLogger } from "../logger/baseLogger";
+import { type BaseLogger } from "../logger/baseLogger";
 import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types";
 
-@registerDi({ singleton: true, teardown: true, phase: 20 })
+@registerDi({ singleton: true, teardown: true, phase: 30 })
 export class BasePubSub {
   private static instance?: BasePubSub;
 
   private subscriptions: Set<Subscription> = new Set<Subscription>();
   private inflightCount = 0;
 
-  @di<BaseLogger>(BaseLogger, "PubSub")
+  @di<BaseLogger>("BaseLogger", "PubSub")
   private accessor logger!: BaseLogger;
 
   get inFlight(): number {
@@ -95,6 +95,11 @@ export class BasePubSub {
         };
       })
       .filter((m: SubscriptionMatch) => !!m.match);
+  }
+
+  async setup(): Promise<void> {
+    await delay();
+    this.logger.info("BasePubSub setup.");
   }
 
   async teardown(): Promise<void> {

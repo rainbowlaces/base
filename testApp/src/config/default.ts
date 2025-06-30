@@ -1,6 +1,6 @@
-import { type BaseAppConfig, BaseConfigProvider, config, LogLevel } from "../../../src";
+import { type BaseAppConfig, BaseConfigProvider, LogLevel, provider } from "../../../src";
 
-@config()
+@provider()
 export class AppConfig extends BaseConfigProvider {
   get config(): Partial<BaseAppConfig> {
     return {

@@ -122,3 +122,4 @@ old/testApp/src/public/test.html
 LEARNINGS.md
 .gitignore
 TODO.md
+old/types.ts

@@ -4,7 +4,7 @@ import { BaseConfigRegistry } from "./baseConfigRegistry";
 import { BaseDi } from "../di/baseDi";
 import { type Constructor } from "../di/types";
 
-@registerDi({ setup: true, phase: 10 })
+@registerDi({ setup: true, phase: 10, singleton: true })
 export class BaseConfig {
   private static config: BaseConfigRegistry;
 

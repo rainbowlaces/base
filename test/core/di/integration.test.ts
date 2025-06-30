@@ -530,21 +530,21 @@ describe("DI System Integration Tests", () => {
     it("should handle initialization failures gracefully", async () => {
       let setupCallCount = 0;
 
-      @registerDi({ setup: true, phase: 10 })
+      @registerDi({ setup: true, phase: 10, singleton: true })
       class _GoodService {
         async setup(): Promise<void> {
           setupCallCount++;
         }
       }
 
-      @registerDi({ setup: true, phase: 20 })
+      @registerDi({ setup: true, phase: 20, singleton: true })
       class _BadService {
         async setup(): Promise<void> {
           throw new Error("Setup failed");
         }
       }
 
-      @registerDi({ setup: true, phase: 30 })
+      @registerDi({ setup: true, phase: 30, singleton: true })
       class _NeverReachedService {
         async setup(): Promise<void> {
           setupCallCount++;

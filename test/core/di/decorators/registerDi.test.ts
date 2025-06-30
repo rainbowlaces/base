@@ -124,7 +124,7 @@ describe("@registerDi decorator", () => {
     });
 
     it("should use custom phase", () => {
-      @registerDi({ phase: 50 })
+      @registerDi({ singleton: true, phase: 50 })
       class TestService {
         value = "custom-phase";
       }
@@ -139,7 +139,7 @@ describe("@registerDi decorator", () => {
 
   describe("Setup Integration", () => {
     it("should register with BaseInitializer when setup is true", () => {
-      @registerDi({ setup: true })
+      @registerDi({ setup: true, singleton: true })
       class _TestSetupService {
         async setup(): Promise<void> {
           // Setup logic
@@ -152,7 +152,7 @@ describe("@registerDi decorator", () => {
     });
 
     it("should use custom phase for initialization", () => {
-      @registerDi({ setup: true, phase: 25 })
+      @registerDi({ setup: true, phase: 25, singleton: true })
       class _TestPhaseService {
         async setup(): Promise<void> {
           // Setup logic
@@ -164,17 +164,30 @@ describe("@registerDi decorator", () => {
       assert.strictEqual(initializers[0].phase, 25);
     });
 
-    it("should throw error when setup is true but no setup method exists", () => {
+    it("should throw error when setup is true but singleton is not true", () => {
       assert.throws(() => {
         @registerDi({ setup: true })
         class _TestBadService {
-          // No setup method
-          value = "test";
+          async setup(): Promise<void> {
+            // Has setup method but singleton is not true
+          }
         }
       }, {
         name: "Error",
-        message: /Configuration Error.*does not have a 'setup\(\): Promise<void>' method/
+        message: /Configuration Error.*singleton.*not set to true/
       });
+    });
+
+    it("should not require setup method when setup is true", () => {
+      // This should NOT throw anymore - setup methods are optional
+      @registerDi({ setup: true, singleton: true })
+      class TestServiceWithoutSetup {
+        value = "test";
+      }
+      
+      // Verify the registration worked
+      const instance = BaseDi.resolve<TestServiceWithoutSetup>("TestServiceWithoutSetup");
+      assert.strictEqual(instance.value, "test");
     });
 
     it("should not register with BaseInitializer when setup is false", () => {
@@ -204,7 +217,7 @@ describe("@registerDi decorator", () => {
 
   describe("Teardown Validation", () => {
     it("should validate teardown method exists when teardown is true", () => {
-      @registerDi({ teardown: true })
+      @registerDi({ teardown: true, singleton: true })
       class TestService {
         async teardown(): Promise<void> {
           // Teardown logic
@@ -216,17 +229,30 @@ describe("@registerDi decorator", () => {
       assert.ok(instance instanceof TestService);
     });
 
-    it("should throw error when teardown is true but no teardown method exists", () => {
+    it("should throw error when teardown is true but singleton is not true", () => {
       assert.throws(() => {
         @registerDi({ teardown: true })
         class _TestService {
-          // No teardown method
-          value = "test";
+          async teardown(): Promise<void> {
+            // Has teardown method but singleton is not true
+          }
         }
       }, {
         name: "Error",
-        message: /Configuration Error.*does not have a 'teardown\(\): Promise<void>' method/
+        message: /Configuration Error.*singleton.*not set to true/
       });
+    });
+
+    it("should not require teardown method when teardown is true", () => {
+      // This should NOT throw anymore - teardown methods are optional
+      @registerDi({ teardown: true, singleton: true })
+      class TestServiceWithoutTeardown {
+        value = "test";
+      }
+      
+      // Verify the registration worked
+      const instance = BaseDi.resolve<TestServiceWithoutTeardown>("TestServiceWithoutTeardown");
+      assert.strictEqual(instance.value, "test");
     });
 
     it("should not validate teardown method when teardown is false", () => {

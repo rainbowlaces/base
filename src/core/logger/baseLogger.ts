@@ -9,7 +9,9 @@ import {
 import { camelToLowerUnderscore } from "../../utils/string";
 import { NodeConsole, type Console } from "../../utils/console";
 import { registerDi } from "../di/decorators/registerDi";
-import { diByTag, di } from "../di/baseDi";
+import { diByTag } from "../di/baseDi";
+import { delay } from "../../utils/async";
+import { config } from "../config/decorators/config";
 
 /**
  * BaseLogger provides a flexible, testable logging solution.
@@ -22,7 +24,7 @@ export class BaseLogger {
   readonly baseTags: string[];
   readonly #console: Console;
 
-  @di<LoggerConfig>("Config.BaseLogger")
+  @config<LoggerConfig>("BaseLogger")
   private accessor config!: LoggerConfig;
 
   @diByTag("Logger:Serializer")
@@ -30,6 +32,10 @@ export class BaseLogger {
 
   @diByTag("Logger:Redactor")
   private accessor redactors!: LogObjectTransformer[];
+
+  async setup(): Promise<void> {
+    void delay();
+  }
 
   /**
    * Get the console method for a specific log level.

@@ -1,8 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { config } from '../../../../src/core/config/decorators/config';
-import { BaseConfigProvider, BaseConfigRegistry } from '../../../../src/core/config/baseConfigRegistry';
-import { BaseDi } from '../../../../src/core/di/baseDi';
+import { BaseConfigProvider, BaseConfigRegistry, BaseDi, provider } from '../../../../src';
 
 // Extend BaseAppConfig for testing
 declare module '../../../../src/core/config/types' {
@@ -25,7 +23,7 @@ test('@config decorator', (t) => {
   t.test('basic functionality', (t) => {
     t.test('should register provider with default parameters', () => {
       // Create a test config provider class
-      @config()
+      @provider()
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -37,14 +35,14 @@ test('@config decorator', (t) => {
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
       assert.strictEqual(providers.length, 1, 'Should register one provider');
       
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'default', 'Should use default environment');
-      assert.strictEqual(provider.priority, 0, 'Should use priority 0 for default environment');
-      assert.deepStrictEqual(provider.config, { test: 'value' }, 'Should have correct config');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'default', 'Should use default environment');
+      assert.strictEqual(configProvider.priority, 0, 'Should use priority 0 for default environment');
+      assert.deepStrictEqual(configProvider.config, { test: 'value' }, 'Should have correct config');
     });
 
     t.test('should register provider with custom environment', () => {
-      @config('test')
+      @provider('test')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -55,13 +53,13 @@ test('@config decorator', (t) => {
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
       assert.strictEqual(providers.length, 1, 'Should register one provider');
       
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'test', 'Should use custom environment');
-      assert.strictEqual(provider.priority, 100, 'Should use priority 100 for non-default environment');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'test', 'Should use custom environment');
+      assert.strictEqual(configProvider.priority, 100, 'Should use priority 100 for non-default environment');
     });
 
     t.test('should register provider with custom priority', () => {
-      @config('production', 50)
+      @provider('production', 50)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -72,13 +70,13 @@ test('@config decorator', (t) => {
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
       assert.strictEqual(providers.length, 1, 'Should register one provider');
       
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'production', 'Should use custom environment');
-      assert.strictEqual(provider.priority, 50, 'Should use custom priority');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'production', 'Should use custom environment');
+      assert.strictEqual(configProvider.priority, 50, 'Should use custom priority');
     });
 
     t.test('should register provider with default environment and custom priority', () => {
-      @config('default', 25)
+      @provider('default', 25)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -89,15 +87,15 @@ test('@config decorator', (t) => {
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
       assert.strictEqual(providers.length, 1, 'Should register one provider');
       
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'default', 'Should use default environment');
-      assert.strictEqual(provider.priority, 25, 'Should use custom priority even for default');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'default', 'Should use default environment');
+      assert.strictEqual(configProvider.priority, 25, 'Should use custom priority even for default');
     });
   });
 
   t.test('edge cases', (t) => {
     t.test('should handle environment normalization', () => {
-      @config('PRODUCTION')
+      @provider('PRODUCTION')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -106,12 +104,12 @@ test('@config decorator', (t) => {
       }
 
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'production', 'Should convert environment to lowercase');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'production', 'Should convert environment to lowercase');
     });
 
     t.test('should handle undefined environment parameter', () => {
-      @config(undefined)
+      @provider(undefined)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -120,13 +118,13 @@ test('@config decorator', (t) => {
       }
 
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
-      const provider = providers[0];
-      assert.strictEqual(provider.env, 'default', 'Should default to "default" for undefined environment');
-      assert.strictEqual(provider.priority, 0, 'Should use priority 0 for default environment');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.env, 'default', 'Should default to "default" for undefined environment');
+      assert.strictEqual(configProvider.priority, 0, 'Should use priority 0 for default environment');
     });
 
     t.test('should handle zero priority correctly', () => {
-      @config('test', 0)
+      @provider('test', 0)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -135,12 +133,12 @@ test('@config decorator', (t) => {
       }
 
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
-      const provider = providers[0];
-      assert.strictEqual(provider.priority, 0, 'Should handle zero priority correctly');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.priority, 0, 'Should handle zero priority correctly');
     });
 
     t.test('should handle negative priority correctly', () => {
-      @config('test', -10)
+      @provider('test', -10)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -149,12 +147,12 @@ test('@config decorator', (t) => {
       }
 
       const providers = ((BaseConfigRegistry as unknown) as { providers: BaseConfigProvider[] }).providers;
-      const provider = providers[0];
-      assert.strictEqual(provider.priority, -10, 'Should handle negative priority correctly');
+      const configProvider = providers[0];
+      assert.strictEqual(configProvider.priority, -10, 'Should handle negative priority correctly');
     });
 
     t.test('should register multiple providers correctly', () => {
-      @config('default')
+      @provider('default')
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class DefaultConfig extends BaseConfigProvider {
         get config() {
@@ -162,7 +160,7 @@ test('@config decorator', (t) => {
         }
       }
 
-      @config('test', 50)
+      @provider('test', 50)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class TestConfig extends BaseConfigProvider {
         get config() {
@@ -170,7 +168,7 @@ test('@config decorator', (t) => {
         }
       }
 
-      @config('PRODUCTION', 25)
+      @provider('PRODUCTION', 25)
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       class ProductionConfig extends BaseConfigProvider {
         get config() {

@@ -229,7 +229,7 @@ test('BaseInitializer', (t) => {
         // This should throw because BaseDi.resolve will fail
         await assert.rejects(
           async () => { await BaseInitializer.run(); },
-          { message: /No registration found for key/ }
+          { message: /No registration found for/ }
         );
       } finally {
         console.log = originalConsoleLog;

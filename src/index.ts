@@ -29,10 +29,11 @@ export { BaseInitializer } from "./core/di/baseInitializer";
 // export { html } from "../old/modules/templates/engine";
 
 // Decorator exports
-export { config } from "./core/config/decorators/config";
+export { provider as config } from "./core/config/decorators/provider";
 // export { request } from "../old/decorators/actions/request";
 // export { init } from "../old/decorators/actions/init";
 export { di } from "./core/di/decorators/di";
+export { provider } from "./core/config/decorators/provider";
 // export { registerDi as register } from "../old/decorators/registerDi";
 // export { dependsOn } from "../old/decorators/dependsOn";
 export { sub } from "./core/pubsub/decorators/sub";
