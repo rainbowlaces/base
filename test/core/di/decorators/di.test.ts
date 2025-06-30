@@ -169,20 +169,20 @@ describe("@di decorator", () => {
     });
   });
 
-  describe("Lazy Resolution", () => {
-    it("should resolve dependencies lazily on first access", () => {
+  describe("Fresh Resolution", () => {
+    it("should resolve dependencies fresh on each access", () => {
       let resolutionCount = 0;
       
       class ServiceA {
         constructor() {
           resolutionCount++;
         }
-        getValue() { return "lazy"; }
+        getValue() { return "fresh"; }
       }
-      BaseDi.register(ServiceA, "lazyService");
+      BaseDi.register(ServiceA, "freshService");
 
       class TestClass {
-        @di("lazyService")
+        @di("freshService")
         accessor service!: ServiceA;
       }
 
@@ -196,10 +196,10 @@ describe("@di decorator", () => {
       assert.strictEqual(resolutionCount, 1);
       assert.ok(service instanceof ServiceA);
       
-      // Subsequent accesses should use the same instance
+      // Subsequent accesses should resolve fresh instances
       const service2 = instance.service;
-      assert.strictEqual(resolutionCount, 1); // No additional resolution for same instance
-      assert.strictEqual(service, service2);
+      assert.strictEqual(resolutionCount, 2); // New resolution each time
+      assert.notStrictEqual(service, service2); // Different instances
     });
 
     it("should handle resolution errors gracefully", () => {

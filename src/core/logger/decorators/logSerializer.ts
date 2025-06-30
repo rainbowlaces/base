@@ -1,4 +1,4 @@
-import { registerDi } from "../../di/baseDi";
+import { registerDi } from "../../di/decorators/registerDi";
 import { type LogObjectTransformer } from "../types";
 
 export function logSerializer() {

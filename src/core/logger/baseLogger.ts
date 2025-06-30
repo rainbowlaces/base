@@ -1,30 +1,43 @@
 import { LogMessage } from "./logMessage";
-import { type LogContext, LogLevel, type SerializedLogMessage, type LoggerConfig, type LogObjectTransformer } from "./types";
+import {
+  type LogContext,
+  LogLevel,
+  type SerializedLogMessage,
+  type LoggerConfig,
+  type LogObjectTransformer,
+} from "./types";
 import { camelToLowerUnderscore } from "../../utils/string";
-import { type Console } from "./console";
+import { NodeConsole, type Console } from "../../utils/console";
 import { registerDi } from "../di/decorators/registerDi";
-import { di } from "../di/decorators/di";
-import { diByTag } from "../di/baseDi";
+import { diByTag, di } from "../di/baseDi";
 
 /**
  * BaseLogger provides a flexible, testable logging solution.
-*/
+ */
 @registerDi()
 export class BaseLogger {
   // --- Private Properties ---
 
-  readonly #namespace: string;
-  readonly #baseTags: string[];
-  readonly #config: LoggerConfig;
+  readonly namespace: string;
+  readonly baseTags: string[];
   readonly #console: Console;
-  readonly #serializers: LogObjectTransformer[];
-  readonly #redactors: LogObjectTransformer[];
+
+  @di<LoggerConfig>("Config.BaseLogger")
+  private accessor config!: LoggerConfig;
+
+  @diByTag("Logger:Serializer")
+  private accessor serializers!: LogObjectTransformer[];
+
+  @diByTag("Logger:Redactor")
+  private accessor redactors!: LogObjectTransformer[];
 
   /**
    * Get the console method for a specific log level.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _getConsoleMethod(level: string): (message?: any, ...optionalParams: any[]) => void {
+  private _getConsoleMethod(
+    level: string
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): (message?: any, ...optionalParams: any[]) => void {
     switch (level) {
       case LogLevel[LogLevel.FATAL]:
       case LogLevel[LogLevel.ERROR]:
@@ -42,84 +55,110 @@ export class BaseLogger {
     }
   }
 
-
   /**
    * Creates a new Logger instance.
    * @param namespace The namespace for this logger instance (e.g., the module name).
-   * @param config The logger configuration.
-   * @param console The console abstraction for output.
-   * @param serializers Array of serializer plugins.
-   * @param redactors Array of redactor plugins.
    * @param baseTags An optional array of tags to apply to all messages from this logger.
+   * @param console Optional console implementation for testing.
    */
   constructor(
     namespace: string,
-    config: LoggerConfig,
-    console: Console,
-    serializers: LogObjectTransformer[] = [],
-    redactors: LogObjectTransformer[] = [],
-    baseTags: string[] = []
-  ) {    
-    this.#namespace = camelToLowerUnderscore(namespace);
-    this.#config = config;
+    baseTags: string[] = [],
+    console: Console = new NodeConsole()
+  ) {
+    this.namespace = camelToLowerUnderscore(namespace);
+    this.baseTags = baseTags;
     this.#console = console;
-    this.#serializers = serializers;
-    this.#redactors = redactors;
-    this.#baseTags = baseTags;
   }
 
   // --- Public Logging API ---
 
-  public fatal(message: string, tags: string[] = [], context?: LogContext): void {
+  public fatal(
+    message: string,
+    tags: string[] = [],
+    context?: LogContext
+  ): void {
     this.log(message, tags, LogLevel.FATAL, context);
   }
 
-  public error(message: string | Error, tags: string[] = [], context: LogContext = {}): void {
+  public error(
+    message: string | Error,
+    tags: string[] = [],
+    context: LogContext = {}
+  ): void {
     if (message instanceof Error) {
-      this.log(message.message, tags, LogLevel.ERROR, { error: message, ...context });
+      this.log(message.message, tags, LogLevel.ERROR, {
+        error: message,
+        ...context,
+      });
     } else {
       this.log(message, tags, LogLevel.ERROR, context);
     }
   }
 
-  public warn(message: string, tags: string[] = [], context?: LogContext): void {
+  public warn(
+    message: string,
+    tags: string[] = [],
+    context?: LogContext
+  ): void {
     this.log(message, tags, LogLevel.WARNING, context);
   }
 
-  public info(message: string, tags: string[] = [], context?: LogContext): void {
+  public info(
+    message: string,
+    tags: string[] = [],
+    context?: LogContext
+  ): void {
     this.log(message, tags, LogLevel.INFO, context);
   }
 
-  public debug(message: string, tags: string[] = [], context?: LogContext): void {
+  public debug(
+    message: string,
+    tags: string[] = [],
+    context?: LogContext
+  ): void {
     this.log(message, tags, LogLevel.DEBUG, context);
   }
-  
-  public trace(message: string, tags: string[] = [], context?: LogContext): void {
+
+  public trace(
+    message: string,
+    tags: string[] = [],
+    context?: LogContext
+  ): void {
     this.log(message, tags, LogLevel.TRACE, context);
   }
 
-  public log(message: string, tags: string[] = [], level: LogLevel = LogLevel.INFO, context: LogContext = {}): void {
-    if (level > (this.#config.logLevel ?? LogLevel.INFO)) {
+  public log(
+    message: string,
+    tags: string[] = [],
+    level: LogLevel = LogLevel.INFO,
+    context: LogContext = {}
+  ): void {
+    if (!(level <= (this.config.logLevel ?? LogLevel.INFO))) {
       return;
     }
 
     const logMessage = new LogMessage(
-        message,
-        this.#namespace,
-        [...this.#baseTags, ...tags],
-        level,
-        context,
+      message,
+      this.namespace,
+      [...this.baseTags, ...tags],
+      level,
+      context
     );
 
     try {
-        const output = this._format(logMessage);
-        const consoleMethod = this._getConsoleMethod(logMessage.level);
-        consoleMethod(output);
-    } catch(err) {
-        // If formatting fails, log a raw error to avoid losing the original message entirely.
-        this.#console.error("--- LOGGER FORMATTING ERROR ---", err, "--- ORIGINAL MESSAGE ---", logMessage);
+      const output = this._format(logMessage);
+      const consoleMethod = this._getConsoleMethod(logMessage.level);
+      consoleMethod(output);
+    } catch (err) {
+      // If formatting fails, log a raw error to avoid losing the original message entirely.
+      this.#console.error(
+        "--- LOGGER FORMATTING ERROR ---",
+        err,
+        "--- ORIGINAL MESSAGE ---",
+        logMessage
+      );
     }
-
 
     // A fatal log should terminate the process.
     if (level === LogLevel.FATAL) {
@@ -142,21 +181,22 @@ export class BaseLogger {
       message: logMessage.message,
       tags: logMessage.tags,
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      context: this._applyTransformers(logMessage.context, this.#serializers),
+      context: this._applyTransformers(logMessage.context, this.serializers),
     };
 
     // Stage 2: Redact the entire plain object if redaction is enabled.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const redacted = (this.#config.redaction ?? true)
-      ? this._applyTransformers(serializable, this.#redactors)
-      : serializable;
+    const redacted =
+      (this.config.redaction ?? true)
+        ? this._applyTransformers(serializable, this.redactors)
+        : serializable;
 
     // Stage 3: Convert the final, safe object to a JSON string.
     return JSON.stringify(redacted, (_key, value: unknown) => {
-        if (typeof value === 'bigint') {
-            return value.toString();
-        }
-        return value;
+      if (typeof value === "bigint") {
+        return value.toString();
+      }
+      return value;
     });
   }
 
@@ -172,96 +212,57 @@ export class BaseLogger {
    * @param transformers An array of transformers (e.g., serializers or redactors).
    * @returns The transformed value or object.
    */
+  private _applyTransformers(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: any,
+    transformers: LogObjectTransformer[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private _applyTransformers(value: any, transformers: LogObjectTransformer[]): any {
-    const sortedTransformers = [...transformers].sort((a, b) => a.priority - b.priority);
+  ): any {
+    const sortedTransformers = [...transformers].sort(
+      (a, b) => a.priority - b.priority
+    );
     const seen = new WeakSet<object>();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const recurse = (val: any): any => {
-        if (typeof val === 'object' && val !== null) {
-            // Check for circular references
-            if (seen.has(val as object)) return '[CircularReference]';
-            seen.add(val as object);
+      // Find the highest-priority transformer that can handle the current value.
+      const transformer = sortedTransformers.find((t) => t.canTransform(val));
 
-            // Check if there's a transformer for this object FIRST
-            const objTransformer = sortedTransformers.find(t => t.canTransform(val));
-            if (objTransformer) {
-                // Transform the object, then recurse into the result
-                const transformed = objTransformer.transform(val);
-                if (typeof transformed === 'object' && transformed !== null) {
-                    // Now recurse into the transformed object's properties
-                    const result: Record<string, unknown> | unknown[] = Array.isArray(transformed) ? [] : {};
-                    for (const key in transformed) {
-                        if (Object.prototype.hasOwnProperty.call(transformed, key)) {
-                            if (Array.isArray(result)) {
-                                result[parseInt(key, 10)] = recurse((transformed as Record<string, unknown>)[key]);
-                            } else {
-                                result[key] = recurse((transformed as Record<string, unknown>)[key]);
-                            }
-                        }
-                    }
-                    return result;
-                } else {
-                    return transformed;
-                }
-            }
+      // If a transformer is found, use it and STOP.
+      // We don't recurse into the *result* of a transformation,
+      // as that could cause unpredictable behavior.
+      if (transformer) {
+        return transformer.transform(val);
+      }
 
-            // No transformer for this object, so recurse into its children
-            const result: Record<string, unknown> | unknown[] = Array.isArray(val) ? [] : {};
-            for (const key in val) {
-                if (Object.prototype.hasOwnProperty.call(val, key)) {
-                    if (Array.isArray(result)) {
-                        result[parseInt(key, 10)] = recurse((val as Record<string, unknown>)[key]);
-                    } else {
-                        result[key] = recurse((val as Record<string, unknown>)[key]);
-                    }
-                }
-            }
-            return result;
+      // If no transformer is found, and it's an object, we recurse into its children.
+      if (typeof val === "object" && val !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        if (seen.has(val)) {
+          return "[CircularReference]";
         }
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        seen.add(val);
 
-        // For primitives, find ALL applicable transformers and chain their results.
-        const applicableTransformers = sortedTransformers.filter(t => t.canTransform(val));
-        return applicableTransformers.reduce(
-            (currentValue, transformer) => transformer.transform(currentValue),
-            val
-        );
+        const result: Record<string, unknown> | unknown[] = Array.isArray(val)
+          ? []
+          : {};
+        for (const key in val) {
+          if (Object.prototype.hasOwnProperty.call(val, key)) {
+            const newKey = Array.isArray(result) ? parseInt(key, 10) : key;
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            result[newKey as keyof typeof result] = recurse(
+              (val as Record<string, unknown>)[key]
+            );
+          }
+        }
+        return result;
+      }
+
+      // If it's a primitive with no transformer, return it as is.
+      return val;
     };
 
     return recurse(value);
-  }
-}
-
-/**
- * DI-compatible factory for BaseLogger that resolves dependencies from the DI container.
- * Use this in production code where DI is available.
- */
-@registerDi()
-export class BaseLoggerFactory {
-  @di<LoggerConfig>("Config.BaseLogger")
-  accessor #config!: LoggerConfig;
-
-  @di<Console>("NodeConsole")
-  accessor #console!: Console;
-
-  @diByTag<LogObjectTransformer>("Logger:Serializer")
-  accessor #serializers!: LogObjectTransformer[];
-
-  @diByTag<LogObjectTransformer>("Logger:Redactor")
-  accessor #redactors!: LogObjectTransformer[];
-
-  /**
-   * Creates a new BaseLogger instance with dependencies resolved from DI.
-   */
-  public create(namespace: string, baseTags: string[] = []): BaseLogger {
-    return new BaseLogger(
-      namespace,
-      this.#config,
-      this.#console,
-      this.#serializers,
-      this.#redactors,
-      baseTags
-    );
   }
 }

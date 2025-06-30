@@ -15,12 +15,9 @@ export interface Console {
   trace(message?: any, ...optionalParams: any[]): void;
 }
 
-import { registerDi } from "../di/decorators/registerDi";
-
 /**
  * Default implementation that delegates to the global console object.
  */
-@registerDi()
 export class NodeConsole implements Console {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public log(message?: any, ...optionalParams: any[]): void {

@@ -4,7 +4,6 @@ import { BaseInitializer } from "./baseInitializer";
 export { BaseAutoload } from "./baseAutoload";
 export { BaseInitializer } from "./baseInitializer";
 
-export { registerDi } from "./decorators/registerDi";
 export { di } from "./decorators/di";
 export { diByTag } from "./decorators/diByTag";
 
@@ -107,9 +106,7 @@ export class BaseDi {
     return resolvedInstances;
   }
 
-  static async teardown(): Promise<void> {
-    console.log("Tearing down all services...");
-    
+  static async teardown(): Promise<void> {    
     const phases = new Map<number, string[]>();
     
     for (const registration of BaseDi.registrations.values()) {
@@ -125,32 +122,30 @@ export class BaseDi {
 
     for (const phaseNumber of sortedPhaseNumbers) {
       const itemsInPhase = phases.get(phaseNumber)!;
-      console.log(`--- Tearing down Phase ${phaseNumber} ---`);
-
       const phasePromises = itemsInPhase.map(async (name) => {
         if (BaseDi.instances.has(name)) {
           const instance = BaseDi.instances.get(name);
           if (instance && typeof (instance as DiTeardown).teardown === 'function') {
-            console.log(` - Tearing down: ${name}`);
             try {
               await (instance as DiTeardown).teardown();
-            } catch (error) {
-              console.error(` - Teardown failed for ${name}:`, error);
+            } catch {
               // Continue with other teardowns despite this failure
             }
           }
         }
       });
       await Promise.all(phasePromises);
-      console.log(`--- Phase ${phaseNumber} teardown complete ---`);
     }
 
+    BaseDi.reset();
+  }
+
+  public static reset(): void {
     BaseDi.instances.clear();
     BaseDi.registrations.clear();
     BaseInitializer.clear();
-    console.log("All services torn down and DI container cleared.");
+    BaseDi.resolving.clear();
   }
-
 
   private static isInstance(value: unknown): value is Instance<never> {
     return typeof value === "object" && value !== null;

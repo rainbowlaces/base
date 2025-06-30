@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { BaseDi } from '../../../src';
+import { BaseDi } from '../../../src/core/di/baseDi';
 import { type DiTeardown } from '../../../src/core/di/types';
 
 test('BaseDi', (t) => {

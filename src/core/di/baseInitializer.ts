@@ -1,5 +1,5 @@
-import { BaseDi } from "./baseDi";
 import { type DiSetup } from "./types";
+import { BaseDi } from "./baseDi";
 
 interface InitializerItem {
   name: string;

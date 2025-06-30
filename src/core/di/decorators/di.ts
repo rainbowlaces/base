@@ -19,16 +19,9 @@ export function di<T = unknown>(
       resolveKey = keyOrClass;
     }
 
-    let cached: T | undefined;
-    let resolved = false;
-
     return {
       get(): T {
-        if (!resolved) {
-          cached = BaseDi.resolve<T>(resolveKey, ...injectionArgs);
-          resolved = true;
-        }
-        return cached as T;
+        return BaseDi.resolve<T>(resolveKey, ...injectionArgs);
       },
       set(): void {
         throw new Error(

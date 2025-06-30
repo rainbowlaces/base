@@ -8,12 +8,9 @@ export function diByTag<T = unknown>(tag: string) {
     _target: unknown,
     context: ClassAccessorDecoratorContext
   ) {
-    let instances: T[] | null = null;
-
     return {
       get(): T[] {
-        instances ??= BaseDi.resolveByTag<T>(tag);
-        return instances;
+        return BaseDi.resolveByTag<T>(tag);
       },
       set(): void {
         throw new Error(

@@ -180,8 +180,8 @@ describe("@diByTag decorator", () => {
     });
   });
 
-  describe("Lazy Resolution and Caching", () => {
-    it("should resolve services lazily and cache result", () => {
+  describe("Fresh Resolution", () => {
+    it("should resolve services fresh on each access", () => {
       let resolutionCount = 0;
       
       class ServiceA {
@@ -212,10 +212,11 @@ describe("@diByTag decorator", () => {
       assert.strictEqual(resolutionCount, 1);
       assert.strictEqual(services1.length, 1);
       
-      // Second access should return cached result (same array)
+      // Second access should resolve fresh instances
       const services2 = instance.services;
-      assert.strictEqual(resolutionCount, 1); // No additional resolution
-      assert.strictEqual(services1, services2); // Same array reference
+      assert.strictEqual(resolutionCount, 2); // Fresh resolution each time
+      assert.notStrictEqual(services1, services2); // Different array references
+      assert.notStrictEqual(services1[0], services2[0]); // Different service instances
     });
 
     it("should handle empty results properly", () => {
@@ -229,9 +230,10 @@ describe("@diByTag decorator", () => {
       const services1 = instance.services;
       const services2 = instance.services;
       
-      // Should return the same empty array reference
-      assert.strictEqual(services1, services2);
+      // Should return different empty array references each time
+      assert.notStrictEqual(services1, services2);
       assert.strictEqual(services1.length, 0);
+      assert.strictEqual(services2.length, 0);
     });
   });
 

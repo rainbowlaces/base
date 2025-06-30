@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { BaseAutoload } from '../../../src';
+import { BaseAutoload } from '../../../src/core/di/baseAutoload';
 import { type FileSystem, type FileSystemEntry } from '../../../src/utils/fileSystem';
 import type fs from 'fs';
 
@@ -28,27 +28,13 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      // Track that import was called (we can't easily test the actual import)
-      const originalConsoleLog = console.log;
-      const logMessages: string[] = [];
-      console.log = (message: string) => {
-        logMessages.push(message);
-      };
-
-      try {
-        await BaseAutoload.autoload('/test/root', [], mockFileSystem);
-        
-        // Check that files were tracked
-        const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
-        assert.strictEqual(autoloadedFiles.size, 2); // Only .js files
-        assert.ok(autoloadedFiles.has('/test/root/service1.js'));
-        assert.ok(autoloadedFiles.has('/test/root/service2.js'));
-        
-        // Check console output
-        assert.ok(logMessages.some(msg => msg.includes('/test/root:')));
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', [], mockFileSystem);
+      
+      // Check that files were tracked
+      const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
+      assert.strictEqual(autoloadedFiles.size, 2); // Only .js files
+      assert.ok(autoloadedFiles.has('/test/root/service1.js'));
+      assert.ok(autoloadedFiles.has('/test/root/service2.js'));
     });
 
     t.test('should recursively scan subdirectories', async () => {
@@ -70,19 +56,12 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
-      console.log = () => { /* suppress output */ };
-
-      try {
-        await BaseAutoload.autoload('/test/root', [], mockFileSystem);
-        
-        const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
-        assert.strictEqual(autoloadedFiles.size, 2);
-        assert.ok(autoloadedFiles.has('/test/root/root.js'));
-        assert.ok(autoloadedFiles.has('/test/root/subdir/nested.js'));
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', [], mockFileSystem);
+      
+      const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
+      assert.strictEqual(autoloadedFiles.size, 2);
+      assert.ok(autoloadedFiles.has('/test/root/root.js'));
+      assert.ok(autoloadedFiles.has('/test/root/subdir/nested.js'));
     });
 
     t.test('should skip files matching ignore patterns', async () => {
@@ -101,20 +80,13 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
-      console.log = () => { /* suppress output */ };
-
-      try {
-        await BaseAutoload.autoload('/test/root', ['**/test.js', '**/spec.js'], mockFileSystem);
-        
-        const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
-        assert.strictEqual(autoloadedFiles.size, 1);
-        assert.ok(autoloadedFiles.has('/test/root/service1.js'));
-        assert.ok(!autoloadedFiles.has('/test/root/test.js'));
-        assert.ok(!autoloadedFiles.has('/test/root/spec.js'));
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', ['**/test.js', '**/spec.js'], mockFileSystem);
+      
+      const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
+      assert.strictEqual(autoloadedFiles.size, 1);
+      assert.ok(autoloadedFiles.has('/test/root/service1.js'));
+      assert.ok(!autoloadedFiles.has('/test/root/test.js'));
+      assert.ok(!autoloadedFiles.has('/test/root/spec.js'));
     });
 
     t.test('should skip non-JavaScript files', async () => {
@@ -129,18 +101,11 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
-      console.log = () => { /* suppress output */ };
-
-      try {
-        await BaseAutoload.autoload('/test/root', [], mockFileSystem);
-        
-        const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
-        assert.strictEqual(autoloadedFiles.size, 1);
-        assert.ok(autoloadedFiles.has('/test/root/service.js'));
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', [], mockFileSystem);
+      
+      const autoloadedFiles = BaseAutoload.getAutoloadedFiles();
+      assert.strictEqual(autoloadedFiles.size, 1);
+      assert.ok(autoloadedFiles.has('/test/root/service.js'));
     });
 
     t.test('should handle import errors gracefully', async () => {
@@ -155,10 +120,8 @@ test('BaseAutoload', (t) => {
 
       // Capture console.error to verify error handling
       const originalConsoleError = console.error;
-      const originalConsoleLog = console.log;
       let _errorCalled = false;
       console.error = () => { _errorCalled = true; };
-      console.log = () => { /* suppress output */ };
 
       try {
         await BaseAutoload.autoload('/test/root', [], mockFileSystem);
@@ -170,7 +133,6 @@ test('BaseAutoload', (t) => {
         // Note: error handling depends on actual import behavior which is hard to mock
       } finally {
         console.error = originalConsoleError;
-        console.log = originalConsoleLog;
       }
     });
 
@@ -183,9 +145,7 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
       const originalConsoleError = console.error;
-      console.log = () => { /* suppress output */ };
       console.error = () => { /* suppress output */ };
 
       try {
@@ -212,7 +172,6 @@ test('BaseAutoload', (t) => {
         await BaseAutoload.autoload('/test/root', [], mockFileSystem);
         assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 1); // Size should remain the same
       } finally {
-        console.log = originalConsoleLog;
         console.error = originalConsoleError;
       }
     });
@@ -260,18 +219,11 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
-      console.log = () => { /* suppress output */ };
-
-      try {
-        await BaseAutoload.autoload('/test/root', [], mockFileSystem);
-        assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 1);
-        
-        BaseAutoload.clearAutoloadedFiles();
-        assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 0);
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', [], mockFileSystem);
+      assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 1);
+      
+      BaseAutoload.clearAutoloadedFiles();
+      assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 0);
     });
   });
 
@@ -285,26 +237,19 @@ test('BaseAutoload', (t) => {
         stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
       };
 
-      const originalConsoleLog = console.log;
-      console.log = () => { /* suppress output */ };
-
-      try {
-        await BaseAutoload.autoload('/test/root', [], mockFileSystem);
-        
-        const files1 = BaseAutoload.getAutoloadedFiles();
-        const files2 = BaseAutoload.getAutoloadedFiles();
-        
-        // Should be different objects (copies)
-        assert.notStrictEqual(files1, files2);
-        // But with same content
-        assert.deepStrictEqual([...files1], [...files2]);
-        
-        // Modifying returned set shouldn't affect internal state
-        files1.clear();
-        assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 1);
-      } finally {
-        console.log = originalConsoleLog;
-      }
+      await BaseAutoload.autoload('/test/root', [], mockFileSystem);
+      
+      const files1 = BaseAutoload.getAutoloadedFiles();
+      const files2 = BaseAutoload.getAutoloadedFiles();
+      
+      // Should be different objects (copies)
+      assert.notStrictEqual(files1, files2);
+      // But with same content
+      assert.deepStrictEqual([...files1], [...files2]);
+      
+      // Modifying returned set shouldn't affect internal state
+      files1.clear();
+      assert.strictEqual(BaseAutoload.getAutoloadedFiles().size, 1);
     });
   });
 });
