@@ -1,4 +1,4 @@
-import { Tag, EndTag } from "./tag";
+import sanitizeHtml from "sanitize-html";
 
 export class TemplateValue {
   constructor(
@@ -13,9 +13,12 @@ export class TemplateValue {
     }
   }
 }
+
+
+
 export class TemplateResult {
   public readonly values: TemplateValue[] = [];
-  private _rendered: string | null = null;
+  private rendered: string | null = null;
 
   constructor(strings: string[], values: unknown[]) {
     const len = Math.max(strings.length, values.length);
@@ -31,55 +34,11 @@ export class TemplateResult {
 
   render(): string {
     const renderer = new TagRenderer();
-    this._rendered = renderer.renderAll(this.values);
-    return this._rendered;
+    this.rendered = renderer.renderAll(this.values);
+    return this.rendered;
   }
 
   toString(): string {
-    return this._rendered ?? "";
-  }
-}
-
-export class TagRenderer {
-  private stack: Tag[] = [];
-  private root: Tag;
-
-  constructor() {
-    this.root = new Tag();
-    this.stack.push(this.root);
-    this.root.open();
-  }
-
-  getCurrentContext(): Tag {
-    return this.stack[this.stack.length - 1];
-  }
-
-  renderAll(values: TemplateValue[]): string {
-    for (const tv of values) {
-      const current = this.getCurrentContext();
-      const result = current.process(tv);
-      if (typeof result === "string") {
-        this.getCurrentContext().inside(result);
-      }
-      if (tv.value instanceof Tag) {
-        if (tv.value instanceof EndTag) {
-          const closedTag = this.stack.pop();
-          if (closedTag && typeof result === "string") {
-            this.getCurrentContext().inside(result);
-          }
-        } else if (tv.value.isBlock()) {
-          this.stack.push(tv.value);
-          tv.value.open();
-        }
-      }
-    }
-    return this.finalize();
-  }
-
-  finalize(): string {
-    if (this.stack.length > 1) {
-      throw new Error(`Unclosed tags remain: ${this.stack.length - 1}`);
-    }
-    return this.root.close();
+    return this.rendered ?? "";
   }
 }

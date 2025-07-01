@@ -17,7 +17,7 @@
     "build": "node esbuild.config.js",
     "start:dev": "npm run build && NODE_ENV=development node --inspect -r source-map-support/register dist/testApp/src/index.js 2>&1 | node ./dev/logFormatter.js",
     "start:dev:watch": "nodemon",
-    "clean": "rm -rf dist",    
+    "clean": "rm -rf dist",
     "lint:fix": "npm run lint -- --fix",
     "clean:test": "rm -rf _test.dist",
     "build:test": "node esbuild.test.config.js",
@@ -63,6 +63,7 @@
     "@babel/preset-env": "^7.24.8",
     "@babel/preset-typescript": "^7.24.7",
     "@babel/types": "^7.24.9",
+    "@types/parse5": "^6.0.3",
     "cookie": "^1.0.2",
     "cookie-signature": "^1.2.1",
     "formidable": "^3.5.1",
@@ -70,6 +71,7 @@
     "luxon": "^3.4.4",
     "mime-types": "^3.0.1",
     "nanoid": "^5.0.7",
+    "parse5": "^7.3.0",
     "resolve": "^1.22.8",
     "sanitize-html": "^2.13.0"
   }

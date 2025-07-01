@@ -8,7 +8,6 @@ import { BaseModule } from "../../core/module/baseModule";
 import { di } from "../../core/di/baseDi";
 import { BaseError } from "../../core/baseErrors";
 import { dependsOn } from "../../core/module/decorators/dependsOn";
-import { init } from "../../core/module/decorators/init";
 import { loadFile } from "../../utils/file";
 import { request } from "../../core/module/decorators/request";
 import { type BaseHttpActionArgs } from "../../core/module/types";
@@ -35,8 +34,7 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
   accessor baseFsRoot!: string;
   staticFsRoot: string = "";
 
-  @init()
-  async init() {
+  async setup(): Promise<void> {
     this.staticFsRoot = path.normalize(
       path.join(this.baseFsRoot, this.config.staticFsRoot ?? "/public"),
     );
