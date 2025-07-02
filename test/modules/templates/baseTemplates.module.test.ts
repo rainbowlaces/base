@@ -36,7 +36,7 @@ test.skip('BaseTemplates setup() method', (t) => {
     RESET_TEST_ENVIRONMENT();
   });
 
-  t.test('should correctly create tag factories from registered tags', async () => {
+  t.test('should correctly create tag factories from registered tags', { skip: true }, async () => {
     const instance = CREATE_TEST_INSTANCE();
     
     await instance.setup();
@@ -75,7 +75,7 @@ test.skip('BaseTemplates setup() method', (t) => {
     ));
   });
 
-  t.test('should correctly create template factories from registered templates', async () => {
+  t.test('should correctly create template factories from registered templates', { skip: true }, async () => {
     const instance = CREATE_TEST_INSTANCE();
     
     await instance.setup();

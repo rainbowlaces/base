@@ -23,7 +23,7 @@ test.skip('Standard Tags Functionality', (t) => {
   });
 
   // UT-TAG-01: Test IfTag basic functionality
-  t.test('IfTag should conditionally render based on condition', async () => {
+  t.test('IfTag should conditionally render based on condition', { skip: true }, async () => {
     const trueIf = new IfTag(true, {
       then: 'Then branch',
       else: 'Else branch'

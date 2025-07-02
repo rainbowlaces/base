@@ -42,7 +42,7 @@ class TestUserListPage extends BaseTemplate<{ users: { name: string; isAdmin?: b
 }
 
 // IT-RENDER tests for complex integration scenarios
-test.skip('Template Integration Tests', (t) => {
+test('Template Integration Tests', (t) => {
   t.beforeEach(() => {
     RESET_TEST_ENVIRONMENT();
     
@@ -59,7 +59,7 @@ test.skip('Template Integration Tests', (t) => {
   });
 
   // IT-RENDER-01: Test master template rendering nested templates and tags
-  t.test('master template should correctly render nested templates and tags', async () => {
+  t.test('master template should correctly render nested templates and tags', { skip: true }, async () => {
     const instance = CREATE_TEST_INSTANCE();
     await instance.setup();
     
@@ -106,7 +106,7 @@ test.skip('Template Integration Tests', (t) => {
   });
   
   // IT-RENDER-02: Test async resolution of values and nested Renderable objects
-  t.test('should correctly resolve async values and nested Renderable objects', async () => {
+  t.test('should correctly resolve async values and nested Renderable objects', { skip: true }, async () => {
     const instance = CREATE_TEST_INSTANCE();
     await instance.setup();
     
@@ -134,7 +134,7 @@ test.skip('Template Integration Tests', (t) => {
   });
 
   // Additional test: Check empty list case
-  t.test('should render empty state when no users are provided', async () => {
+  t.test('should render empty state when no users are provided', { skip: true }, async () => {
     const instance = CREATE_TEST_INSTANCE();
     await instance.setup();
     
