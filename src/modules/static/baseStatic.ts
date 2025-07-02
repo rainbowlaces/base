@@ -10,6 +10,7 @@ import { BaseError } from "../../core/baseErrors";
 import { loadFile } from "../../utils/file";
 import { request } from "../../core/module/decorators/request";
 import { type BaseHttpActionArgs } from "../../core/module/types";
+import { NodeFileSystem, type FileSystem } from "../../utils/fileSystem";
 
 interface NodeError extends Error {
   code?: string;
@@ -32,6 +33,8 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
   @di("fsRoot")
   accessor baseFsRoot!: string;
   staticFsRoot: string = "";
+
+  fileSystem: FileSystem = new NodeFileSystem();
 
   async setup(): Promise<void> {
     this.logger.debug(`BaseStatic setup starting`, []);
@@ -88,7 +91,7 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     
     try {
       this.logger.debug(`Attempting to load file: ${filePath}`, [ctx.id]);
-      const result = await loadFile(filePath);
+      const result = await loadFile(filePath, this.fileSystem);
       data = result.data;
       stats = result.stats;
       this.logger.debug(`File loaded successfully, size: ${stats.size} bytes`, [ctx.id]);
