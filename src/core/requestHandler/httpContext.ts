@@ -30,7 +30,6 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
       this.error();
     });
 
-    // Trigger RFA coordination flow
     void this.coordinateAndRun(this.#topic).catch((error: unknown) => {
       this.logger.error("HTTP context coordination failed:",[], { error });
       // For HTTP contexts, respond with 404 or 501

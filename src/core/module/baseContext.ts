@@ -41,8 +41,9 @@ export abstract class BaseContext<
     }
   }
 
-  static getActionsForTopic(topic: string): BaseAction[] {
+  static getActionsForTopic(topic: string): { actions: BaseAction[], params: Record<string, string> } {
     const matchingActions: BaseAction[] = [];
+    const extractedParams: Record<string, string> = {};
     const logger = BaseDi.resolve<BaseLogger>(BaseLogger, "HttpHandler");
     
     logger.debug(`Finding actions for topic: ${topic}`);
@@ -50,9 +51,17 @@ export abstract class BaseContext<
     // Iterate through all registered URLPattern keys and test them against the topic
     for (const [urlPattern, actions] of BaseContext.actionRegistry.entries()) {
       try {
-        if (urlPattern.test(topic)) {
+        const match = urlPattern.exec(topic);
+        if (match?.pathname.groups) {
           logger.debug(`URLPattern matches topic '${topic}', adding ${actions.length} actions`);
           matchingActions.push(...actions);
+          
+          // Extract and merge parameters from this match
+          const pathParams = Object.fromEntries(
+            Object.entries(match.pathname.groups).filter(([_, value]) => value !== undefined)
+          );
+          Object.assign(extractedParams, pathParams);
+          logger.debug(`Extracted parameters: ${JSON.stringify(pathParams)}`);
         } else {
           logger.debug(`URLPattern does not match topic '${topic}'`);
         }
@@ -62,11 +71,13 @@ export abstract class BaseContext<
     }
     
     logger.debug(`Found ${matchingActions.length} total actions matching topic: ${topic}`);
-    return matchingActions;
+    logger.debug(`Total extracted parameters: ${JSON.stringify(extractedParams)}`);
+    return { actions: matchingActions, params: extractedParams };
   }
 
   // Phase execution properties
   #phaseMap = new Map<number, Set<string>>();
+  #urlParams: Record<string, string> = {};
 
   static #registry: FinalizationRegistry<Subscription> =
     new FinalizationRegistry<Subscription>((sub: Subscription) => {
@@ -105,8 +116,12 @@ export abstract class BaseContext<
     this.logger.debug(`Starting coordination flow for topic: ${topic}`);
     
     // Look up actions using URL pattern matching
-    const actions = BaseContext.getActionsForTopic(topic);
+    const { actions, params } = BaseContext.getActionsForTopic(topic);
     this.logger.debug(`Found ${actions.length} actions matching topic: ${topic}`);
+    
+    // Store extracted parameters for use in action execution
+    this.#urlParams = params;
+    this.logger.debug(`Stored URL parameters: ${JSON.stringify(params)}`);
 
     // Build phase map from registered actions
     for (const action of actions) {
@@ -173,7 +188,10 @@ export abstract class BaseContext<
 
           // Trigger the action execution
           this.logger.debug(`Triggering execution of ${actionId}`);
-          void BaseContext.pubsub.pub(executionTopic, { context: this });
+          void BaseContext.pubsub.pub(executionTopic, { 
+            context: this, 
+            ...this.#urlParams 
+          });
         });
       });
 

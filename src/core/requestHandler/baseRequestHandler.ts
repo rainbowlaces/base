@@ -44,12 +44,12 @@ export class BaseRequestHandler {
   private async handleContext(ctx: BaseHttpContext) {
     ctx.res.once("done", () => {
       this.logger.info("Request done.", [ctx.id]);
-      ctx.res.removeAllListeners("error");
+      ctx.res.removeAllListeners();
     });
 
     ctx.res.once("error", (err: BaseError) => {
       this.logger.warn(err.message, [ctx.id], { err });
-      ctx.res.removeAllListeners("done");
+      ctx.res.removeAllListeners();
     });
 
     this.logger.info(`New request: ${ctx.topic}`, [ctx.id]);

@@ -11,7 +11,6 @@ export class BaseInitContext extends BaseContext<InitContextData> {
         `/base/init/${id}/${module}/${action}/${status}`,
     );
 
-    // Trigger RFA coordination flow
     this.coordinateAndRun("/init").catch((error: unknown) => {
       console.error("Init context coordination failed:", error);
       this.error();

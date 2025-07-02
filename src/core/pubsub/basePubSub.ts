@@ -89,8 +89,7 @@ export class BasePubSub {
         const match = subscription.pattern.exec({ pathname: topic });
         return {
           subscription,
-          match: !!match,
-           
+          match: !!match,           
           params: match ? (match.pathname.groups as BasePubSubArgs) : undefined,
         };
       })
