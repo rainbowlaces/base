@@ -17,6 +17,6 @@ export class ErrorTemplate extends BaseTemplate<Error> {
 
 declare module "../types" {
     interface Templates {
-        ErrorTemplate: (data: Error) => TemplateResult;
+        ErrorTemplate: ErrorTemplate;
     }
 }

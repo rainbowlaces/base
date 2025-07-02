@@ -10,7 +10,7 @@ const pkg = JSON.parse(readFileSync('./package.json', 'utf8'));
 
 // --- Server Build ---
 build({
-  entryPoints: await glob(['./src/**/*.ts', './testApp/**/*.ts'], { ignore: ['./testApp/src/components/**'] }),
+  entryPoints: await glob(['./src/**/*.ts', './testApp/**/*.ts'], { ignore: ['./testApp/src/elements/**'] }),
   outdir: 'dist',
   platform: 'node',
   target: 'node24',
@@ -29,10 +29,9 @@ build({
   ],
 }).catch(() => process.exit(1));
 
-
 // --- Client Build and asset copy: Bundle it up ---
 build({
-    entryPoints: ['./testApp/src/components/loader.ts'],
+    entryPoints: ['./testApp/src/elements/loader.ts'],
     bundle: true,
     outfile: './dist/testApp/src/public/bundle.js',
     format: 'esm',

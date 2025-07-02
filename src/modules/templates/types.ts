@@ -72,11 +72,6 @@ declare module "../../core/config/types" {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface TemplateTags {
-  // Modules will add their tags here via declaration merging
-}
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type TagFactory<T extends Tag<any, any>> = (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -91,9 +86,11 @@ export type TagFactories = { [K in keyof TemplateTags]: TagFactory<TemplateTags[
  * Registry of available template components.
  * Modules will extend this using declaration merging via the @template decorator.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 export interface Templates {
   // e.g. 'MyComponent': BaseTemplate<{ prop1: string }>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [K: string]: BaseTemplate<any>;
 }
 
 // And a helper type for the factory functions, for consistency

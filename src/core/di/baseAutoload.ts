@@ -10,7 +10,7 @@ export class BaseAutoload {
     ignore: string[] = [],
     fileSystem: FileSystem = new NodeFileSystem()
   ): Promise<void> {
-    debugLog(`[BaseAutoload] Starting autoload for root: ${root}`);
+    console.log(`[BaseAutoload] Starting autoload for root: ${root}`);
     debugLog(`[BaseAutoload] Ignore patterns:`, ignore);
     
     if (BaseAutoload.matchesIgnorePattern(root, ignore)) {
