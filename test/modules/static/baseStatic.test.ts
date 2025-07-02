@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { mock } from 'node:test';
