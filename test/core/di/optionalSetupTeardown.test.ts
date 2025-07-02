@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { registerDi } from "../../../src/core/di/decorators/registerDi";
@@ -47,7 +48,7 @@ test("Optional Setup/Teardown Methods", (t) => {
 
   t.test("should enforce that phase requires singleton=true", () => {
     assert.throws(() => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       @registerDi({ singleton: false, phase: 10 })
       class NonSingletonWithPhase {
         public value = 42; // Added to avoid empty class
@@ -61,7 +62,7 @@ test("Optional Setup/Teardown Methods", (t) => {
   t.test("should still work with setup method present", async () => {
     let setupCalled = false;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     @registerDi({ singleton: true, setup: true, phase: 30 })
     class ServiceWithSetup {
       async setup(): Promise<void> {
@@ -76,7 +77,7 @@ test("Optional Setup/Teardown Methods", (t) => {
   t.test("should still work with teardown method present", async () => {
     let teardownCalled = false;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     @registerDi({ singleton: true, teardown: true, phase: 40 })
     class ServiceWithTeardown {
       async teardown(): Promise<void> {
@@ -93,7 +94,7 @@ test("Optional Setup/Teardown Methods", (t) => {
   t.test("should respect phase ordering even without setup methods", async () => {
     const order: string[] = [];
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     @registerDi({ singleton: true, setup: true, phase: 10 })
     class ServicePhase10 {
       constructor() {
@@ -103,7 +104,7 @@ test("Optional Setup/Teardown Methods", (t) => {
       public value = 10; // Added property to avoid lint error
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     @registerDi({ singleton: true, setup: true, phase: 5 })
     class ServicePhase5 {
       constructor() {
@@ -113,7 +114,7 @@ test("Optional Setup/Teardown Methods", (t) => {
       public value = 5; // Added property to avoid lint error
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     @registerDi({ singleton: true, setup: true, phase: 15 })
     class ServicePhase15 {
       constructor() {

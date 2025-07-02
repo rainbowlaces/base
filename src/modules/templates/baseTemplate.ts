@@ -1,18 +1,27 @@
-class BaseTemplate {
+import { di } from "../../core/di/baseDi";
+import { BaseTemplates } from "./baseTemplates";
+import { type TemplateResult } from "./engine/templateResult";
+import { type TemplateFactories, type TagFactories } from "./types";
 
-}
+export abstract class BaseTemplate<T> {
 
-class TemplateResult {
-    constructor() {
-        
+    @di<BaseTemplates>(BaseTemplates)
+    accessor #templates!: BaseTemplates;
+
+    protected readonly data: T;
+
+    constructor(data: T) {
+        this.data = data;
     }
-}
 
-function html(
-  strings: TemplateStringsArray,
-  ...values: unknown[]
-): TemplateResult {
-  return new TemplateResult(Array.from(strings), values);
-}
+    get tags(): TagFactories {
+        return this.#templates.tagFactories;
+    }
 
-export { html, BaseTemplate, TemplateResult };
+    get templates(): TemplateFactories {
+        return this.#templates.templateFactories;
+    }
+
+    abstract render(): TemplateResult;
+
+}

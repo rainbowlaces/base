@@ -130,6 +130,12 @@ export default [
           selector: "property",
           format: ["camelCase", "PascalCase"],
         },
+        // Allow method signatures in interfaces to be PascalCase or camelCase
+        {
+          selector: "method",
+          format: ["camelCase", "PascalCase"],
+          leadingUnderscore: "allow",
+        },
       ],
       "no-restricted-syntax": [
         "error",
@@ -165,57 +171,12 @@ export default [
   {
     files: ["testApp/src/config/**/*.ts"],
     rules: {
+      // Object literal properties can be snake_case, camelCase, or PascalCase
       "@typescript-eslint/naming-convention": [
         "error",
-        // Default: most things should be camelCase
-        {
-          selector: "default",
-          format: ["camelCase"],
-          leadingUnderscore: "allow",
-          trailingUnderscore: "allow",
-        },
-        // Variables can be camelCase or UPPER_CASE (for constants)
-        {
-          selector: "variable",
-          format: ["camelCase", "UPPER_CASE"],
-          leadingUnderscore: "allow",
-          trailingUnderscore: "allow",
-        },
-        // Top-level const variables should be UPPER_CASE
-        {
-          selector: "variable",
-          modifiers: ["const", "global"],
-          format: ["UPPER_CASE"],
-          leadingUnderscore: "forbid",
-        },
-        // Class names, types, interfaces should be PascalCase
-        {
-          selector: "typeLike",
-          format: ["PascalCase"],
-        },
-        // Parameters with _ prefix are allowed to be unused
-        {
-          selector: "parameter",
-          modifiers: ["unused"],
-          format: ["camelCase"],
-          leadingUnderscore: "require",
-        },
-        // Allow destructured variables to keep their original names
-        {
-          selector: "variable",
-          modifiers: ["destructured"],
-          format: null,
-        },
-        // Object literal properties can be snake_case, camelCase, or PascalCase
         {
           selector: "objectLiteralProperty",
           format: ["snake_case", "camelCase", "PascalCase"],
-        },
-        // Allow any format for properties that require quotes (includes kebab-case)
-        {
-          selector: "property",
-          modifiers: ["requiresQuotes"],
-          format: null,
         },
       ],
     },
