@@ -12,7 +12,7 @@ export class BaseInitContext extends BaseContext<InitContextData> {
     );
 
     // Trigger RFA coordination flow
-    this._coordinateAndRun().catch((error: unknown) => {
+    this.coordinateAndRun("/init").catch((error: unknown) => {
       console.error("Init context coordination failed:", error);
       this.error();
     });

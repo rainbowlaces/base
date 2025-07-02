@@ -20,8 +20,9 @@ export interface BaseAction extends Subscriber {
   dependsOn?: string[];
   action: true;
   phase: number;
-  type: "request" | "init";
+  module: string;
   name: string;
+  topic: string;
 }
 
 export type TopicFunction = (

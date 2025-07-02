@@ -1,6 +1,7 @@
 import { BaseDi } from "../../di/baseDi";
 import { type BasePubSub } from "../../pubsub/basePubSub";
 import { type BasePubSubArgs } from "../../pubsub/types";
+import { BaseContext } from "../baseContext";
 import { type BaseModule } from "../baseModule";
 import { type BaseAction, type ActionOptions, type BaseActionArgs } from "../types";
 
@@ -11,14 +12,12 @@ function request(optionsOrTopic?: ActionOptions | string) {
     context: ClassMethodDecoratorContext,
   ): void {
     const target = t as BaseAction;
-
     target.action = true;
-    target.type = "request";
 
-    // Handle backwards compatibility
+    // Handle both string topic and ActionOptions
     let options: ActionOptions;
     if (typeof optionsOrTopic === "string") {
-      options = { topic: optionsOrTopic, phase: 1 };
+      options = { topic: optionsOrTopic, phase: 100 };
     } else {
       options = optionsOrTopic ?? {};
     }
@@ -29,23 +28,12 @@ function request(optionsOrTopic?: ActionOptions | string) {
       const module = this as BaseModule;
       const moduleName = module.constructor.name;
       const actionName = target.name;
+      target.module = moduleName;
+      target.topic = `/request/:requestId${options.topic ?? "/*"}`;
+
+      BaseContext.registerAction(target.topic, target);
 
       const pubsub = BaseDi.resolve<BasePubSub>("BasePubSub");
-
-      // RFA subscription - respond to Request for Action
-      pubsub.sub(
-        `/context/http/:contextId/rfa`,
-        async function (args: BasePubSubArgs) {
-          const rfaPayload = (args as unknown) as { contextId: string; contextType: string };
-          // Respond with Intent to Handle (ITH)
-          const ithTopic = `/context/${rfaPayload.contextId}/ith`;
-          void pubsub.pub(ithTopic, {
-            module: moduleName,
-            action: actionName,
-            phase: target.phase
-          });
-        }
-      );
 
       // Execution subscription - handle the actual action execution
       pubsub.sub(
