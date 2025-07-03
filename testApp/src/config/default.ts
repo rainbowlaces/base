@@ -8,7 +8,7 @@ export class AppConfig extends BaseConfigProvider {
         port: 3000,
       },
       BaseLogger: {
-        logLevel: LogLevel.TRACE,
+        logLevel: LogLevel.INFO,
       }
     };
   }

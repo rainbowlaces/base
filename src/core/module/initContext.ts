@@ -11,8 +11,7 @@ export class BaseInitContext extends BaseContext<InitContextData> {
         `/base/init/${id}/${module}/${action}/${status}`,
     );
 
-    this.coordinateAndRun("/init").catch((error: unknown) => {
-      console.error("Init context coordination failed:", error);
+    this.coordinateAndRun("/init").catch(() => {
       this.error();
     });
   }

@@ -33,8 +33,12 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
   @di("fsRoot")
   accessor baseFsRoot!: string;
   staticFsRoot: string = "";
+  fileSystem: FileSystem;
 
-  fileSystem: FileSystem = new NodeFileSystem();
+  constructor(fs: FileSystem = new NodeFileSystem()) {
+    super();
+    this.fileSystem =fs;
+  }
 
   async setup(): Promise<void> {
     this.logger.debug(`BaseStatic setup starting`, []);
