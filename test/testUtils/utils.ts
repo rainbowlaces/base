@@ -2,24 +2,45 @@ import { BaseDi, type BaseLogger } from "../../src";
 import { type BaseModule } from "../../src/core/module/baseModule";
 import { type BaseClassConfig } from "../../src/core/config/types";
 import { type FileSystem } from "../../src/utils/fileSystem";
+import { type BasePubSub } from "../../src/core/pubsub/basePubSub";
+import { mock } from 'node:test';
+
+function debugLog(...args: unknown[]): void {
+    if (process.env.LOG_DEBUG) {
+        console.log(...args);
+    }
+}
 
 export function getMockLogger(): BaseLogger {
     return {
-        error: () => { /* Mock logger method */ },
-        info: () => { /* Mock logger method */ },
-        warn: () => { /* Mock logger method */ },
-        debug: () => { /* Mock logger method */ },
-        trace: () => { /* Mock logger method */ },
-        fatal: () => { /* Mock logger method */ }
+        error: mock.fn((...args: unknown[]) => { debugLog("Mock error:", ...args); }),
+        info: mock.fn((...args: unknown[]) => { debugLog("Mock info:", ...args); }),
+        warn: mock.fn((...args: unknown[]) => { debugLog("Mock warn:", ...args); }),
+        debug: mock.fn((...args: unknown[]) => { debugLog("Mock debug:", ...args); }),
+        trace: mock.fn((...args: unknown[]) => { debugLog("Mock trace:", ...args); }),
+        fatal: mock.fn((...args: unknown[]) => { debugLog("Mock fatal:", ...args); })
     } as unknown as BaseLogger;
+}
+
+export function getMockPubSub(): BasePubSub {
+    return {
+        pub: mock.fn(async () => { /* Mock pubsub method */ }),
+        sub: mock.fn(() => ({ /* Mock subscription */ })),
+        unsub: mock.fn(() => { /* Mock pubsub method */ }),
+        once: mock.fn(async () => { /* Mock pubsub method */ }),
+        setup: mock.fn(async () => { /* Mock pubsub method */ }),
+        teardown: mock.fn(async () => { /* Mock pubsub method */ }),
+        get inFlight() { return 0; }
+    } as unknown as BasePubSub;
 }
 
 export function getMockFileSystem(): FileSystem {
     const now = new Date();
+    
     return {
-        readdir: async () => [],
-        readFile: async () => Buffer.alloc(0),
-        stat: async () => ({
+        readdir: mock.fn(async () => []),
+        readFile: mock.fn(async () => Buffer.alloc(0)),
+        stat: mock.fn(async () => ({
             isFile: () => false,
             isDirectory: () => false,
             isBlockDevice: () => false,
@@ -45,21 +66,28 @@ export function getMockFileSystem(): FileSystem {
             rdev: 0,
             blksize: 0,
             blocks: 0
-        })
+        }))
     };
 }
 
-export function getModuleWithMocks<C extends BaseClassConfig, T extends BaseModule<C>>(name: string, builder: () => T, inject: Record<string, unknown> = {}): { module: T; logger: BaseLogger; config: C; } {
+export function getModuleWithMocks<C extends BaseClassConfig, T extends BaseModule<C>>(name: string, builder: () => T, inject: Record<string, unknown> = {}): { module: T; logger: BaseLogger; config: C; pubsub: BasePubSub; } {
     BaseDi.reset();
     const logger = getMockLogger();
-    BaseDi.register("BaseLogger", { value: logger, singleton: true });
+    const pubsub = getMockPubSub();
+    
+    // Register the logger and pubsub as scalar values
+    BaseDi.register(logger, { key: "BaseLogger", singleton: true, type: "scalar" });
+    BaseDi.register(pubsub, { key: "BasePubSub", singleton: true, type: "scalar" });
+    
     const config = {} as C;
-    BaseDi.register({ key: `Config.${name}`, singleton: true, type: "scalar", value: config });
+    BaseDi.register(config, { key: `Config.${name}`, singleton: true, type: "scalar" });
 
     for (const [key, value] of Object.entries(inject)) {
-        BaseDi.register(key, { value, singleton: true });
+        BaseDi.register(value, { key, singleton: true, type: "scalar" });
     }
 
+    // Now create the module AFTER all dependencies are registered
     const module = builder();
-    return { module, logger, config };
+
+    return { module, logger, config, pubsub };
 }

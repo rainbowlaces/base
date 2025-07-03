@@ -37,7 +37,7 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
 
   constructor(fs: FileSystem = new NodeFileSystem()) {
     super();
-    this.fileSystem =fs;
+    this.fileSystem = fs;
   }
 
   async setup(): Promise<void> {
@@ -45,7 +45,7 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     this.logger.debug(`Base filesystem root: ${this.baseFsRoot}`, []);
     this.logger.debug(`Config staticFsRoot: ${this.config.staticFsRoot ?? "/public"}`, []);
     
-    this.staticFsRoot = path.normalize(
+    this.staticFsRoot = path.resolve(
       path.join(this.baseFsRoot, this.config.staticFsRoot ?? "/public"),
     );
     
@@ -56,6 +56,9 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
 
   @request("/get/static/:path*")
   async handleStatic({ context: ctx, path: reqPath }: BaseHttpActionArgs & { path?: string }) {
+
+    this.logger.debug(`******* handleStatic called with path: ${reqPath} ******`, [ctx.id]);
+
     if (!reqPath) {
       this.logger.debug(`No path provided, returning 400`, [ctx.id]);
       ctx.res.statusCode(400);
@@ -75,8 +78,8 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
       return;
     }
 
-    const filePath = path.normalize(path.join(this.staticFsRoot, cleanPath));
-    this.logger.debug(`Resolved file path: ${filePath}`, [ctx.id]);
+    const filePath = path.join(path.resolve(this.staticFsRoot, cleanPath));
+    this.logger.debug(`Resolved file path: ${filePath} from req path: ${reqPath}`, [ctx.id]);
 
     // Security check - ensure file is within static root
     if (!filePath.startsWith(this.staticFsRoot)) {
@@ -86,15 +89,18 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
       void ctx.res.send("Forbidden");
       return;
     }
+    else {
+      this.logger.debug(`Filepath(${filePath}) is inside of root(${this.staticFsRoot})`, [ctx.id]);
+    }
 
-    this.logger.debug(`Security check passed, loading file`, [ctx.id]);
+    this.logger.debug(`Security check passed, loading file Filepath(${filePath})`, [ctx.id]);
 
     // Load the file
     let data: Buffer | string;
     let stats: fs.Stats;
     
     try {
-      this.logger.debug(`Attempting to load file: ${filePath}`, [ctx.id]);
+      this.logger.debug(`Attempting to load file: ${filePath}`, [ctx.id], {FS: this.fileSystem});
       const result = await loadFile(filePath, this.fileSystem);
       data = result.data;
       stats = result.stats;
