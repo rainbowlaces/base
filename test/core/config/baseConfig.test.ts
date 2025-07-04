@@ -40,7 +40,7 @@ test('BaseConfig', (t) => {
           return mockConfigRegistry;
         }
         throw new Error('Unexpected resolve call');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       }) as any;
 
       const baseConfig = new BaseConfig();
@@ -59,7 +59,7 @@ test('BaseConfig', (t) => {
       const originalResolve = BaseDi.resolve.bind(BaseDi);
       BaseDi.resolve = (() => {
         throw new Error('Key \'env\' not found in DI container');
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       }) as any;
 
       const baseConfig = new BaseConfig();
@@ -79,7 +79,7 @@ test('BaseConfig', (t) => {
       // Manually set up BaseConfig with test data
       const baseConfig = new BaseConfig();
       // Access private static field for testing
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (BaseConfig as any).config = {
         config: {
           TestModule: { apiUrl: 'test-api', timeout: 5000 },
@@ -96,7 +96,7 @@ test('BaseConfig', (t) => {
 
     t.test('should return undefined for non-existent namespace', () => {
       const baseConfig = new BaseConfig();
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (BaseConfig as any).config = {
         config: { TestModule: { apiUrl: 'test-api' } }
       };
@@ -108,7 +108,7 @@ test('BaseConfig', (t) => {
     t.test('should handle undefined config when not set up', () => {
       const baseConfig = new BaseConfig();
       // Ensure config is undefined
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+       
       (BaseConfig as any).config = undefined;
 
       // Should throw because BaseConfig.config is undefined

@@ -181,7 +181,7 @@ describe("DI System Integration Tests", () => {
       @registerDi({ tags: ["controller"] })
       class UserController {
         @diByTag("service")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         accessor services!: any[];
 
         handle() {
@@ -192,11 +192,11 @@ describe("DI System Integration Tests", () => {
       @registerDi()
       class TestController {
         @diByTag("service")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         accessor services!: any[];
 
         @diByTag("controller")
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         accessor controllers!: any[];
 
         getServiceCount(): number {

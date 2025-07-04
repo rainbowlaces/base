@@ -12,8 +12,8 @@ interface IfTagParams extends TagConfig {
 export class IfTag extends Tag<boolean, IfTagParams> {
   readonly name = 'if';
 
-  async pre(value: boolean): Promise<string | Renderable> {
-    return value ? this.params.then : (this.params.else ?? '');
+  async pre(condition: boolean): Promise<string | Renderable> {
+    return condition ? this.params.then : (this.params.else ?? '');
   }
 }
 
