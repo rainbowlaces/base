@@ -6,19 +6,28 @@
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
 
 import { BaseModel } from "../baseModel";
-import { type FieldOptions, type Cardinality, type ModelData, type ModelConstructor } from "../types";
+import { type FieldOptions, type Cardinality, type ModelData, type ModelConstructor, type FieldMetadata } from "../types";
+
+const FIELD_SYM = Symbol.for("model.field-meta");
 
 export function embed<T extends BaseModel<T>>(
     
     model: ModelConstructor<T>, 
     options: { cardinality: Cardinality } & FieldOptions<T | T[]>
 ) { 
-    return function<M extends BaseModel<M>>(target: ClassAccessorDecoratorTarget<M, any>, context: ClassAccessorDecoratorContext): any {
-        const constructor = target.constructor as typeof BaseModel;
+    return function<M extends BaseModel<M>>(_target: ClassAccessorDecoratorTarget<M, any>, context: ClassAccessorDecoratorContext): any {
         const propertyName = context.name as string;
 
-        // Register the field with the parent's schema.
-        constructor.registerField(propertyName, options);
+        // Use new unified metadata system with relation info
+        const { cardinality, ...fieldOptions } = options;
+        const metadata: FieldMetadata = {
+            options: fieldOptions,
+            relation: {
+                type: 'embed',
+                model: model,
+                cardinality: cardinality,
+            },
+        };
 
         return {
             get(this: M): any {
@@ -56,6 +65,10 @@ export function embed<T extends BaseModel<T>>(
                         rawDataArray.map((data: ModelData<T>) => model.fromData(data))
                     );
                 };
+                
+                // Attach the payload to something that *will* end up in the class
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                (accessor as any)[FIELD_SYM] = { name: propertyName, meta: metadata };
                 
                 return accessor;
             },

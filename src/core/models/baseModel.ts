@@ -1,5 +1,7 @@
-import { type BasePubSub, di, string } from "../../index";
 
+import { camelToKebab } from "../../utils/string";
+import { di } from "../di/baseDi";
+import { type BasePubSub } from "../pubsub/basePubSub";
 import {
     type ModelsEvent,
     type ModelsEventData,
@@ -9,6 +11,9 @@ import {
     type ModelsEventType,
     type Persistable,
     type Deletable,
+    type BaseModelSchema,
+    type ModelMetadata,
+    type FieldMetadata,
 } from "./types";
 
 import { UniqueID } from "./uniqueId";
@@ -16,7 +21,8 @@ import { UniqueID } from "./uniqueId";
 export type BaseModelClass<T extends BaseModel<T>> = typeof BaseModel & ModelConstructor<T>;
 
 export abstract class BaseModel<T extends BaseModel<T>> {
-    static #schema: Partial<Record<string, FieldOptions>> = {};
+    // A unique, private key to store metadata on the class constructor.
+    private static readonly modelSchemaKey = Symbol("modelSchema");
 
     @di("BasePubSub")
     accessor #pubSub!: BasePubSub;
@@ -27,14 +33,105 @@ export abstract class BaseModel<T extends BaseModel<T>> {
     #new: boolean = true;
 
     constructor() {
+        this.setDefaults();
+    }
+
+    // --- METADATA HANDLING LOGIC ---
+
+    /**
+     * A simple recursive clone function that correctly handles functions.
+     * This is not a perfect deep clone, but it's what's needed here.
+     */
+    private static _cloneWithFunctions<T>(source: T): T {
+        if (typeof source !== 'object' || source === null) {
+            return source; // Primitives and functions are returned as-is
+        }
+
+        const clone = (Array.isArray(source) ? [] : {}) as T;
+
+        for (const key in source) {
+            if (Object.prototype.hasOwnProperty.call(source, key)) {
+                (clone as Record<string, unknown>)[key] = this._cloneWithFunctions((source as Record<string, unknown>)[key]);
+            }
+        }
+        
+        return clone;
+    }
+
+    /**
+     * Safely retrieves or initializes the schema object on a class constructor.
+     * This is the core utility that prevents shared state between models.
+     */
+    private static getOrInitSchema(constructor: typeof BaseModel): BaseModelSchema {
+        // Use `Object.hasOwnProperty.call` for safety.
+        if (!Object.prototype.hasOwnProperty.call(constructor, this.modelSchemaKey)) {
+            const parentConstructor = Object.getPrototypeOf(constructor) as Record<symbol, BaseModelSchema> | null;
+            let newSchema: BaseModelSchema = { fields: {}, meta: {} };
+
+            // If there's a parent with a schema, clone it.
+            if (parentConstructor?.[this.modelSchemaKey]) {
+                const parentSchema = parentConstructor[this.modelSchemaKey];
+                // Use the CORRECT cloning function.
+                newSchema = this._cloneWithFunctions(parentSchema);
+            }
+
+            Object.defineProperty(constructor, this.modelSchemaKey, {
+                value: newSchema,
+                enumerable: false,
+                configurable: true,
+                writable: true,
+            });
+        }
+        return (constructor as unknown as Record<symbol, BaseModelSchema>)[this.modelSchemaKey];
+    }
+
+    /**
+     * A static method for decorators to add a key-value pair to the model's metadata.
+     */
+    public static setMetaValue<K extends keyof ModelMetadata>(key: K, value: ModelMetadata[K]) {
+        const schema = BaseModel.getOrInitSchema(this);
+        schema.meta[key] = value;
+    }
+
+    /**
+     * A static method for decorators to add field metadata.
+     */
+    public static addField(propertyName: string, meta: FieldMetadata) {
+        const schema = BaseModel.getOrInitSchema(this);
+        schema.fields[propertyName] = meta;
+    }
+
+    /**
+     * Get the processed schema directly from the constructor.
+     */
+    public static getProcessedSchema(): BaseModelSchema {
+        return BaseModel.getOrInitSchema(this);
+    }
+
+    /**
+     * TEMPORARY: Backward compatibility method for tests.
+     * TODO: Remove this once tests are updated to use decorators.
+     */
+    public static registerField<T>(
+        fieldName: string,
+        options: FieldOptions<T>,
+    ) {
+        const fieldMetadata: FieldMetadata = {
+            options,
+        };
+        this.addField(fieldName, fieldMetadata);
+    }
+
+    private setDefaults() {
         const constructor = this.constructor as typeof BaseModel;
-        for (const key in constructor.#schema) {
-            const options = constructor.#schema[key];
-            if (!options) throw new Error(`Field "${key}" is not defined in the schema.`);
-            if (options.default) {
-                const val = typeof options.default === "function"
-                    ? (options.default as () => unknown)()
-                    : options.default;
+        const schema = constructor.getProcessedSchema();
+        
+        for (const key in schema.fields) {
+            const fieldMeta = schema.fields[key];
+            if (fieldMeta.options.default) {
+                const val = typeof fieldMeta.options.default === "function"
+                    ? (fieldMeta.options.default as () => unknown)()
+                    : fieldMeta.options.default;
                 this.#data[key] = val;
                 this.#originalData[key] = val;
             }
@@ -48,7 +145,8 @@ export abstract class BaseModel<T extends BaseModel<T>> {
 
     protected async hydrate(data: ModelData<T>) {
         const constructor = this.constructor as typeof BaseModel;
-        for (const key in constructor.#schema) {
+        const schema = constructor.getProcessedSchema();
+        for (const key in schema.fields) {
             if (key in data) {
                 this.#originalData[key] = data[key];
                 this.#data[key] = data[key];
@@ -63,13 +161,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
         this.#dirty = false;
         this.#data = {};
         this.#originalData = {};
-    }
-
-    public static registerField<T>(
-        fieldName: string,
-        options: FieldOptions<T>,
-    ) {
-        this.#schema[fieldName] = options;
+        this.setDefaults();
     }
 
     /**
@@ -89,11 +181,13 @@ export abstract class BaseModel<T extends BaseModel<T>> {
         key: string,
     ): { constructor: typeof BaseModel; fieldOptions: FieldOptions } {
         const constructor = this.constructor as typeof BaseModel;
-        const fieldOptions = constructor.#schema[key];
-        if (!fieldOptions) {
+        const schema = constructor.getProcessedSchema();
+        const fieldMeta = schema.fields[key];
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+        if (!fieldMeta) {
             throw new Error(`Field "${key}" is not defined in the schema.`);
         }
-        return { constructor, fieldOptions };
+        return { constructor, fieldOptions: fieldMeta.options };
     }
 
     public unset(key: string): boolean {
@@ -132,8 +226,9 @@ export abstract class BaseModel<T extends BaseModel<T>> {
 
     public defined(key: string): boolean {
         try {
-            const { constructor } = this.getMeta(key);
-            return key in constructor.#schema;
+            const constructor = this.constructor as typeof BaseModel;
+            const schema = constructor.getProcessedSchema();
+            return key in schema.fields;
         } catch {
             return false;
         }
@@ -176,8 +271,9 @@ export abstract class BaseModel<T extends BaseModel<T>> {
 
     public serialise(): ModelData<T> {
         const constructor = this.constructor as typeof BaseModel;
+        const schema = constructor.getProcessedSchema();
         const data: Record<string, unknown> = {};
-        for (const key in constructor.#schema) {
+        for (const key in schema.fields) {
             if (this.has(key)) {
                 data[key] = this.get(key);
             }
@@ -225,7 +321,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
     // events
 
     private getTopicName() {
-        return string.camelToKebab(this.constructor.name);
+        return camelToKebab(this.constructor.name);
     }
  
     protected getEventTopic(event: ModelsEventType): string {

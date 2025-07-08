@@ -4,6 +4,62 @@ import { type ModelCollection } from "./modelCollection";
 import { type UniqueID } from "./uniqueId";
 
 export type Cardinality = 'one' | 'many';
+export type RelationType = 'reference' | 'embed';
+
+// --- METADATA INTERFACES (Designed for Extension) ---
+
+/**
+ * A container for arbitrary, model-level metadata.
+ * Downstream modules (e.g., for persistence or search) will
+ * add their own optional properties to this interface.
+ *
+ * @example
+ * declare module './types' {
+ *   interface ModelMetadata {
+ *     mongo?: { collection: string };
+ *   }
+ * }
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface ModelMetadata {
+    // Intentionally empty.
+}
+
+/**
+ * A container for arbitrary, field-level metadata.
+ *
+ * @example
+ * declare module './types' {
+ *   interface FieldMetadata {
+ *     mongo?: { isIndexed?: boolean };
+ *   }
+ * }
+ */
+export interface FieldMetadata {
+    /** The raw options passed to the field decorator. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    options: FieldOptions<any>;
+    
+    // Optional relation info.
+    relation?: {
+        type: RelationType;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        model: ModelConstructor<any>;
+        cardinality: Cardinality;
+    };
+}
+
+// --- THE UNIFIED SCHEMA OBJECT ---
+
+/**
+ * The canonical schema object for a given model, stored in the
+ * BaseModel's central registry. It holds the complete description
+ * of a model's structure and metadata.
+ */
+export interface BaseModelSchema {
+    fields: Record<string, FieldMetadata>;
+    meta: ModelMetadata;
+}
 
 export type ModelsEventType = "create" | "update" | "delete";
 

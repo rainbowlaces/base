@@ -8,7 +8,8 @@ export type IdentifiableModelClass<T extends IdentifiableModel<T>> = ModelConstr
 
 export abstract class IdentifiableModel<T extends IdentifiableModel<T>> extends BaseModel<T> {
 
-    @field<UniqueID>({ readOnly: true, default: () => new UniqueID() })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    @(field<UniqueID>({ readOnly: true, default: () => new UniqueID() }) as any)
     accessor id!: UniqueID;
 
     /**

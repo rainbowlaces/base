@@ -5,20 +5,29 @@
 
 import { type BaseModel } from "../baseModel";
 import { type IdentifiableModelClass, type IdentifiableModel } from "../identifyableModel";
-import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds } from "../types";
+import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds, type FieldMetadata } from "../types";
 import { type UniqueID } from "../uniqueId";
 import { toUniqueIdAsync, toUniqueIdsAsync } from "../utils";
+
+const FIELD_SYM = Symbol.for("model.field-meta");
 
 export function reference<T extends IdentifiableModel<T>>(
     model: IdentifiableModelClass<T>,
     options: { cardinality: Cardinality } & FieldOptions<T | T[]>
 ) {
-    return function<M extends BaseModel<M>>(target: ClassAccessorDecoratorTarget<M, any>, context: ClassAccessorDecoratorContext) {
-        const constructor = target.constructor as typeof BaseModel;
+    return function<M extends BaseModel<M>>(_target: ClassAccessorDecoratorTarget<M, any>, context: ClassAccessorDecoratorContext) {
         const propertyName = String(context.name);
         
-        // Register the underlying field that stores the ID.
-        constructor.registerField(propertyName, options);
+        // Use new unified metadata system with relation info
+        const { cardinality, ...fieldOptions } = options;
+        const metadata: FieldMetadata = {
+            options: fieldOptions,
+            relation: {
+                type: 'reference',
+                model: model,
+                cardinality: cardinality,
+            },
+        };
 
         return {
             get(this: M): any {
@@ -51,6 +60,10 @@ export function reference<T extends IdentifiableModel<T>>(
                     const ids = this.get<UniqueID[]>(propertyName);
                     return model.byIds(ids);
                 };
+                
+                // Attach the payload to something that *will* end up in the class
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                (accessor as any)[FIELD_SYM] = { name: propertyName, meta: metadata };
                 
                 return accessor;
             },
