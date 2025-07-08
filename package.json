@@ -14,11 +14,11 @@
   },
   "scripts": {
     "start": "npx base start dist/testApp/src/index.js",
-    "start:dev": "npm run build && npx base start --dev dist/testApp/src/index.js",
+    "start:dev": "npm run build && npx base start -q --dev dist/testApp/src/index.js",
     "lint": "npx base lint 'src/**/*.ts' 'test/**/*.ts' 'testApp/**/*.ts' 'bin/**/*.js'",
     "lint:fix": "npm run lint -- --fix",
     "tsc": "npx base build --types-only",
-    "build": "npm run lint && npx base build",    
+    "build": "npm run lint && npx base build -q",    
     "test": "npx base build --test && node --enable-source-maps --test '_test.dist/test/**/*.js'",
 
     "release": "npm run lint && npx base build --release",

@@ -9,6 +9,7 @@ export function createStartCommand(program) {
     .option('--dev', 'Run with debugging flags and log formatting.')
     .action(async (entryFile, options) => {
       const { projectRoot } = program.paths;
+      const { quietLog, quietError } = program;
       
       let finalEntryFile;
 
@@ -44,7 +45,7 @@ export function createStartCommand(program) {
         commandToRun = `node ${finalEntryFile}`;
       }
 
-      console.log(`Executing:\n> ${commandToRun}`);
+      quietLog(`Executing:\n> ${commandToRun}`);
 
       try {
         spawn(commandToRun, {
@@ -52,7 +53,7 @@ export function createStartCommand(program) {
             shell: true,
         });
       } catch (e) {
-        console.error('❌ Failed to start the application. Colour me surprised.', e);
+        quietError('❌ Failed to start the application. Colour me surprised.', e);
         process.exit(1);
       }
     });

@@ -8,9 +8,11 @@ export function createFormatLogCommand(program) {
     .command('format-log')
     .description('Formats piped, newline-delimited JSON logs for readability.')
     .action(() => {
+      const { quietError, quietLog } = program;
+      
       if (process.stdin.isTTY) {
-        console.error('Error: This command requires data to be piped to it.');
-        console.log('Usage: <some-command> | base format-log');
+        quietError('Error: This command requires data to be piped to it.');
+        quietLog('Usage: <some-command> | base format-log');
         process.exit(1);
       }
 

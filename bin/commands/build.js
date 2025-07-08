@@ -31,6 +31,7 @@ export function createBuildCommand(program) {
     .option('--no-types', 'Skips the type-checking step.')
     .action(async (options) => {
       const { projectRoot, frameworkRoot } = program.paths;
+      const { quietLog, quietError } = program;
       const isDev = projectRoot === frameworkRoot;
 
       try {
@@ -48,14 +49,14 @@ export function createBuildCommand(program) {
             process.exit(1);
           }
           const testDistPath = path.join(projectRoot, '_test.dist');
-          console.log(`🧹 Cleaning test directory: ${testDistPath}`);
+          quietLog(`🧹 Cleaning test directory: ${testDistPath}`);
           if (fs.existsSync(testDistPath)) {
             fs.rmSync(testDistPath, { recursive: true, force: true });
           }
           
-          console.log('Building source and tests for execution...');
+          quietLog('Building source and tests for execution...');
           await build(config.test);
-          console.log('✅ Test build complete. Artifacts are in _test.dist/');
+          quietLog('✅ Test build complete. Artifacts are in _test.dist/');
           return; // Stop here.
         }
 
@@ -64,9 +65,9 @@ export function createBuildCommand(program) {
 
         // --- Types-Only Build ---
         if (options.typesOnly) {
-            console.log(`🔬 Running type-checking only using ${tsconfigName}...`);
+            quietLog(`🔬 Running type-checking only using ${tsconfigName}...`);
             await runCommand('npx', ['tsc', '--project', tsconfigPath]);
-            console.log('✅ Type-checking complete.');
+            quietLog('✅ Type-checking complete.');
             return; // Stop here.
         }
 
@@ -75,38 +76,38 @@ export function createBuildCommand(program) {
         // 1. Clean the main dist directory.
         const distPath = path.join(projectRoot, 'dist');
         if (fs.existsSync(distPath)) {
-            console.log(`🧹 Cleaning directory: ${distPath}`);
+            quietLog(`🧹 Cleaning directory: ${distPath}`);
             fs.rmSync(distPath, { recursive: true, force: true });
         }
 
         // 2. Run TypeScript compiler, unless skipped.
         if (options.types) {
-            console.log(`🔬 Type-checking using ${tsconfigName}...`);
+            quietLog(`🔬 Type-checking using ${tsconfigName}...`);
             await runCommand('npx', ['tsc', '--project', tsconfigPath]);
         } else {
-            console.log('Skipping type-checking as requested. Good luck.');
+            quietLog('Skipping type-checking as requested. Good luck.');
         }
 
         // 3. Generate JavaScript with esbuild.
-        console.log('📦 Building JavaScript with esbuild...');
+        quietLog('📦 Building JavaScript with esbuild...');
 
         if (options.release) {
           await build(config.framework);
-          console.log('✅ Framework release build complete.');
+          quietLog('✅ Framework release build complete.');
         } else {
           if (isDev) {
-            console.log('Building framework source for testApp...');
+            quietLog('Building framework source for testApp...');
             await build(config.framework);
           }
-          console.log('Building application server...');
+          quietLog('Building application server...');
           await build(config.server);
-          console.log('Building application client...');
+          quietLog('Building application client...');
           await build(config.client);
-          console.log('✅ Development build complete.');
+          quietLog('✅ Development build complete.');
         }
 
       } catch (e) {
-        console.error('❌ Build failed. It was a valiant effort, though.', e);
+        quietError('❌ Build failed. It was a valiant effort, though.', e);
         process.exit(1);
       }
     });

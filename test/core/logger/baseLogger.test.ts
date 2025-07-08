@@ -8,8 +8,8 @@ import {
   type LogObjectTransformer,
 } from "../../../src/core/logger/types";
 import { type Console } from "../../../src/utils/console";
-import { ErrorSerializer } from "../../../src/core/logger/serializers/errorSerializer";
 import { BaseDi } from "../../../src/core/di/baseDi";
+import { ErrorSerializer } from "../../../src/core/logger/transformers/errorSerializer";
 
 function setLoggerConfig(config: LoggerConfig): void {
   BaseDi.register(config, { key: "Config.BaseLogger", singleton: true, type: "scalar" });

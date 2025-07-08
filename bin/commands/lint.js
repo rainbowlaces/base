@@ -9,8 +9,9 @@ export function createLintCommand(program) {
     .option('--fix', 'Automatically fix linting problems.')
     .action(async (paths, options) => { // <-- Commander passes the new argument here
       const { projectRoot, frameworkRoot } = program.paths;
+      const { quietLog, quietError } = program;
       
-      console.log('Linting project...');
+      quietLog('Linting project...');
 
       try {
         const eslint = new ESLint({
@@ -24,13 +25,13 @@ export function createLintCommand(program) {
         //
         // If the user provided paths, use them. Otherwise, use our default.
         const filesToLint = paths.length > 0 ? paths : ['src/**/*.ts'];
-        console.log(`Linting targets: ${filesToLint.join(', ')}`);
+        quietLog(`Linting targets: ${filesToLint.join(', ')}`);
 
         const results = await eslint.lintFiles(filesToLint);
         
         if (options.fix) {
             await ESLint.outputFixes(results);
-            console.log('Applied fixable linting changes.');
+            quietLog('Applied fixable linting changes.');
         }
 
         const formatter = await eslint.loadFormatter('stylish');
@@ -46,9 +47,9 @@ export function createLintCommand(program) {
         );
 
         if (errorCount > 0 || warningCount > 0) {
-          console.log(resultText);
+          quietLog(resultText);
         } else {
-          console.log('✅ No linting issues found. This feels suspicious.');
+          quietLog('✅ No linting issues found. This feels suspicious.');
         }
 
         if (errorCount > 0) {
@@ -56,7 +57,7 @@ export function createLintCommand(program) {
         }
 
       } catch (e) {
-        console.error('❌ An unexpected error occurred during linting.', e);
+        quietError('❌ An unexpected error occurred during linting.', e);
         process.exit(1);
       }
     });

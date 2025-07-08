@@ -9,6 +9,7 @@ import { createStartCommand } from './commands/start.js';
 
 import { resolvePaths } from './utils/paths.js';
 import { createAsciiBox } from './utils/ascii.js';
+import { shouldShowHeader, quietError, quietLog } from './utils/quiet.js';
 import { createRequire } from 'module';
 
 const program = new Command();
@@ -26,19 +27,29 @@ try {
     `Project: ${paths.projectRoot}`
   ];
   
-  console.log(createAsciiBox(infoLines, 'Base Framework CLI'));
+  // Only show header if not quiet
+  if (shouldShowHeader()) {
+    console.log(createAsciiBox(infoLines, 'Base Framework CLI'));
+  }
 } catch (error) {
-  console.error(`Error: ${error.message}`);
+  quietError(`Error: ${error.message}`);
   process.exit(1);
 }
 
 program
     .name('base')
     .description('A CLI for the Base Framework.')
-    .version(version);
+    .version(version)
+    .option('-q, --quiet', 'suppress header output')
+    .option('-e, --errors', 'only show errors')
+    .option('-s, --silent', 'totally silent (no output)');
 
 // Make paths available to commands
 program.paths = paths;
+
+// Make quiet utilities available to commands
+program.quietLog = quietLog;
+program.quietError = quietError;
 
 createPingCommand(program);
 createFormatLogCommand(program);

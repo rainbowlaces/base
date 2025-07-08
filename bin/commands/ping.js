@@ -3,11 +3,12 @@ export function createPingCommand(program) {
     .command('ping')
     .description('PING! PONG! (also shows resolved paths)')
     .action(() => {
-      console.log('PONG!');
-      console.log('');
-      console.log('Resolved paths:');
-      console.log(`  Framework root: ${program.paths.frameworkRoot}`);
-      console.log(`  Project root: ${program.paths.projectRoot}`);
+      const { quietLog } = program;
+      quietLog('PONG!');
+      quietLog('');
+      quietLog('Resolved paths:');
+      quietLog(`  Framework root: ${program.paths.frameworkRoot}`);
+      quietLog(`  Project root: ${program.paths.projectRoot}`);
       process.exit();
     });
 }
