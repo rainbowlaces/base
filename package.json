@@ -13,17 +13,16 @@
     "node": ">=24.0.0"
   },
   "scripts": {
-    "start": "node dist/testApp/src/index.js",
+    "start": "npx base start dist/testApp/src/index.js",
+    "start:dev": "npm run build && npx base start --dev dist/testApp/src/index.js",
     "lint": "npx base lint 'src/**/*.ts' 'test/**/*.ts' 'testApp/**/*.ts' 'bin/**/*.js'",
     "lint:fix": "npm run lint -- --fix",
     "tsc": "npx base build --types-only",
-    "build": "npm run lint && npx base build",
-    "release": "npm run lint && npx base build --release",
+    "build": "npm run lint && npx base build",    
     "test": "npx base build --test && node --enable-source-maps --test '_test.dist/test/**/*.js'",
-    
-    "start:dev": "npm run build && NODE_ENV=development node --inspect -r source-map-support/register dist/testApp/src/index.js 2>&1 | node ./dev/logFormatter.js",
+
+    "release": "npm run lint && npx base build --release",
     "start:dev:watch": "nodemon",
-    
     "full": "npm run lint && npm run tsc && npm run test && npm run build",
     "push": "npm run full && npm publish --access=public",
     "version:patch": "npm version patch && git push --tags",
