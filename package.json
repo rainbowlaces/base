@@ -6,23 +6,24 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
+  "bin": {
+    "base": "./bin/cli.js"
+  },
   "engines": {
     "node": ">=24.0.0"
   },
   "scripts": {
     "start": "node dist/testApp/src/index.js",
-    "lint": "eslint 'src/**/*.ts' 'test/**/*.ts' 'testApp/**/*.ts'",
-    "tsc": "tsc --noEmit --project tsconfig.json",
-    "build:clean": "npm run clean && npm run build",
-    "build": "node esbuild.config.js",
+    "lint": "npx base lint 'src/**/*.ts' 'test/**/*.ts' 'testApp/**/*.ts' 'bin/**/*.js'",
+    "lint:fix": "npm run lint -- --fix",
+    "tsc": "npx base build --types-only",
+    "build": "npm run lint && npx base build",
+    "release": "npm run lint && npx base build --release",
+    "test": "npx base build --test && node --enable-source-maps --test '_test.dist/test/**/*.js'",
+    
     "start:dev": "npm run build && NODE_ENV=development node --inspect -r source-map-support/register dist/testApp/src/index.js 2>&1 | node ./dev/logFormatter.js",
     "start:dev:watch": "nodemon",
-    "clean": "rm -rf dist",
-    "lint:fix": "npm run lint -- --fix",
-    "_cleanTest": "rm -rf _test.dist",
-    "_buildTest": "node esbuild.test.config.js",
-    "_testRun": "node --enable-source-maps --test '_test.dist/test/**/*.js'",
-    "test": "npm run _cleanTest && npm run _buildTest && npm run _testRun",
+    
     "full": "npm run lint && npm run tsc && npm run test && npm run build",
     "push": "npm run full && npm publish --access=public",
     "version:patch": "npm version patch && git push --tags",
@@ -64,6 +65,7 @@
     "@babel/preset-typescript": "^7.24.7",
     "@babel/types": "^7.24.9",
     "@types/parse5": "^6.0.3",
+    "commander": "^14.0.0",
     "cookie": "^1.0.2",
     "cookie-signature": "^1.2.1",
     "formidable": "^3.5.1",

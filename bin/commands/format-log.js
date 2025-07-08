@@ -1,18 +1,36 @@
-/* eslint-disable node/no-unpublished-import */
 import readline from "readline";
 import process from "process";
 import chalk from "chalk";
 import { DateTime } from "luxon";
 
-// Create an interface for reading from stdin
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-  terminal: false,
-});
+export function createFormatLogCommand(program) {
+  program
+    .command('format-log')
+    .description('Formats piped, newline-delimited JSON logs for readability.')
+    .action(() => {
+      if (process.stdin.isTTY) {
+        console.error('Error: This command requires data to be piped to it.');
+        console.log('Usage: <some-command> | base format-log');
+        process.exit(1);
+      }
 
-// Event listener for each line of input
-rl.on("line", (line) => {
+      // Create an interface for reading from stdin
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+        terminal: false,
+      });
+
+      // Event listener for each line of input
+      rl.on("line", (line) => {
+        processLine(line);
+      });
+    });
+}
+
+function processLine(line) {
+  if (!line) return;
+  
   try {
     const log = JSON.parse(line);
 
@@ -22,23 +40,29 @@ rl.on("line", (line) => {
 
     let level = log.level.padEnd(8, " ");
     let message = chalk.gray(log.message);
+    let logger = console.log;
     switch (log.level) {
+      case "TRACE":
       case "DEBUG":
         level = chalk.gray(level);
         message = chalk.gray(log.message);
+        logger = console.debug;
         break;
       case "INFO":
         level = chalk.blue(level);
         message = chalk.white(log.message);
+        logger = console.info;
         break;
       case "WARNING":
         level = chalk.yellow(level);
         message = chalk.bold.white(log.message);
+        logger = console.warn;
         break;
       case "ERROR":
       case "FATAL":
         level = chalk.red(level);
         message = chalk.bold.white(log.message);
+        logger = console.error;
         break;
     }
 
@@ -46,17 +70,18 @@ rl.on("line", (line) => {
       log.namespace.toUpperCase().padEnd(15, " "),
     );
 
-    console.log(`${timestamp} ${namespace} ${level} ${message}`);
+    logger(`${timestamp} ${namespace} ${level} ${message}`);
+
     if (log.tags.length) {
-      console.log(
+      logger(
         "Tags: ",
         log.tags.map((tag) => chalk.bgBlue.whiteBright(` ${tag} `)).join(" "),
       );
     }
     if (Object.values(log.context).length) {
-      console.log(chalk.gray(JSON.stringify(log.context, null, 2)));
+      logger(chalk.gray(JSON.stringify(log.context, null, 2)));
     }
-  } catch (e) {
-    console.error(line);
+  } catch (_e) {
+    console.log(line);
   }
-});
+}
