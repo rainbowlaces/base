@@ -4,12 +4,12 @@ import { baseModule } from "../../../src/core/module/decorators/baseModule";
 import { request } from "../../../src/core/module/decorators/request";
 import { type BaseHttpActionArgs } from "../../../src/core/module/types";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
-export class PingModuleConfig implements BaseClassConfig {
+export interface PingModuleConfig extends BaseClassConfig {
+  pingMessage: string;
 }
 
 @baseModule
-export class PingModule extends BaseModule {
+export class PingModule extends BaseModule<PingModuleConfig> {
   
   @request("/get/ping")
   async handlePing(args: BaseHttpActionArgs) {
@@ -18,7 +18,7 @@ export class PingModule extends BaseModule {
     this.logger.info("Ping request received", [ctx.id]);
     
     // Send PONG response
-    await ctx.res.text("PONG");
+    await ctx.res.text(`PONG! ${this.config.pingMessage}`);
     
     this.logger.debug("Ping response sent", [ctx.id]);
   }

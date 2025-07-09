@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 
-// Helper to run external commands.
+// Helper to run external commands. (Unchanged)
 function runCommand(command, args, options) {
     return new Promise((resolve, reject) => {
         const child = spawn(command, args, { stdio: 'inherit', ...options });
@@ -32,79 +32,106 @@ export function createBuildCommand(program) {
     .action(async (options) => {
       const { projectRoot, frameworkRoot } = program.paths;
       const { quietLog, quietError } = program;
-      const isDev = projectRoot === frameworkRoot;
+      const isDevEnvironment = projectRoot === frameworkRoot;
 
       try {
-        const config = createEsbuildConfig({
-          projectRoot,
-          isDev,
-          isRelease: !!options.release,
-        });
-
-        // --- Test Build ---
-        // This is a special mode that takes precedence over all others.
+        // --- Test Build Logic (Unchanged) ---
         if (options.test) {
-          if (!isDev) {
-            console.error('Error: --test flag can only be used from within the base framework repository.');
+          if (!isDevEnvironment) {
+            quietError('Error: --test flag can only be used from within the base framework repository.');
             process.exit(1);
           }
-          const testDistPath = path.join(projectRoot, '_test.dist');
-          quietLog(`🧹 Cleaning test directory: ${testDistPath}`);
-          if (fs.existsSync(testDistPath)) {
-            fs.rmSync(testDistPath, { recursive: true, force: true });
+          const testOutdir = path.join(projectRoot, '_test');
+          quietLog(`🧹 Cleaning test directory: ${testOutdir}`);
+          if (fs.existsSync(testOutdir)) {
+            fs.rmSync(testOutdir, { recursive: true, force: true });
           }
-          
+
+          const testConfig = createEsbuildConfig({
+            projectRoot,
+            testSources: [`${projectRoot}/src/**/*.ts`, `${projectRoot}/test/**/*.ts`],
+            testOutdir: testOutdir,
+          });
+
           quietLog('Building source and tests for execution...');
-          await build(config.test);
-          quietLog('✅ Test build complete. Artifacts are in _test.dist/');
-          return; // Stop here.
+          await build(testConfig.test);
+          quietLog('✅ Test build complete. Artifacts are in _test/');
+          return;
         }
 
+        // --- Standard Build Flow (Unchanged parts) ---
         const tsconfigName = options.release ? 'tsconfig.release.json' : 'tsconfig.json';
         const tsconfigPath = path.join(projectRoot, tsconfigName);
 
-        // --- Types-Only Build ---
         if (options.typesOnly) {
             quietLog(`🔬 Running type-checking only using ${tsconfigName}...`);
             await runCommand('npx', ['tsc', '--project', tsconfigPath]);
             quietLog('✅ Type-checking complete.');
-            return; // Stop here.
+            return;
         }
 
-        // --- Standard Build Flow (Dev or Release) ---
-
-        // 1. Clean the main dist directory.
         const distPath = path.join(projectRoot, 'dist');
         if (fs.existsSync(distPath)) {
             quietLog(`🧹 Cleaning directory: ${distPath}`);
             fs.rmSync(distPath, { recursive: true, force: true });
         }
 
-        // 2. Run TypeScript compiler, unless skipped.
-        if (options.types) {
+        if (!options.noTypes) {
             quietLog(`🔬 Type-checking using ${tsconfigName}...`);
             await runCommand('npx', ['tsc', '--project', tsconfigPath]);
         } else {
             quietLog('Skipping type-checking as requested. Good luck.');
         }
 
-        // 3. Generate JavaScript with esbuild.
         quietLog('📦 Building JavaScript with esbuild...');
-
+        const buildOptions = {
+          projectRoot,
+          isRelease: !!options.release,
+        };
+        
+        // --- Corrected Build Options Logic ---
         if (options.release) {
-          await build(config.framework);
-          quietLog('✅ Framework release build complete.');
+            buildOptions.frameworkSources = [`${projectRoot}/src/**/*.ts`];
+            buildOptions.frameworkOutdir = path.join(projectRoot, 'dist');
         } else {
-          if (isDev) {
-            quietLog('Building framework source for testApp...');
-            await build(config.framework);
-          }
-          quietLog('Building application server...');
-          await build(config.server);
-          quietLog('Building application client...');
-          await build(config.client);
-          quietLog('✅ Development build complete.');
+            const appRoot = isDevEnvironment ? path.join(projectRoot, 'testApp') : projectRoot;
+            const outRoot = isDevEnvironment ? path.join(distPath, 'testApp') : distPath;
+
+            if (isDevEnvironment) {
+                buildOptions.frameworkSources = [`${projectRoot}/src/**/*.ts`];
+                buildOptions.frameworkOutdir = path.join(distPath, 'src');
+            }
+            
+            buildOptions.serverSources = [`${appRoot}/src/**/*.ts`];
+            buildOptions.serverIgnore = [`${appRoot}/src/elements/**`];
+            buildOptions.serverOutdir = outRoot;
+            buildOptions.serverOutbase = appRoot;
+
+            // --- THE FIX IS HERE ---
+            // The output for client assets needs to be inside the 'src' subdirectory
+            // of the testApp's distribution folder to match the original structure.
+            const clientOutRoot = path.join(outRoot, 'src');
+
+            buildOptions.clientEntryPoint = path.join(appRoot, 'src', 'elements', 'loader.ts');
+            buildOptions.clientOutfile = path.join(clientOutRoot, 'public', 'bundle.js');
+            buildOptions.clientCopyAssets = {
+                resolveFrom: 'cwd',
+                assets: {
+                    from: [`${appRoot}/src/public/*`],
+                    to: [path.join(clientOutRoot, 'public')],
+                },
+            };
         }
+
+        // --- Build Execution (Unchanged) ---
+        const configs = createEsbuildConfig(buildOptions);
+        
+        for (const key in configs) {
+            quietLog(`Building target: ${key}...`);
+            await build(configs[key]);
+        }
+
+        quietLog(`✅ ${options.release ? 'Release' : 'Development'} build complete.`);
 
       } catch (e) {
         quietError('❌ Build failed. It was a valiant effort, though.', e);

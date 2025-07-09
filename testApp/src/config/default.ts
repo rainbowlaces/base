@@ -9,7 +9,10 @@ export class AppConfig extends BaseConfigProvider {
       },
       BaseLogger: {
         logLevel: LogLevel.INFO,
-      }
+      },
+      PingModule: {
+        pingMessage: "Hello world!",
+      },
     };
   }
   

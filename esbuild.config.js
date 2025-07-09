@@ -6,133 +6,151 @@ import { readFileSync, existsSync } from 'fs';
 import path from 'path';
 
 /**
- * Creates a set of esbuild configuration objects based on the provided options.
- * This function understands the difference between running in the framework's own
- * development environment versus a downstream consumer's project, and between
- * a local test build versus a final release build.
+ * Creates a generic set of esbuild configuration objects based on explicit options.
+ * This function is "dumb" by design; it doesn't know about dev/release environments,
+ * only the explicit paths and settings it is given.
  *
  * @param {object} options
- * @param {string} options.projectRoot - The absolute path to the root of the project being built.
- * @param {boolean} [options.isDev=false] - True if running in the base framework's dev environment.
- * @param {boolean} [options.isRelease=false] - True if this is a release build.
+ * @param {string} options.projectRoot - The absolute path to the root of the project.
+ * @param {boolean} [options.isRelease=false] - True if this is a release build (for minification).
+ *
+ * @param {string[]} [options.frameworkSources] - Globs for framework source files.
+ * @param {string} [options.frameworkOutdir] - Output directory for framework build.
+ *
+ * @param {string[]} [options.serverSources] - Globs for server source files.
+ * @param {string[]} [options.serverIgnore] - Globs to ignore for server source files.
+ * @param {string} [options.serverOutdir] - Output directory for server build.
+ * @param {string} [options.serverOutbase] - The 'outbase' for the server build.
+ *
+ * @param {string} [options.clientEntryPoint] - Entry point for the client bundle.
+ * @param {string} [options.clientOutfile] - Output file for the client bundle.
+ * @param {object} [options.clientCopyAssets] - Asset copy rules for the esbuild-plugin-copy.
+ *
+ * @param {string[]} [options.testSources] - Globs for test files.
+ * @param {string} [options.testOutdir] - Output directory for test build.
+ *
  * @returns {object} The esbuild configurations.
  */
 export function createEsbuildConfig(options) {
-  const { projectRoot, isDev = false, isRelease = false } = options;
+  const { projectRoot, isRelease = false, ...builds } = options;
 
-  // We need the package.json to correctly identify external dependencies.
+  // --- Common Setup ---
   const pkg = JSON.parse(readFileSync(path.join(projectRoot, 'package.json'), 'utf8'));
+  const allDependencies = Object.keys(pkg.dependencies || {}).concat(Object.keys(pkg.peerDependencies || {}));
+  const appDependencies = Object.keys(pkg.dependencies || {});
+  const filePathExtensionsPlugin = esbuildPluginFilePathExtensions({ esmExtension: 'js' });
 
-  // --- Framework Config ---
-  const frameworkConfig = {
-    entryPoints: glob.sync([`${projectRoot}/src/**/*.ts`]),
-    outdir: isRelease ? path.join(projectRoot, 'dist') : path.join(projectRoot, 'dist', 'src'),
+  // --- Base Config ---
+  const baseNodeConfig = {
+    bundle: true,
     format: 'esm',
     platform: 'node',
     target: 'node24',
     sourcemap: true,
     tsconfig: path.join(projectRoot, 'tsconfig.json'),
-    bundle: true,
-    external: Object.keys(pkg.dependencies || {}).concat(Object.keys(pkg.peerDependencies || {})),
-    plugins: [
-      esbuildPluginFilePathExtensions({ esmExtension: 'js' }),
-    ],
   };
 
-  // --- Application Configs ---
-  const appRoot = isDev ? path.join(projectRoot, 'testApp') : projectRoot;
+  const configs = {};
 
-  const serverConfig = {
-    entryPoints: glob.sync([`${appRoot}/src/**/*.ts`], { ignore: [`${appRoot}/src/elements/**`] }),
-    outdir: isDev ? path.join(projectRoot, 'dist', 'testApp') : path.join(projectRoot, 'dist'),
-    outbase: appRoot,
-    platform: 'node',
-    target: 'node24',
-    format: 'esm',
-    sourcemap: true,
-    tsconfig: path.join(projectRoot, 'tsconfig.json'),
-    bundle: true,
-    keepNames: true,
-    external: Object.keys(pkg.dependencies || {}),
-    plugins: [
-      esbuildPluginFilePathExtensions({ esmExtension: 'js' }),
-    ],
-  };
+  // --- Build Definitions ---
+  // Each build is only configured if its corresponding 'sources' or 'entryPoint' option is provided.
 
-  const configs = {
-    server: serverConfig,
-    framework: frameworkConfig,
-  };
-
-  // Only create client config if elements/loader.ts exists (framework convention)
-  const clientEntryPoint = `${appRoot}/src/elements/loader.ts`;
-  if (existsSync(clientEntryPoint)) {
-    const clientConfig = {
-      entryPoints: [clientEntryPoint],
-      bundle: true,
-      outfile: isDev ? path.join(projectRoot, 'dist', 'testApp', 'src', 'public', 'bundle.js') : path.join(projectRoot, 'dist', 'public', 'bundle.js'),
-      format: 'esm',
-      minify: true,
-      plugins: [
-        copy({
-          resolveFrom: 'cwd',
-          assets: {
-            from: [`${appRoot}/src/public/*`],
-            to: [ isDev ? path.join(projectRoot, 'dist', 'testApp', 'src', 'public') : path.join(projectRoot, 'dist', 'public') ],
-          },
-        }),
-      ],
+  if (builds.frameworkSources) {
+    configs.framework = {
+      ...baseNodeConfig,
+      entryPoints: glob.sync(builds.frameworkSources),
+      outdir: builds.frameworkOutdir,
+      external: allDependencies,
+      plugins: [filePathExtensionsPlugin],
     };
-    configs.client = clientConfig;
   }
 
-  // --- Test Environment Config ---
-  // This configuration is only created when running in the dev environment.
-  if (isDev) {
-    configs.test = {
-      entryPoints: glob.sync([`${projectRoot}/src/**/*.ts`, `${projectRoot}/test/**/*.ts`]),
-      outdir: path.join(projectRoot, '_test.dist'),
-      platform: 'node',
-      target: 'node24',
-      format: 'esm',
-      sourcemap: true,
-      bundle: true,
+  if (builds.serverSources) {
+    configs.server = {
+      ...baseNodeConfig,
+      entryPoints: glob.sync(builds.serverSources, { ignore: builds.serverIgnore || [] }),
+      outdir: builds.serverOutdir,
+      outbase: builds.serverOutbase,
       keepNames: true,
-      external: Object.keys(pkg.dependencies || {}),
-      plugins: [
-        esbuildPluginFilePathExtensions({
-          esmExtension: 'js',
-        }),
-      ],
+      external: appDependencies,
+      plugins: [filePathExtensionsPlugin],
+    };
+  }
+
+  if (builds.clientEntryPoint && existsSync(builds.clientEntryPoint)) {
+    configs.client = {
+      entryPoints: [builds.clientEntryPoint],
+      bundle: true,
+      outfile: builds.clientOutfile,
+      format: 'esm',
+      minify: isRelease, // Minify only on release
+      plugins: builds.clientCopyAssets ? [copy(builds.clientCopyAssets)] : [],
+    };
+  }
+
+  if (builds.testSources) {
+    configs.test = {
+      ...baseNodeConfig,
+      entryPoints: glob.sync(builds.testSources),
+      outdir: builds.testOutdir,
+      keepNames: true,
+      external: appDependencies,
+      plugins: [filePathExtensionsPlugin],
     };
   }
 
   return configs;
 }
 
+
 // This allows the file to be run directly with `node esbuild.config.js`.
-// It will always run a full development build, building both the framework and the testApp.
+// This is now the "convention" layer, showing how to use the generic function
+// for this project's specific development workflow.
 if (import.meta.url.endsWith(process.argv[1])) {
   console.log("Running esbuild.config.js directly for a full development build...");
   (async () => {
     try {
-      const config = createEsbuildConfig({
-        projectRoot: process.cwd(),
-        isDev: true,
-        isRelease: false
+      const projectRoot = process.cwd();
+      const testAppRoot = path.join(projectRoot, 'testApp');
+      const distDir = path.join(projectRoot, 'dist');
+
+      const allConfigs = createEsbuildConfig({
+        projectRoot,
+        isRelease: false, // This is a dev build
+
+        // Framework build (for the testApp)
+        frameworkSources: [`${projectRoot}/src/**/*.ts`],
+        frameworkOutdir: path.join(distDir, 'src'),
+
+        // TestApp server build
+        serverSources: [`${testAppRoot}/src/**/*.ts`],
+        serverIgnore: [`${testAppRoot}/src/elements/**`],
+        serverOutdir: path.join(distDir, 'testApp'),
+        serverOutbase: testAppRoot,
+
+        // TestApp client build
+        clientEntryPoint: path.join(testAppRoot, 'src', 'elements', 'loader.ts'),
+        clientOutfile: path.join(distDir, 'testApp', 'src', 'public', 'bundle.js'),
+        clientCopyAssets: {
+          resolveFrom: 'cwd',
+          assets: {
+            from: [`${testAppRoot}/src/public/*`],
+            to: [path.join(distDir, 'testApp', 'src', 'public')],
+          },
+        },
       });
-      
+
       console.log("Building framework source for testApp...");
-      await build(config.framework);
+      await build(allConfigs.framework);
 
       console.log("Building testApp server...");
-      await build(config.server);
+      await build(allConfigs.server);
 
-      if (config.client) {
+      if (allConfigs.client) {
         console.log("Building testApp client...");
-        await build(config.client);
+        await build(allConfigs.client);
       } else {
-        console.log("No client build needed (no elements/loader.ts found).");
+        console.log("No client build needed (entry point not found).");
       }
 
       console.log("✅ Direct run build complete.");
