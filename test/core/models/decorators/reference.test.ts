@@ -1,4 +1,4 @@
-import { describe, it, mock, afterEach } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BaseModel } from '../../../../src/core/models/baseModel';
 import { reference } from '../../../../src/core/models/decorators/reference';
@@ -236,12 +236,12 @@ describe('@reference decorator', () => {
         assert(schema.fields.author.relation, 'Should have relation metadata for author');
         assert(schema.fields.contributors.relation, 'Should have relation metadata for contributors');
         
-        assert.strictEqual(schema.fields.author.relation!.type, 'reference', 'Should be reference type');
-        assert.strictEqual(schema.fields.author.relation!.cardinality, 'one', 'Should have one cardinality');
-        assert.strictEqual(schema.fields.contributors.relation!.cardinality, 'many', 'Should have many cardinality');
+        assert.strictEqual(schema.fields.author.relation.type, 'reference', 'Should be reference type');
+        assert.strictEqual(schema.fields.author.relation.cardinality, 'one', 'Should have one cardinality');
+        assert.strictEqual(schema.fields.contributors.relation.cardinality, 'many', 'Should have many cardinality');
         
         // Should reference the correct model
-        assert.strictEqual(schema.fields.author.relation!.model, TestUser, 'Should reference TestUser model');
-        assert.strictEqual(schema.fields.contributors.relation!.model, TestUser, 'Should reference TestUser model');
+        assert.strictEqual(schema.fields.author.relation.model, TestUser, 'Should reference TestUser model');
+        assert.strictEqual(schema.fields.contributors.relation.model, TestUser, 'Should reference TestUser model');
     });
 });
