@@ -172,4 +172,31 @@ describe('@embed decorator', () => {
         assert.strictEqual(modelsArray[0].get('content'), 'First comment', 'First model should have correct data');
         assert.strictEqual(modelsArray[1].get('content'), 'Second comment', 'Second model should have correct data');
     });
+
+    it('EmbedMany setter should call post.set() with serialized comments array', async () => {
+        @model
+        class TestPost extends BaseModel {
+            @embed(TestComment, { cardinality: 'many' })
+            accessor comments!: EmbedMany<TestComment>;
+        }
+
+        const post = new TestPost();
+        const setSpy = mock.method(post, 'set');
+        
+        const comment1 = new TestComment();
+        const comment2 = new TestComment();
+        const serializedData1 = { content: 'First serialized comment' };
+        const serializedData2 = { content: 'Second serialized comment' };
+        
+        // Mock the serialise methods to return known data
+        const serialiseSpy1 = mock.method(comment1, 'serialise', () => serializedData1);
+        const serialiseSpy2 = mock.method(comment2, 'serialise', () => serializedData2);
+
+        await post.comments([comment1, comment2]);
+
+        assert.strictEqual(serialiseSpy1.mock.callCount(), 1, 'comment1.serialise should be called once');
+        assert.strictEqual(serialiseSpy2.mock.callCount(), 1, 'comment2.serialise should be called once');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comments', [serializedData1, serializedData2]], 'post.set should be called with property name and serialized data array');
+    });
 });
