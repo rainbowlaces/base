@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { BaseConfigProvider, BaseConfigRegistry, BaseDi, provider } from '../../../../src';
+import { BaseConfigProvider, BaseConfigRegistry, BaseDi, provider, BaseClassConfig, configClass, getConfigClass, clearConfigClassRegistry } from '../../../../src';
 
 // Extend BaseAppConfig for testing
 declare module '../../../../src/core/config/types' {
@@ -191,6 +191,65 @@ test('@config decorator', (t) => {
       assert.strictEqual(defaultProvider.priority, 0, 'Default should have priority 0');
       assert.strictEqual(testProvider.priority, 50, 'Test should have priority 50');
       assert.strictEqual(productionProvider.priority, 25, 'Production should have priority 25');
+    });
+  });
+});
+
+test('@configClass decorator', (t) => {
+  t.beforeEach(() => {
+    // Clear the config class registry before each test
+    clearConfigClassRegistry();
+  });
+
+  t.test('basic functionality', (t) => {
+    t.test('should register class with correct namespace', () => {
+      @configClass('test')
+      class TestConfig extends BaseClassConfig {
+        message: string = "test message";
+      }
+
+      const registeredClass = getConfigClass('test');
+      assert.strictEqual(registeredClass, TestConfig, 'Should register class with correct namespace');
+    });
+
+    t.test('should return undefined for unregistered namespace', () => {
+      const registeredClass = getConfigClass('nonexistent');
+      assert.strictEqual(registeredClass, undefined, 'Should return undefined for unregistered namespace');
+    });
+
+    t.test('should register multiple classes', () => {
+      @configClass('first')
+      class FirstConfig extends BaseClassConfig {
+        value: string = "first";
+      }
+
+      @configClass('second')
+      class SecondConfig extends BaseClassConfig {
+        value: string = "second";
+      }
+
+      const firstClass = getConfigClass('first');
+      const secondClass = getConfigClass('second');
+      
+      assert.strictEqual(firstClass, FirstConfig, 'Should register first class');
+      assert.strictEqual(secondClass, SecondConfig, 'Should register second class');
+      assert.notStrictEqual(firstClass, secondClass, 'Should register different classes');
+    });
+
+    t.test('should handle duplicate registrations', () => {
+      @configClass('duplicate')
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      class FirstConfig extends BaseClassConfig {
+        value: string = "first";
+      }
+
+      @configClass('duplicate')
+      class SecondConfig extends BaseClassConfig {
+        value: string = "second";
+      }
+
+      const registeredClass = getConfigClass('duplicate');
+      assert.strictEqual(registeredClass, SecondConfig, 'Should register the latest class for duplicate namespace');
     });
   });
 });

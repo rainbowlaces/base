@@ -57,7 +57,7 @@ const CREATE_TEMPLATES_INSTANCE = (): TestBaseTemplates => {
 
 test('BaseTemplate constructor', (t) => {
 
-  t.test('should store data correctly', () => {
+  t.test('should store data correctly', async () => {
     // Setup BaseTemplates and required tags for UserTemplate
     const templatesInstance = CREATE_TEMPLATES_INSTANCE();
     BaseDi.register(templatesInstance, { key: 'BaseTemplates', singleton: true });
@@ -186,7 +186,7 @@ test('BaseTemplate templates property', (t) => {
     assert.ok(templateResult instanceof TemplateResult);
   });
 
-  t.test('should return empty object when BaseTemplates not set up', () => {
+  t.test('should return empty object when BaseTemplates not set up', async () => {
     // Create a BaseTemplates instance but don't set it up
     const templatesInstance = CREATE_TEMPLATES_INSTANCE();
     

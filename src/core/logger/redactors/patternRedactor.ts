@@ -15,10 +15,10 @@ export abstract class PatternRedactor implements LogObjectTransformer {
   private get pattern(): RegExp {
     if (!this.#pattern) {
       const fullLoggerConfig = BaseDi.resolve<LoggerConfig>('Config.BaseLogger');
-      const configuredPattern = fullLoggerConfig.patterns?.[this.patternName];
+      const configuredPattern = fullLoggerConfig.patterns[this.patternName];
       
       this.#pattern = new RegExp(
-        configuredPattern ?? this.defaultPattern,
+        configuredPattern || this.defaultPattern,
         'gui'
       );
     }

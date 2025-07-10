@@ -26,7 +26,7 @@ export class BaseResponse extends EventEmitter {
   @di("BaseLogger", "BaseResponse")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("RequestHandler")
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
   private accessor config!: BaseRequestHandlerConfig;
 
   #ctxId: string;
@@ -94,7 +94,7 @@ export class BaseResponse extends EventEmitter {
   }
 
   cookie(name: string, value: string, options: CookieOptions = {}) {
-    const secret = this.config.cookieSecret ?? "";
+    const secret = this.config.cookieSecret;
     let finalValue = value;
 
     if (secret.length > 0) {

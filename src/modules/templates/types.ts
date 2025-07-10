@@ -1,4 +1,4 @@
-import { type BaseClassConfig } from '../../core/config/types';
+import { BaseClassConfig, type ConfigData } from '../../core/config/types';
 import { type BaseTemplate } from './baseTemplate';
 import type { Renderable } from './engine/renderable';
 import { type Tag, type TagConfig } from './engine/tag';
@@ -49,26 +49,26 @@ export type ElementFunction = (
   elements?: TemplateElements
 ) => Renderable;
 
-export interface BaseTemplatesConfig extends BaseClassConfig {
+export class BaseTemplatesConfig extends BaseClassConfig {
   /**
    * Maximum buffer size in megabytes before throwing buffer exceeded error.
    * Prevents runaway memory usage during template rendering.
    * Default: 8
    */
-  bufferLimitMB?: number;
+  bufferLimitMB: number = 8;
 
   /**
    * Whether to perform HTML validation on rendered output.
    * When true, strips dangerous attributes and neutralizes unsafe URL schemes.
    * Default: true
    */
-  validateHtml?: boolean;
+  validateHtml: boolean = true;
 }
 
 // Declaration merging to add the templates config to the global app config type.
 declare module "../../core/config/types" {
   interface BaseAppConfig {
-    BaseTemplates?: BaseTemplatesConfig;
+    BaseTemplates?: ConfigData<BaseTemplatesConfig>;
   }
 }
 

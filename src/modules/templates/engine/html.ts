@@ -1,11 +1,12 @@
 import { TemplateValue } from './templateValue';
 import { TemplateResult } from './templateResult';
+import { RawHtml } from './rawHtml';
 import { isRenderable } from './renderable';
 
 /**
  * The tagged template literal function. It interleaves static strings and dynamic
  * values into a structured array of Renderable objects.
- * Everything is sanitized by default - use unsafe() to bypass.
+ * Static strings are treated as raw HTML, interpolated values are sanitized.
  */
 export function html(
   strings: TemplateStringsArray,
@@ -15,12 +16,14 @@ export function html(
   
   // A tagged template has N strings and N-1 values
   for (let i = 0; i < strings.length; i++) {
-    result.push(new TemplateValue(strings[i]));
+    // String literals are raw HTML and should not be escaped
+    result.push(new RawHtml(strings[i]));
     if (i < values.length) {
       const value = values[i];
       if (isRenderable(value)) {
         result.push(value);
       } else {
+        // Interpolated values should be sanitized
         result.push(new TemplateValue(value));
       }
     }

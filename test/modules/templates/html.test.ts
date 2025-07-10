@@ -41,16 +41,16 @@ test('html() tagged template function', (t) => {
     const rendered = await result.render();
     
     // Should strip HTML tags completely
-    assert.strictEqual(rendered, 'Content&#58; ');
+    assert.strictEqual(rendered, 'Content: ');
   });
 
   t.test('should not wrap values that are already Renderable', async () => {
-    const existingRenderable = new TestRenderable('<already-rendered>');
+    const existingRenderable = new TestRenderable('hello <p>hello</p> hello');
     const result = html`Value: ${existingRenderable}`;
     const rendered = await result.render();
     
     // The existing renderable should be used as-is (HTML tags stripped)
-    assert.strictEqual(rendered, 'Value&#58; ');
+    assert.strictEqual(rendered, 'Value: hello hello hello');
   });
 
   t.test('should return TemplateResult instance', () => {

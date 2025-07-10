@@ -140,7 +140,7 @@ export class BaseLogger {
     level: LogLevel = LogLevel.INFO,
     context: LogContext = {}
   ): void {
-    if (!(level <= (this.config.logLevel ?? LogLevel.INFO))) {
+    if (!(level <= this.config.logLevel)) {
       return;
     }
 
@@ -193,7 +193,7 @@ export class BaseLogger {
     // Stage 2: Redact the entire plain object if redaction is enabled.
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const redacted =
-      (this.config.redaction ?? true)
+      this.config.redaction
         ? this._applyTransformers(serializable, this.redactors)
         : serializable;
 

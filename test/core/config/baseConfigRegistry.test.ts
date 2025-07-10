@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { BaseConfigRegistry, BaseConfigProvider } from '../../../src/core/config/baseConfigRegistry';
 import { BaseDi } from '../../../src/core/di/baseDi';
+import { BaseClassConfig, configClass, clearConfigClassRegistry } from '../../../src';
 
 // Extend BaseAppConfig for testing
 declare module '../../../src/core/config/types' {
@@ -261,6 +262,9 @@ test('BaseConfigRegistry', (t) => {
 
   t.test('DI registration for config namespaces', (t) => {
     t.test('should register each namespace with DI container', () => {
+      // Clear any existing config class registrations
+      clearConfigClassRegistry();
+      
       // Mock BaseDi.register to capture registrations
       const originalRegister = BaseDi.register.bind(BaseDi);
       const registrations: { value: unknown; options: string | Partial<import('../../../src/core/di/types').BaseDiWrapper<unknown>> | undefined }[] = [];
@@ -314,6 +318,66 @@ test('BaseConfigRegistry', (t) => {
       
       // Restore original register
       BaseDi.register = originalRegister;
+    });
+  });
+
+  t.test('class instantiation', (t) => {
+    t.beforeEach(() => {
+      // Clear the config class registry before each test
+      clearConfigClassRegistry();
+    });
+
+    t.test('should create class instance when @configClass exists', () => {
+      // Register a config class
+      @configClass('TestModule')
+      class TestModuleConfig extends BaseClassConfig {
+        value: string = 'default value';
+        priority: string = 'low';
+      }
+
+      // Create a provider that would normally provide data for TestModule
+      class TestProvider extends BaseConfigProvider {
+        get config() {
+          return { TestModule: { value: 'provider value' } };
+        }
+      }
+
+      // Register the provider
+      BaseConfigRegistry.register(new TestProvider());
+
+      // Mock BaseDi.register to capture what gets registered
+      const registrations: any[] = [];
+      const originalRegister = BaseDi.register.bind(BaseDi);
+      BaseDi.register = (value: any, options: any) => {
+        registrations.push({ value, options });
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        originalRegister(value, options);
+      };
+
+      try {
+        // Create registry which should create class instances
+        new BaseConfigRegistry('default');
+
+        // Find the TestModule registration
+        const testModuleRegistration = registrations.find(r => 
+          typeof r.options === 'object' && 'key' in r.options && r.options.key === 'Config.TestModule'
+        );
+        
+        assert.ok(testModuleRegistration, 'Should register TestModule config');
+        
+        // Should be a class instance, not just a plain object
+        assert.ok(testModuleRegistration.value instanceof TestModuleConfig, 'Should register class instance');
+        
+        // Should have hydrated values from provider
+        assert.strictEqual(testModuleRegistration.value.value, 'provider value', 'Should hydrate with provider data');
+        
+        // Should preserve default values for non-provided properties
+        assert.strictEqual(testModuleRegistration.value.priority, 'low', 'Should preserve default values');
+        
+      } finally {
+        // Restore original register
+        BaseDi.register = originalRegister;
+      }
     });
   });
 });

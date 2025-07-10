@@ -1,5 +1,7 @@
 import type formidable from "formidable";
-import { type BaseClassConfig } from "../config/types";
+import { tmpdir } from "os";
+import { BaseClassConfig, type ConfigData } from "../config/types";
+import { configClass } from "../config/decorators/provider";
 
 export type HttpContextData = Record<string, unknown>;
 export type UrlParams = Record<string, string>;
@@ -20,20 +22,21 @@ export interface ParsedForm<T> {
   files: formidable.Files;
 }
 
-export interface BaseRequestHandlerConfig extends BaseClassConfig {
-  requestTimeout?: number;
-  port?: number;
-  cookieSecret?: string;
-  maxBodySize?: number;
-  formEncoding?: formidable.BufferEncoding;
-  uploadDir?: string;
-  keepExtensions?: boolean;
-  maxUploadSize?: number;
-  maxFields?: number;
+@configClass("BaseRequestHandler")
+export class BaseRequestHandlerConfig extends BaseClassConfig {
+  requestTimeout: number = 5000;
+  port: number = 3000;
+  cookieSecret: string = "";
+  maxBodySize: number = 1024 * 1024; // 1MB
+  formEncoding: formidable.BufferEncoding = 'utf8';
+  uploadDir: string = tmpdir();
+  keepExtensions: boolean = false;
+  maxUploadSize: number = 1024 * 1024; // 1MB
+  maxFields: number = 1000;
 }
 
 declare module "../config/types" {
   interface BaseAppConfig {
-    BaseRequestHandler?: BaseRequestHandlerConfig;
+    BaseRequestHandler?: ConfigData<BaseRequestHandlerConfig>;
   }
 }

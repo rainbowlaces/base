@@ -1,6 +1,5 @@
-// Logger types and enums
-
-import { type BaseClassConfig } from "../config/types";
+import { BaseClassConfig, type ConfigData } from "../config/types";
+import { configClass } from "../config/decorators/provider";
 
 export enum LogLevel {
   FATAL = 1,
@@ -61,16 +60,17 @@ export interface LogObjectTransformer {
   transform(value: unknown): unknown;
 }
 
-export interface LoggerConfig extends BaseClassConfig {
-  logLevel?: LogLevel;
-  redaction?: boolean;
-  patterns?: PatternMap;
-  maxMessageLength?: number;
+@configClass("BaseLogger")
+export class LoggerConfig extends BaseClassConfig {
+  logLevel: LogLevel = LogLevel.INFO;
+  redaction: boolean = true;
+  patterns: PatternMap = {};
+  maxMessageLength: number = 1000;
 }
 
 // Declaration merging to add the logger config to the global app config type.
 declare module "../config/types" {
   interface BaseAppConfig {
-    BaseLogger?: LoggerConfig;
+    BaseLogger?: ConfigData<LoggerConfig>;
   }
 }

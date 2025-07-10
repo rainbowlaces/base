@@ -17,7 +17,7 @@ export class BaseRequestHandler {
   @di<BaseLogger>("BaseLogger", "RequestHandler")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("RequestHandler")
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
   private accessor config!: BaseRequestHandlerConfig;
 
   @di<BasePubSub>("BasePubSub")
@@ -31,7 +31,7 @@ export class BaseRequestHandler {
   }
 
   async setup() {
-    const port = this.config.port ?? 3000;
+    const port = this.config.port;
     this.#server.listen(port, () => {
       this.logger.info(`Server listening on port ${port}`);
     });
@@ -56,7 +56,7 @@ export class BaseRequestHandler {
 
     void this.bus.pub(ctx.topic, { context: ctx });
 
-    await delay(this.config.requestTimeout ?? 5000);
+    await delay(this.config.requestTimeout);
 
     if (ctx.res.finished) return;
 

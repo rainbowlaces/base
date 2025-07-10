@@ -3,6 +3,8 @@ import { type BaseModule } from "../../src/core/module/baseModule";
 import { type BaseClassConfig } from "../../src/core/config/types";
 import { type FileSystem } from "../../src/utils/fileSystem";
 import { type BasePubSub } from "../../src/core/pubsub/basePubSub";
+import { getConfigClass } from "../../src/core/config/decorators/provider";
+
 import { mock } from 'node:test';
 
 function debugLog(...args: unknown[]): void {
@@ -79,7 +81,19 @@ export function getModuleWithMocks<C extends BaseClassConfig, T extends BaseModu
     BaseDi.register(logger, { key: "BaseLogger", singleton: true, type: "scalar" });
     BaseDi.register(pubsub, { key: "BasePubSub", singleton: true, type: "scalar" });
     
-    const config = {} as C;
+    // Create a proper config class instance with defaults
+    // We need to get the config class constructor from the registry    
+    const configClass = getConfigClass(name);
+    
+    let config: C;
+    if (configClass) {
+        // Create instance of the config class with defaults
+        config = new configClass() as C;
+    } else {
+        // Fall back to empty object for non-decorated configs
+        config = {} as C;
+    }
+    
     BaseDi.register(config, { key: `Config.${name}`, singleton: true, type: "scalar" });
 
     for (const [key, value] of Object.entries(inject)) {

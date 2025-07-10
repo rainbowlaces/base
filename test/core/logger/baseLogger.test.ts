@@ -7,11 +7,12 @@ import {
   type LoggerConfig,
   type LogObjectTransformer,
 } from "../../../src/core/logger/types";
+import { type ConfigData } from "../../../src/core/config/types";
 import { type Console } from "../../../src/utils/console";
 import { BaseDi } from "../../../src/core/di/baseDi";
 import { ErrorSerializer } from "../../../src/core/logger/transformers/errorSerializer";
 
-function setLoggerConfig(config: LoggerConfig): void {
+function setLoggerConfig(config: ConfigData<LoggerConfig>): void {
   BaseDi.register(config, { key: "Config.BaseLogger", singleton: true, type: "scalar" });
 }
 
@@ -50,7 +51,7 @@ describe("BaseLogger", () => {
     }) as unknown as typeof process.exit;
 
     // Register dependencies in DI
-    const config: LoggerConfig = { logLevel: LogLevel.INFO, redaction: false };
+    const config: ConfigData<LoggerConfig> = { logLevel: LogLevel.INFO, redaction: false };
     setLoggerConfig(config);
   });
 
@@ -102,7 +103,7 @@ describe("BaseLogger", () => {
     });
 
     it("should filter out logs below configured level", async () => {
-      const config: LoggerConfig = {
+      const config: ConfigData<LoggerConfig> = {
         logLevel: LogLevel.WARNING, 
         redaction: false,
       };
@@ -128,7 +129,7 @@ describe("BaseLogger", () => {
 
     it("should log all messages when level is TRACE", async () => {
       // To see all levels, you must set log level to TRACE.
-      const config: LoggerConfig = {
+      const config: ConfigData<LoggerConfig> = {
         logLevel: LogLevel.TRACE,
         redaction: false,
       };
@@ -155,7 +156,7 @@ describe("BaseLogger", () => {
 
       // Use a mask that includes all levels for these tests.
       const allLevels = LogLevel.FATAL | LogLevel.ERROR | LogLevel.WARNING | LogLevel.INFO | LogLevel.DEBUG | LogLevel.TRACE;
-      const config: LoggerConfig = { 
+      const config: ConfigData<LoggerConfig> = { 
         logLevel: allLevels, 
         redaction: false 
       };
@@ -294,7 +295,7 @@ describe("BaseLogger", () => {
       };
 
       // Register with redaction enabled and problematic redactor
-      const config: LoggerConfig = { logLevel: LogLevel.INFO, redaction: true };
+      const config: ConfigData<LoggerConfig> = { logLevel: LogLevel.INFO, redaction: true };
       BaseDi.register(config, "Config.BaseLogger");
       BaseDi.register(badTransformer, {
         key: "BadRedactor",

@@ -1,6 +1,4 @@
 import * as http from "http";
-import path from "path";
-import * as os from "os";
 
 import formidable from "formidable";
 import cookie from "cookie";
@@ -24,7 +22,7 @@ export class BaseRequest {
   @di("BaseLogger", "BaseRequest")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("RequestHandler")
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
   private accessor config!: BaseRequestHandlerConfig;
 
   constructor(ctxId: string, req: http.IncomingMessage) {
@@ -73,7 +71,7 @@ export class BaseRequest {
     const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") ?? "");
     const raw = cookies[name];
     if (raw?.startsWith("s:")) {
-      const secret = this.config.cookieSecret ?? "";
+      const secret = this.config.cookieSecret;
       if (secret.length > 0) {
         const unsignedValue = signature.unsign(raw.slice(2), secret);
         if (unsignedValue !== false) {
@@ -101,7 +99,7 @@ export class BaseRequest {
 
       this.#req.on("data", (chunk: Buffer) => {
         totalLength += chunk.length;
-        if (totalLength > (this.config.maxBodySize ?? 5e6)) {
+        if (totalLength > this.config.maxBodySize) {
           this.#req.destroy();
           bodyTooLarge = true;
           reject(new BaseError("Request body too large"));
@@ -151,11 +149,11 @@ export class BaseRequest {
 
   async form<T>(): Promise<ParsedForm<T>> {
     const form = formidable({
-      encoding: this.config.formEncoding ?? "utf-8",
-      uploadDir: this.config.uploadDir?? path.resolve(path.join(os.tmpdir(), "uploads")),
-      keepExtensions: this.config.keepExtensions ?? true,
-      maxFileSize: this.config.maxUploadSize ?? 5e6,
-      maxFields: this.config.maxFields ?? 1000,
+      encoding: this.config.formEncoding,
+      uploadDir: this.config.uploadDir,
+      keepExtensions: this.config.keepExtensions,
+      maxFileSize: this.config.maxUploadSize,
+      maxFields: this.config.maxFields,
     });
     let fields: formidable.Fields;
     let files: formidable.Files;

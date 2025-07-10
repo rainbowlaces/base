@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 
 import { type BaseModel } from "../baseModel";
 import { type FieldOptions, type FieldMetadata } from "../types";
@@ -6,11 +7,10 @@ import { type FieldOptions, type FieldMetadata } from "../types";
 // Type that allows FieldOptions plus any additional metadata properties
 type ExtendedFieldOptions<T> = FieldOptions<T> & Omit<FieldMetadata, "options">;
 
-const FIELD_SYM = Symbol.for("model.field-meta");
+export const FIELD_METADATA_SYMBOL = Symbol.for("model.field-meta");
 
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-export function field<T>(opts: ExtendedFieldOptions<T> = {} as any) {
-  return function <M extends BaseModel<M>>(
+export function field<T>(opts: ExtendedFieldOptions<T> = {} as ExtendedFieldOptions<T>) {
+  return function <M extends BaseModel>(
     _ignored: unknown,
     ctx: ClassAccessorDecoratorContext<M, T>
   ) {
@@ -29,8 +29,7 @@ export function field<T>(opts: ExtendedFieldOptions<T> = {} as any) {
     }
 
     // Attach the payload to something that *will* end up in the class
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    (getter as any)[FIELD_SYM] = { name, meta };
+    (getter as any)[FIELD_METADATA_SYMBOL] = { name, meta };
 
     return { get: getter, set: setter, enumerable: true, configurable: true };
   };

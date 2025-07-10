@@ -1,25 +1,32 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+
 import { registerDi } from "../../di/decorators/registerDi";
+import { FIELD_METADATA_SYMBOL } from "./field";
+import { type BaseModel } from "../baseModel";
+import { type ModelConstructor } from "../types";
 
-const FIELD_SYM = Symbol.for("model.field-meta");
+export function model<T extends BaseModel>(ctor: ModelConstructor<T>): void {
+  // Collect field metadata from entire prototype chain
+  let currentProto = ctor.prototype;
+  
+  while (currentProto && currentProto !== Object.prototype) {
+    for (const d of Object.values(Object.getOwnPropertyDescriptors(currentProto))) {
+      const info = (d.get as any)?.[FIELD_METADATA_SYMBOL] ?? (d.set as any)?.[FIELD_METADATA_SYMBOL];
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function model(ctor: any): void {
-  for (const d of Object.values(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    Object.getOwnPropertyDescriptors(ctor.prototype)
-  )) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    const info = (d.get as any)?.[FIELD_SYM] ?? (d.set as any)?.[FIELD_SYM];
+      if (!info) continue; // not a @field accessor
 
-    if (!info) continue; // not a @field accessor
-
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call
-    ctor.addField(info.name, info.meta); 
+      // Register the collected field with the static schema
+      (ctor as typeof BaseModel).addField(info.name, info.meta); 
+    }
+    
+    // Move up the prototype chain
+    currentProto = Object.getPrototypeOf(currentProto);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  (registerDi({ singleton: false, tags: ["Model"] }) as (t: Function) => void)(
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    ctor
-  );
+  // Register with DI container
+  registerDi({ singleton: false, tags: ["Model"] })(ctor, {} as ClassDecoratorContext);
 }

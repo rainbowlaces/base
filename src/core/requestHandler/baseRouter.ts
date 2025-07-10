@@ -1,20 +1,22 @@
 import { registerDi } from "../di/decorators/registerDi";
 import { type RouteTarget, type UrlParams, type Routes } from "./types";
-import { type BaseClassConfig } from "../config/types";
+import { BaseClassConfig, type ConfigData } from "../config/types";
 import { config } from "../config/decorators/config";
+import { configClass } from "../config/decorators/provider";
 
-interface BaseRouterConfig extends BaseClassConfig {
-  routes?: Routes;
-  defaultRoute?: string;
+@configClass("BaseRouter")
+class BaseRouterConfig extends BaseClassConfig {
+  routes: Routes = {};
+  defaultRoute: string = "/";
 }
 
 declare module "../config/types" {
   interface BaseAppConfig {
-    BaseRouter?: BaseRouterConfig;
+    BaseRouter?: ConfigData<BaseRouterConfig>;
   }
 }
 
-@registerDi()
+@registerDi({  setup: true, phase: 90, singleton: true })
 export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
@@ -22,9 +24,10 @@ export class BaseRouter {
   @config<BaseRouterConfig>("BaseRouter")
   private accessor config!: BaseRouterConfig;
 
-  constructor() {
-    this.routes = this.config.routes ?? {};
-    this.defaultRoute = this.config.defaultRoute ?? "";
+  public async setup(): Promise<void> {
+    this.routes = this.config.routes;
+    this.defaultRoute = this.config.defaultRoute;
+    console.log(`[BaseRouter] Setup complete with routes: ${JSON.stringify(this.routes)}`);
   }
 
   private cleanPath(path: string): string {

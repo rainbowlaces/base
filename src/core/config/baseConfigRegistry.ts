@@ -2,6 +2,7 @@ import { registerDi } from "../di/decorators/registerDi";
 import { merge } from "../../utils/recursion";
 import { BaseDi } from "../di/baseDi";
 import { type BaseAppConfig } from "./types";
+import { getAllConfigClasses } from "./decorators/provider";
 
 export abstract class BaseConfigProvider {
   abstract get config(): Partial<BaseAppConfig>;
@@ -36,16 +37,36 @@ export class BaseConfigRegistry {
     }
     this.config = mergedConfig as BaseAppConfig;
 
+    // Get all registered config classes
+    const allConfigClasses = getAllConfigClasses();
+    
+    // Create instances for all registered config classes
+    for (const [namespace, configClass] of allConfigClasses) {
+      const diKey = `Config.${namespace}`;
+      
+      // Get the config data for this namespace (if any)
+      const moduleConfig = this.config[namespace as keyof BaseAppConfig];
+      
+      // Create class instance and hydrate with config data (or empty object if no config)
+      const instance = new configClass();
+      instance.hydrate(moduleConfig ? moduleConfig as Partial<Record<string, unknown>> : {});
+      
+      // Register the class instance
+      BaseDi.register(instance, { key: diKey, singleton: true, type: "scalar" });
+    }
+
+    // Handle any remaining config entries that don't have registered classes
     for (const namespace in this.config) {
         if (Object.prototype.hasOwnProperty.call(this.config, namespace)) {
+            const diKey = `Config.${namespace}`;
+            
+            // Skip if we already registered this namespace above
+            if (allConfigClasses.has(namespace)) continue;
             
             // Get the specific config object for the module.
             const moduleConfig = this.config[namespace as keyof BaseAppConfig];
             if (!moduleConfig) continue;
             
-            // Create a unique key. 'Config.ModuleName' is a good convention.
-            const diKey = `Config.${namespace}`;
-
             // Register it as a scalar/value. It's just an object, not a class to be constructed.
             BaseDi.register(moduleConfig, { key: diKey, singleton: true, type: "scalar" });
         }

@@ -3,10 +3,8 @@ import { camelToKebab } from "../../utils/string";
 import { di } from "../di/baseDi";
 import { type BasePubSub } from "../pubsub/basePubSub";
 import {
-    type ModelsEvent,
     type ModelsEventData,
     type FieldOptions,
-    type ModelConstructor,
     type ModelData,
     type ModelsEventType,
     type Persistable,
@@ -18,9 +16,9 @@ import {
 
 import { UniqueID } from "./uniqueId";
 
-export type BaseModelClass<T extends BaseModel<T>> = typeof BaseModel & ModelConstructor<T>;
+export type BaseModelClass = typeof BaseModel;
 
-export abstract class BaseModel<T extends BaseModel<T>> {
+export abstract class BaseModel {
     // A unique, private key to store metadata on the class constructor.
     private static readonly modelSchemaKey = Symbol("modelSchema");
 
@@ -32,9 +30,23 @@ export abstract class BaseModel<T extends BaseModel<T>> {
     #dirty: boolean = false;
     #new: boolean = true;
 
+    // public static getCollection<T extends BaseModel<T>>(
+    // this: ModelConstructor<T>,
+    // src: Iterable<ModelData<T>> | AsyncIterable<ModelData<T>>
+    // ): ModelCollection<T> {
+    //     // Drop-in concrete collection we wrote earlier
+    //     return new SimpleModelCollection(src, this);
+    // }
+
+
     constructor() {
         this.setDefaults();
     }
+    
+    // Collection method removed - will be implemented by specific model types that need it
+    // Models should implement Queryable interface if they need collection functionality
+
+    // Factory method removed from instance - will be static on specific model types
 
     // --- METADATA HANDLING LOGIC ---
 
@@ -143,13 +155,17 @@ export abstract class BaseModel<T extends BaseModel<T>> {
         return this.#dirty;
     }
 
-    protected async hydrate(data: ModelData<T>) {
+    protected async hydrate(data: ModelData<this>): Promise<void> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
+        
+        // Cast to allow for the generic iteration
+        const dataRecord = data as Record<string, unknown>;
+        
         for (const key in schema.fields) {
-            if (key in data) {
-                this.#originalData[key] = data[key];
-                this.#data[key] = data[key];
+            if (key in dataRecord) {
+                this.#originalData[key] = dataRecord[key];
+                this.#data[key] = dataRecord[key];
             }
         }
         this.#dirty = false;
@@ -166,10 +182,10 @@ export abstract class BaseModel<T extends BaseModel<T>> {
 
     /**
      * Static factory method to create a model instance pre-populated with data.
-     * This provides a clean public interface instead of casting to Hydratable.
+     * This provides a clean public interface for model instantiation.
      */
-    public static async fromData<T extends BaseModel<T>>(
-        this: ModelConstructor<T>, 
+    public static async fromData<T extends BaseModel>(
+        this: new () => T, 
         data: ModelData<T>
     ): Promise<T> {
         const instance = new this();
@@ -269,7 +285,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
         return true;
     }
 
-    public serialise(): ModelData<T> {
+    public serialise(): ModelData<this> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         const data: Record<string, unknown> = {};
@@ -278,7 +294,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
                 data[key] = this.get(key);
             }
         }
-        return data as ModelData<T>;
+        return data as ModelData<this>;
     }
 
     public async save(): Promise<void> {
@@ -305,6 +321,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
             await this.delete();
             this.#new = true;
             this.#dirty = false;
+            this.#data = {};
             this.#originalData = {};
             await this.publishDataEvent("delete", originalData);
         } else {
@@ -332,7 +349,7 @@ export abstract class BaseModel<T extends BaseModel<T>> {
         type: ModelsEventType,
         data: E,
     ): Promise<void> {
-        const event: ModelsEvent<T, E> = {
+        const event = {
             id: new UniqueID(),
             type,
             model: this,

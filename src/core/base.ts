@@ -1,20 +1,20 @@
 import path from "node:path";
 import { getDirname } from "../utils/file";
-import { type BaseClassConfig } from "./config/types";
+import { BaseClassConfig, type ConfigData } from "./config/types";
 import { BaseAutoload, BaseDi, BaseInitializer, di } from "./di/baseDi";
 import { BaseLogger } from "./logger/baseLogger";
 import { BasePubSub } from "./pubsub/basePubSub";
 import { BaseInitContext } from "./module/initContext";
 
-interface BaseMainConfig extends BaseClassConfig {
-  port?: number;
-  autoloadIgnore?: string[];
-  autoload?: boolean;
+class BaseMainConfig extends BaseClassConfig {
+  port: number = 3000;
+  autoloadIgnore: string[] = [];
+  autoload: boolean = true;
 }
 
 declare module "./config/types" {
   interface BaseAppConfig {
-    Base?: BaseMainConfig;
+    Base?: ConfigData<BaseMainConfig>;
   }
 }
 
@@ -37,6 +37,9 @@ export class Base {
   constructor(metaUrl: string) {
     this.fsRoot = getDirname(metaUrl);
     this.libRoot = getDirname(import.meta.url);
+    
+    console.log(`[Base] Registering fsRoot: ${this.fsRoot}`);
+    console.log(`[Base] Registering libRoot: ${this.libRoot}`);
     
     BaseDi.register(this.fsRoot, "fsRoot");
     BaseDi.register(this.libRoot, "libRoot");

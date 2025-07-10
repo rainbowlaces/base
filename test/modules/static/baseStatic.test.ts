@@ -48,8 +48,10 @@ const CREATE_TEST_INSTANCE = (configOverrides: Record<string, unknown> = {}, moc
     { FileSystem: fileSystemMock }
   );
   
-  // Apply config overrides
-  Object.assign(config, configOverrides);
+  // Apply config overrides using hydrate method
+  if (Object.keys(configOverrides).length > 0) {
+    config.hydrate(configOverrides);
+  }
   
   // Bypass the DI decorator by setting the property directly on the object
   Object.defineProperty(module, 'baseFsRoot', {
@@ -114,7 +116,7 @@ test('BaseStatic setup() method', (t) => {
 test('BaseStatic cleanPath() method', (t) => {
   let instance: TestBaseStatic;
   
-  t.beforeEach(() => {
+  t.beforeEach(async () => {
     instance = CREATE_TEST_INSTANCE();
   });
 
@@ -306,7 +308,7 @@ test('BaseStatic sendFile() method', (t) => {
     mtime: new Date('2023-01-01T12:00:00Z'),
   } as fs.Stats;
 
-  t.beforeEach(() => {
+  t.beforeEach(async () => {
     instance = CREATE_TEST_INSTANCE({ maxAge: 7200 });
     mockCtx = CREATE_MOCK_CONTEXT();
   });

@@ -3,7 +3,8 @@ import crypto from "crypto";
 import type * as fs from "fs";
 import mime from "mime-types";
 import { baseModule } from "../../core/module/decorators/baseModule";
-import { type BaseClassConfig } from "../../core/config/types";
+import { BaseClassConfig, type ConfigData } from "../../core/config/types";
+import { configClass } from "../../core/config/decorators/provider";
 import { BaseModule } from "../../core/module/baseModule";
 import { di } from "../../core/di/baseDi";
 import { BaseError } from "../../core/baseErrors";
@@ -16,15 +17,16 @@ interface NodeError extends Error {
   code?: string;
 }
 
-export interface BaseStaticConfig extends BaseClassConfig {
-  staticFsRoot?: string;
-  maxAge?: number; 
+@configClass("BaseStatic")
+export class BaseStaticConfig extends BaseClassConfig {
+  staticFsRoot: string = "/public";
+  maxAge: number = 3600; 
 }
 
 // Declaration merging to add the logger config to the global app config type.
 declare module "../../core/config/types" {
   interface BaseAppConfig {
-    BaseStatic?: BaseStaticConfig;
+    BaseStatic?: ConfigData<BaseStaticConfig>;
   }
 }
 
@@ -43,14 +45,18 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
   async setup(): Promise<void> {
     this.logger.debug(`BaseStatic setup starting`, []);
     this.logger.debug(`Base filesystem root: ${this.baseFsRoot}`, []);
-    this.logger.debug(`Config staticFsRoot: ${this.config.staticFsRoot ?? "/public"}`, []);
+    this.logger.debug(`Config staticFsRoot: ${this.config.staticFsRoot}`, []);
     
+    if (!this.baseFsRoot) {
+      throw new BaseError("baseFsRoot dependency not injected - check DI configuration");
+    }
+  
     this.staticFsRoot = path.resolve(
-      path.join(this.baseFsRoot, this.config.staticFsRoot ?? "/public"),
+      path.join(this.baseFsRoot, this.config.staticFsRoot),
     );
     
     this.logger.info(`Static file root: ${this.staticFsRoot}`);
-    this.logger.debug(`Max age setting: ${this.config.maxAge ?? 3600}`, []);
+    this.logger.debug(`Max age setting: ${this.config.maxAge}`, []);
     this.logger.debug(`BaseStatic setup complete`, []);
   }
 
@@ -167,11 +173,11 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     // Set headers and send file
     const mimeType = mime.lookup(filePath) || "application/octet-stream";
     this.logger.debug(`MIME type resolved: ${mimeType}`, [ctx.id]);
-    this.logger.debug(`Setting cache max-age: ${this.config.maxAge ?? 3600}`, [ctx.id]);
+    this.logger.debug(`Setting cache max-age: ${this.config.maxAge}`, [ctx.id]);
     
     ctx.res.header("ETag", etag);
     ctx.res.header("Last-Modified", stats.mtime.toUTCString());
-    ctx.res.header("Cache-Control", `public, max-age=${this.config.maxAge ?? 3600}`);
+    ctx.res.header("Cache-Control", `public, max-age=${this.config.maxAge}`);
     
     this.logger.debug(`Sending file data, size: ${typeof data === "string" ? data.length : data.length} bytes`, [ctx.id]);
     void ctx.res.send(data, mimeType);
