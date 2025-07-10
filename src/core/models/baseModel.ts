@@ -162,6 +162,12 @@ export abstract class BaseModel {
         // Cast to allow for the generic iteration
         const dataRecord = data as Record<string, unknown>;
         
+        // First, validate that all provided fields exist in the schema using getMeta
+        for (const key in dataRecord) {
+            this.getMeta(key); // This will throw if field is not in schema
+        }
+        
+        // Then process the fields
         for (const key in schema.fields) {
             if (key in dataRecord) {
                 this.#originalData[key] = dataRecord[key];

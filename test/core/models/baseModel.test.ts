@@ -121,8 +121,30 @@ describe('BaseModel: Instance State & Data Management', () => {
             'Should be dirty after modification and attempt to save'
         );
     });
+
+    it('should throw for non-schema fields during hydration', async () => {
+        // Test that hydration correctly throws for fields not in the schema
+        const dataWithExtraFields = { 
+            bio: 'Valid field', 
+            extraField: 'should-be-rejected'
+        };
+        
+        // Should throw when trying to hydrate with non-schema fields
+        await assert.rejects(
+            () => TestProfile.fromData(dataWithExtraFields),
+            {
+                message: 'Field "extraField" is not defined in the schema.'
+            },
+            'Should throw for non-schema fields during hydration'
+        );
+        
+        // Should succeed with only schema fields
+        const validData = { bio: 'Valid field' };
+        const profile = await TestProfile.fromData(validData);
+        assert.strictEqual(profile.get('bio'), 'Valid field', 'Should hydrate valid schema fields');
+    });
     
-    it('should serialise model data correctly', () => {
+    it('should serialise model data correctly', async () => {
         const profile = new TestProfile();
         
         // Empty model should serialize to empty object (no fields set)
@@ -138,14 +160,13 @@ describe('BaseModel: Instance State & Data Management', () => {
         assert.strictEqual(Object.hasOwnProperty.call(serialized, 'viewCount'), false, 'Should not include unset readonly fields');
         
         // Test with hydrated model
-        const hydratedData = { bio: 'Original bio', extraField: 'ignored' };
+        const hydratedData = { bio: 'Original bio' };
         const hydratedProfile = new TestProfile();
-        (hydratedProfile as any).hydrate(hydratedData);
+        await (hydratedProfile as any).hydrate(hydratedData);
         
         const hydratedSerialized = hydratedProfile.serialise();
         // Should only serialize fields that are in the schema and set
         assert.deepStrictEqual(hydratedSerialized, { bio: 'Original bio' }, 'Should only serialize schema fields that are set');
-        assert.strictEqual(Object.hasOwnProperty.call(hydratedSerialized, 'extraField'), false, 'Should ignore non-schema fields during serialization');
     });
     
     it('should publish correct events when saving (create vs update)', async () => {
