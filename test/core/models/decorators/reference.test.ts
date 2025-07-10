@@ -208,6 +208,42 @@ describe('@reference decorator', () => {
         assert.strictEqual(byIdSpy.mock.callCount(), 1, 'TestUser.byId should be called once');
     });
 
+    it('RefOne should handle when byId() returns undefined', async () => {
+        // Mock byId to return undefined (user not found)
+        const byIdSpy = mock.method(TestUser, 'byId', () => Promise.resolve(undefined));
+
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'one' })
+            accessor author!: RefOne<TestUser>;
+        }
+
+        const post = new TestPost();
+        const userId = new UniqueID();
+        post.set('author', userId);
+
+        const result = await post.author();
+
+        assert.strictEqual(byIdSpy.mock.callCount(), 1, 'TestUser.byId should be called once');
+        assert.deepStrictEqual(byIdSpy.mock.calls[0].arguments, [userId], 'TestUser.byId should be called with the correct id');
+        assert.strictEqual(result, undefined, 'Should return undefined when user is not found');
+    });
+
+    it('RefOne should handle when stored ID is undefined', async () => {
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'one' })
+            accessor author!: RefOne<TestUser>;
+        }
+
+        const post = new TestPost();
+        // Don't set any author ID - should be undefined
+        
+        const result = await post.author();
+        
+        assert.strictEqual(result, undefined, 'Should return undefined when no ID is set');
+    });
+
     it('should integrate with field metadata system', () => {
         @model
         class TestPost extends BaseModel {

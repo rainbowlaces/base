@@ -170,8 +170,15 @@ export abstract class BaseModel {
         // Then process the fields
         for (const key in schema.fields) {
             if (key in dataRecord) {
-                this.#originalData[key] = dataRecord[key];
-                this.#data[key] = dataRecord[key];
+                let value = dataRecord[key];
+                
+                // Special handling for 'id' field: convert string to UniqueID
+                if (key === 'id' && typeof value === 'string') {
+                    value = new UniqueID(value);
+                }
+                
+                this.#originalData[key] = value;
+                this.#data[key] = value;
             }
         }
         this.#dirty = false;
@@ -226,7 +233,7 @@ export abstract class BaseModel {
     public get<T>(key: string): T {
         const { fieldOptions } = this.getMeta(key);
         if (!(key in this.#data)) {
-            throw new Error(`Field "${key}" is not set.`);
+            return undefined as T;
         }
         return this.beforeGet(key, this.#data[key] as T, fieldOptions) as T;
     }
@@ -237,7 +244,13 @@ export abstract class BaseModel {
             throw new Error(`Field "${key}" is readonly and cannot be set.`);
         }
         if (!this.beforeSet(key, value, fieldOptions)) return;
-        this.#dirty = true;
+        
+        // Only mark as dirty if the value is actually different
+        const currentValue = this.#data[key];
+        if (currentValue !== value) {
+            this.#dirty = true;
+        }
+        
         this.#data[key] = value;
     }
 

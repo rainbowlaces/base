@@ -168,9 +168,21 @@ describe('@embed decorator', () => {
         const modelsArray = await result.toArray();
         assert.strictEqual(modelsArray.length, 2, 'Should have 2 hydrated models');
         
+        // Verify the models are actual TestComment instances (not just plain objects)
+        assert(modelsArray[0] instanceof TestComment, 'First model should be TestComment instance');
+        assert(modelsArray[1] instanceof TestComment, 'Second model should be TestComment instance');
+        
         // Verify the models are hydrated with the correct data
         assert.strictEqual(modelsArray[0].get('content'), 'First comment', 'First model should have correct data');
         assert.strictEqual(modelsArray[1].get('content'), 'Second comment', 'Second model should have correct data');
+        
+        // Verify we can also iterate the collection directly to check hydrated instances
+        const iteratedModels = [];
+        for await (const model of result) {
+            assert(model instanceof TestComment, 'Iterated model should be TestComment instance');
+            iteratedModels.push(model);
+        }
+        assert.strictEqual(iteratedModels.length, 2, 'Should iterate over 2 models');
     });
 
     it('EmbedMany setter should call post.set() with serialized comments array', async () => {

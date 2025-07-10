@@ -412,10 +412,11 @@ describe('BaseModelCollection', () => {
             const generator = lazyGenerator();
             const nextSpy = mock.method(generator, 'next');
 
+            // CRITICAL TEST: Constructor should not touch the generator
             const collection = new BaseModelCollection(generator, TestUser);
 
-            // At this point, next() should not have been called yet
-            assert.strictEqual(nextSpy.mock.callCount(), 0, 'Generator next() should not be called during collection construction');
+            // This is the key assertion - constructor must not call next()
+            assert.strictEqual(nextSpy.mock.callCount(), 0, 'Generator next() should NEVER be called during collection construction - this proves laziness');
 
             // Only iterate first 3 items
             let iteratedCount = 0;
@@ -424,7 +425,7 @@ describe('BaseModelCollection', () => {
                 if (iteratedCount >= 3) break;
             }
 
-            // Should have called next() exactly 3 times (matching actual implementation behavior)
+            // Should have called next() exactly 3 times for the 3 items we requested
             assert.strictEqual(iteratedCount, 3);
             assert.strictEqual(nextSpy.mock.callCount(), 3, 'Generator next() should be called exactly 3 times (for the 3 items we requested)');
         });

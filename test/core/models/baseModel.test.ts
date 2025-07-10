@@ -38,8 +38,8 @@ describe('BaseModel: Instance State & Data Management', () => {
         // Test that get throws for non-existing properties (schema enforcement)
         assert.throws(() => profile.get('nonexistent'), /Field "nonexistent" is not defined in the schema/, 'Should throw for non-existing properties');
         
-        // Test that get throws for readonly field that has no value
-        assert.throws(() => profile.get('viewCount'), /Field "viewCount" is not set/, 'Should throw when getting unset readonly field');
+        // Test that get returns undefined for readonly field that has no value
+        assert.strictEqual(profile.get('viewCount'), undefined, 'Should return undefined when getting unset readonly field');
     });
     
     it('should manage dirty flag correctly during set operations', async () => {
@@ -398,6 +398,56 @@ describe('BaseModel: Instance State & Data Management', () => {
         );
         
         assert.strictEqual(profile.persistCalled, true, 'Failed model should still call persist (remains dirty)');
+    });
+    
+    it('should do nothing when calling revert() on never-dirty model', () => {
+        const profile = new TestProfile();
+        
+        // Hydrate to simulate a loaded, clean model
+        (profile as any).hydrate({ bio: 'Original content' });
+        
+        // Verify model is not dirty and has the hydrated data
+        assert.strictEqual(profile.get('bio'), 'Original content', 'Should have hydrated data');
+        assert.doesNotReject(() => profile.save(), 'Should not be dirty after hydration');
+        
+        // Call revert() on never-dirty model - should do nothing
+        profile.revert();
+        
+        // Model should still have the same data and still not be dirty
+        assert.strictEqual(profile.get('bio'), 'Original content', 'Should still have original data after revert on clean model');
+        assert.doesNotReject(() => profile.save(), 'Should still not be dirty after revert on clean model');
+    });
+
+    it('should revert new modified model to empty state', () => {
+        const profile = new TestProfile();
+        
+        // Set some data on a new model (no hydration, so no original data)
+        profile.set('bio', 'Some content');
+        assert.strictEqual(profile.get('bio'), 'Some content', 'Should have set data');
+        
+        // Verify model is dirty (new model with data should be dirty)
+        assert.rejects(
+            () => profile.save(),
+            {
+                message: `Model 'TestProfile' does not implement the Persistable interface.`
+            },
+            'New model with data should be dirty'
+        );
+        
+        // Revert should clear all data since there was no original state
+        profile.revert();
+        
+        // Model should have no data after revert
+        assert.strictEqual(profile.has('bio'), false, 'Should have no data after revert on new model');
+        
+        // Model should still be dirty and "new" after revert (back to initial new state)
+        assert.rejects(
+            () => profile.save(),
+            {
+                message: `Model 'TestProfile' does not implement the Persistable interface.`
+            },
+            'Should still be dirty after revert on new model (back to new state)'
+        );
     });
 });
 

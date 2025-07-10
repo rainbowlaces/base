@@ -52,8 +52,7 @@ describe('BaseIdentifiableModel', () => {
         });
 
         it('should handle string IDs during hydration by converting to UniqueID', () => {
-            // Note: This test reflects current behavior - string IDs are kept as strings
-            // In a future implementation, automatic conversion might be added
+            // Test that string IDs are properly converted to UniqueID instances during hydration
             const stringId = new UniqueID().toString();
             const _user = TestUser.fromData({ 
                 ...SAMPLE_USER_DATA, 
@@ -61,10 +60,9 @@ describe('BaseIdentifiableModel', () => {
             });
             
             return _user.then(user => {
-                // Current behavior: string IDs stay as strings during hydration
-                // This test documents the current limitation
-                assert.strictEqual(user.get('id'), stringId);
-                // The accessor's getter would still return a string in this case
+                // The hydration should convert string ID to UniqueID instance
+                assert.ok(user.id instanceof UniqueID, 'ID should be converted to UniqueID instance');
+                assert.strictEqual(user.id.toString(), stringId, 'ID value should match original string');
             });
         });
 
