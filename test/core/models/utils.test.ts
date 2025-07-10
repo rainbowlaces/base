@@ -122,31 +122,30 @@ describe('Model Utils', () => {
     });
 
     describe('toUniqueIdsAsync', () => {
-        it('should correctly resolve and convert Promise<array>', async () => {
-            const testStrings = [new UniqueID().toString(), new UniqueID().toString()];
-            const promiseArray = Promise.resolve(testStrings);
+        it('should correctly resolve and convert an array of mixed AsyncDefinedId', async () => {
+            const testString = new UniqueID().toString();
+            const uniqueId = new UniqueID();
+            const user = await TestUser.fromData(SAMPLE_USER_DATA);
+
+            const mixedArray = [
+                Promise.resolve(testString),
+                uniqueId,
+                user,
+                Promise.resolve(new UniqueID().toString())
+            ];
             
-            const result = await toUniqueIdsAsync(promiseArray);
+            const result = await toUniqueIdsAsync(mixedArray);
             
-            assert.strictEqual(result.length, 2);
+            assert.strictEqual(result.length, 4);
             assert.ok(result.every(id => id instanceof UniqueID));
-            assert.strictEqual(result[0].toString(), testStrings[0]);
-            assert.strictEqual(result[1].toString(), testStrings[1]);
+            assert.strictEqual(result[0].toString(), testString);
+            assert.strictEqual(result[1], uniqueId);
+            assert.strictEqual(result[2].toString(), user.id.toString());
+            assert.ok(result[3] instanceof UniqueID);
         });
 
-        it('should handle sync arrays (non-promise case)', async () => {
-            const testStrings = [new UniqueID().toString(), new UniqueID().toString()];
-            
-            const result = await toUniqueIdsAsync(testStrings);
-            
-            assert.strictEqual(result.length, 2);
-            assert.ok(result.every(id => id instanceof UniqueID));
-            assert.strictEqual(result[0].toString(), testStrings[0]);
-            assert.strictEqual(result[1].toString(), testStrings[1]);
-        });
-
-        it('should handle empty promise arrays', async () => {
-            const result = await toUniqueIdsAsync(Promise.resolve([]));
+        it('should handle empty arrays', async () => {
+            const result = await toUniqueIdsAsync([]);
             assert.strictEqual(result.length, 0);
             assert.ok(Array.isArray(result));
         });

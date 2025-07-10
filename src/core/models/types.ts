@@ -79,7 +79,7 @@ export interface FieldOptions<T = unknown> {
 }
 
 export type AsyncDefinedId<T extends BaseIdentifiableModel> = DefinedId<T> | Promise<DefinedId<T>>;
-export type AsyncDefinedIds<T extends BaseIdentifiableModel> = DefinedIds<T> | Promise<DefinedIds<T>>;
+export type AsyncDefinedIds<T extends BaseIdentifiableModel> = AsyncDefinedId<T>[];
 export type DefinedId<T extends BaseIdentifiableModel> = T | UniqueID | string;
 export type DefinedIds<T extends BaseIdentifiableModel> = DefinedId<T>[];
 
