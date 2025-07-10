@@ -184,4 +184,64 @@ describe('@reference decorator', () => {
         assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
         assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user.id, userId]], 'post.set should be called with array of IDs (both model.id and raw ID)');
     });
+
+    it('should handle error when reference model byId() fails', async () => {
+        // Mock byId to throw an error
+        const byIdSpy = mock.method(TestUser, 'byId', () => Promise.reject(new Error('User not found')));
+
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'one' })
+            accessor author!: RefOne<TestUser>;
+        }
+
+        const post = new TestPost();
+        const userId = new UniqueID();
+        post.set('author', userId);
+
+        // Should propagate the error from byId
+        await assert.rejects(
+            () => post.author(),
+            (err: Error) => err.message === 'User not found'
+        );
+
+        assert.strictEqual(byIdSpy.mock.callCount(), 1, 'TestUser.byId should be called once');
+    });
+
+    it('should integrate with field metadata system', () => {
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { 
+                cardinality: 'one',
+                readOnly: true
+            })
+            accessor author!: RefOne<TestUser>;
+
+            @reference(TestUser, { 
+                cardinality: 'many'
+            })
+            accessor contributors!: RefMany<TestUser>;
+        }
+
+        const schema = (TestPost as typeof BaseModel).getProcessedSchema();
+        
+        // Should have reference fields in the schema
+        assert(schema.fields.author, 'Should have author field in schema');
+        assert(schema.fields.contributors, 'Should have contributors field in schema');
+        
+        // Should preserve field options
+        assert.strictEqual(schema.fields.author.options.readOnly, true, 'Should preserve readOnly option');
+        
+        // Should have relation metadata
+        assert(schema.fields.author.relation, 'Should have relation metadata for author');
+        assert(schema.fields.contributors.relation, 'Should have relation metadata for contributors');
+        
+        assert.strictEqual(schema.fields.author.relation!.type, 'reference', 'Should be reference type');
+        assert.strictEqual(schema.fields.author.relation!.cardinality, 'one', 'Should have one cardinality');
+        assert.strictEqual(schema.fields.contributors.relation!.cardinality, 'many', 'Should have many cardinality');
+        
+        // Should reference the correct model
+        assert.strictEqual(schema.fields.author.relation!.model, TestUser, 'Should reference TestUser model');
+        assert.strictEqual(schema.fields.contributors.relation!.model, TestUser, 'Should reference TestUser model');
+    });
 });
