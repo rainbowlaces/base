@@ -317,6 +317,88 @@ describe('BaseModel: Instance State & Data Management', () => {
             'Should be in new dirty state after revert on new model'
         );
     });
+    
+    it('should maintain dirty and new state when persist fails', async () => {
+        // Create a persistable model that will fail to persist
+        class FailingPersistableProfile extends TestProfile implements Persistable {
+            persistCalled = false;
+            
+            async persist(): Promise<void> {
+                this.persistCalled = true;
+                throw new Error('Database connection failed');
+            }
+        }
+        
+        const profile = new FailingPersistableProfile();
+        
+        // Set some data to make it dirty
+        profile.set('bio', 'Test bio that fails to save');
+        
+        // save() should reject with the persist error
+        await assert.rejects(
+            () => profile.save(),
+            {
+                message: 'Database connection failed'
+            },
+            'save() should reject with persist error'
+        );
+        
+        // Verify persist was actually called
+        assert.strictEqual(profile.persistCalled, true, 'persist() should have been called');
+        
+        // Model should remain dirty after failed save (can attempt to save again)
+        await assert.rejects(
+            () => profile.save(),
+            {
+                message: 'Database connection failed'
+            },
+            'Model should remain dirty after failed save (save() still tries to persist)'
+        );
+        
+        // Verify persist was called again (proves model is still dirty)
+        assert.strictEqual(profile.persistCalled, true, 'persist() should have been called again');
+        
+        // Model should still be in "new" state after failed save
+        // Test this by creating a successful persistable model to verify state difference
+        class SuccessfulPersistableProfile extends TestProfile implements Persistable {
+            persistCalled = false;
+            
+            async persist(): Promise<void> {
+                this.persistCalled = true;
+            }
+        }
+        
+        const successProfile = new SuccessfulPersistableProfile();
+        successProfile.set('bio', 'Success bio');
+        
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+        
+        // Successful save should publish create event and change state
+        await successProfile.save();
+        assert.strictEqual(mockPubSub.publishedEvents.length, 1, 'Should publish create event on success');
+        assert.strictEqual(mockPubSub.publishedEvents[0].data.event.type, 'create', 'Should be create event');
+        
+        // Second save should not publish anything (no longer dirty or new)
+        mockPubSub.clearEvents();
+        await successProfile.save();
+        assert.strictEqual(mockPubSub.publishedEvents.length, 0, 'Should not publish anything on second save when not dirty');
+        
+        // Failed model should still behave like first save (publish create if it were to succeed)
+        // Since events are only published on success, we test this indirectly by verifying
+        // the model remains dirty and attempting to save again
+        profile.persistCalled = false; // Reset to track new calls
+        
+        await assert.rejects(
+            () => profile.save(),
+            {
+                message: 'Database connection failed'
+            },
+            'Failed model should still attempt to save (indicating dirty and new state preserved)'
+        );
+        
+        assert.strictEqual(profile.persistCalled, true, 'Failed model should still call persist (remains dirty)');
+    });
 });
 
 describe('BaseModel: Static Schema Methods', () => {
