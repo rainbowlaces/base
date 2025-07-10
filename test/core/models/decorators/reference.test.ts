@@ -1,12 +1,11 @@
-import { describe, it } from 'node:test';
+import { describe, it, mock, afterEach } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BaseModel } from '../../../../src/core/models/baseModel';
 import { reference } from '../../../../src/core/models/decorators/reference';
 import { model } from '../../../../src/core/models/decorators/model';
 import { type RefOne, type RefMany } from '../../../../src/core/models/types';
 import { setupTestTeardown, TestUser } from '../setup';
-// import { spy } from '../../../testUtils/utils';
-// import { UniqueID } from '../../../../src/core/models/uniqueId';
+import { UniqueID } from '../../../../src/core/models/uniqueId';
 
 // Setup test isolation
 setupTestTeardown();
@@ -78,22 +77,111 @@ describe('@reference decorator', () => {
         assert(typeof descriptor.set === 'function', 'Should have setter');
     });
 
-    // it('RefOne should call OtherModel.byId() correctly', async () => {
-    //     const byIdSpy = spy(TestUser, 'byId');
+    it('RefOne should call OtherModel.byId() correctly', async () => {
+        // Mock the byId method to return a mock user instead of throwing
+        const mockUser = new TestUser();
+        const byIdSpy = mock.method(TestUser, 'byId', () => Promise.resolve(mockUser));
 
-    //     @model
-    //     class TestPost extends BaseModel {
-    //         @reference(TestUser, { cardinality: 'one' })
-    //         accessor author!: RefOne<TestUser>;
-    //     }
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'one' })
+            accessor author!: RefOne<TestUser>;
+        }
 
-    //     const post = new TestPost();
-    //     const userId = new UniqueID();
-    //     post.set('author', userId);
+        const post = new TestPost();
+        const userId = new UniqueID();
+        post.set('author', userId);
 
-    //     await post.author();
+        const result = await post.author();
 
-    //     assert.strictEqual(byIdSpy.callCount(), 1, 'TestUser.byId should be called once');
-    //     assert.deepStrictEqual(byIdSpy.getCall(0).arguments, [userId], 'TestUser.byId should be called with the correct id');
-    // });
+        assert.strictEqual(byIdSpy.mock.callCount(), 1, 'TestUser.byId should be called once');
+        assert.deepStrictEqual(byIdSpy.mock.calls[0].arguments, [userId], 'TestUser.byId should be called with the correct id');
+        assert.strictEqual(result, mockUser, 'Should return the user from byId');
+    });
+
+    it('RefOne setter should call post.set() with user UniqueID', async () => {
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'one' })
+            accessor author!: RefOne<TestUser>;
+        }
+
+        const post = new TestPost();
+        const setSpy = mock.method(post, 'set');
+        const user = new TestUser();
+
+        await post.author(user);
+
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['author', user.id], 'post.set should be called with property name and user ID');
+    });
+
+    it('RefMany getter should call TestUser.byIds() correctly', async () => {
+        // Mock the byIds method to return mock users instead of throwing
+        const mockUser1 = new TestUser();
+        const mockUser2 = new TestUser();
+        const byIdsSpy = mock.method(TestUser, 'byIds', () => Promise.resolve([mockUser1, mockUser2]));
+
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'many' })
+            accessor contributors!: RefMany<TestUser>;
+        }
+
+        const post = new TestPost();
+        const userId1 = new UniqueID();
+        const userId2 = new UniqueID();
+        post.set('contributors', [userId1, userId2]);
+
+        const result = await post.contributors();
+
+        assert.strictEqual(byIdsSpy.mock.callCount(), 1, 'TestUser.byIds should be called once');
+        assert.deepStrictEqual(byIdsSpy.mock.calls[0].arguments, [[userId1, userId2]], 'TestUser.byIds should be called with the correct IDs array');
+        assert.deepStrictEqual(result, [mockUser1, mockUser2], 'Should return the users from byIds');
+    });
+
+    it('RefMany setter should call post.set() with user IDs array', async () => {
+        // Mock the byIds method to prevent the "not implemented" error when it returns the empty collection
+        const mockCollection: any = {};
+        mock.method(TestUser, 'byIds', () => Promise.resolve(mockCollection));
+
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'many' })
+            accessor contributors!: RefMany<TestUser>;
+        }
+
+        const post = new TestPost();
+        const setSpy = mock.method(post, 'set');
+        const user1 = new TestUser();
+        const user2 = new TestUser();
+
+        await post.contributors([user1, user2]);
+
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user1.id, user2.id]], 'post.set should be called with property name and user IDs array');
+    });
+
+    it('RefMany setter should handle mixed ID/model array conversion', async () => {
+        // Mock the byIds method to prevent the "not implemented" error when it returns the empty collection
+        const mockCollection: any = {};
+        mock.method(TestUser, 'byIds', () => Promise.resolve(mockCollection));
+
+        @model
+        class TestPost extends BaseModel {
+            @reference(TestUser, { cardinality: 'many' })
+            accessor contributors!: RefMany<TestUser>;
+        }
+
+        const post = new TestPost();
+        const setSpy = mock.method(post, 'set');
+        const user = new TestUser();
+        const userId = new UniqueID();
+
+        // Pass mixed array: both model instance and raw ID
+        await post.contributors([user, userId]);
+
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user.id, userId]], 'post.set should be called with array of IDs (both model.id and raw ID)');
+    });
 });
