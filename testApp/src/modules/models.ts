@@ -7,7 +7,7 @@ import { Comment } from '../models/comment.js';
 import { MemoryModel } from '../data/memoryModel.js';
 import { type BaseHttpActionArgs, baseModule, BaseModule, init, request } from '../../../src/index.js';
 
-@baseModule
+@baseModule()
 export class ModelsModule extends BaseModule {
 
     /**

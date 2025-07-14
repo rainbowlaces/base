@@ -30,7 +30,7 @@ declare module "../../core/config/types.js" {
   }
 }
 
-@baseModule
+@baseModule()
 export class BaseStatic extends BaseModule<BaseStaticConfig> {
   @di("fsRoot")
   accessor baseFsRoot!: string;

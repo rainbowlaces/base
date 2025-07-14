@@ -11,7 +11,7 @@ import { type BaseTemplate } from "./baseTemplate.js";
 import { type TemplateResult } from "./engine/templateResult.js";
 import { BaseError } from "../../core/baseErrors.js";
 
-@baseModule
+@baseModule()
 export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
   public tagFactories: TagFactories = {} as TagFactories;
   public templateFactories: TemplateFactories = {} as TemplateFactories;

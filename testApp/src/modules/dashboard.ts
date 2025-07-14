@@ -7,7 +7,7 @@ import { UserListTemplate, type UserListTemplateData } from '../templates/userLi
 import { ArticleListTemplate, type ArticleListTemplateData } from '../templates/articleListTemplate.js';
 import { GroupListTemplate } from '../templates/groupListTemplate.js';
 
-@baseModule
+@baseModule()
 export class DashboardModule extends BaseModule {
 
     @di<BaseTemplates>("BaseTemplates")
