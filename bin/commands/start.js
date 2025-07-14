@@ -34,6 +34,7 @@ export function createStartCommand(program) {
             'NODE_ENV=development',
             'node',
             '--inspect',
+            '-r dotenv/config',
             '-r source-map-support/register',
             finalEntryFile,
             '2>&1',
