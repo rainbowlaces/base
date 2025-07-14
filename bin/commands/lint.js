@@ -8,17 +8,16 @@ export function createLintCommand(program) {
   program
     .command('lint')
     .description("Lints the project using the base framework's ESLint configuration.")
-    .argument('[paths...]', 'Optional list of files or directories to lint.') // <-- The new argument
+    .argument('[paths...]', 'Optional list of files or directories to lint.') 
     .option('--fix', 'Automatically fix linting problems.')
-    .action(async (paths, options) => { // <-- Commander passes the new argument here
-      const { projectRoot, frameworkRoot } = program.paths;
+    .action(async (paths, options) => { 
+      const { projectRoot } = program.paths;
       const { quietLog, quietError } = program;
       
       quietLog('Linting project...');
 
       try {
         const eslint = new ESLint({
-          overrideConfigFile: path.join(frameworkRoot, 'eslint.config.js'),
           fix: !!options.fix,
           cwd: projectRoot,
         });

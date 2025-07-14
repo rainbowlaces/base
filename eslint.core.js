@@ -128,12 +128,12 @@ export function tsRules(options = {}) {
         languageOptions: config.languageOptions ? {
           ...config.languageOptions,
           parserOptions: {
-            project: true,
+            project: "./tsconfig.json",
             tsconfigRootDir,
           },
         } : {
           parserOptions: {
-            project: true,
+            project: "./tsconfig.json",
             tsconfigRootDir,
           },
         },
@@ -165,12 +165,12 @@ export function tsRules(options = {}) {
     languageOptions: config.languageOptions ? {
       ...config.languageOptions,
       parserOptions: {
-        project: true,
+        project: "./tsconfig.json",
         tsconfigRootDir,
       },
     } : {
       parserOptions: {
-        project: true,
+        project: "./tsconfig.json",
         tsconfigRootDir,
       },
     },
