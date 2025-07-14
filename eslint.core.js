@@ -1,5 +1,4 @@
 import tseslint from 'typescript-eslint';
-import prettier from 'eslint-config-prettier';
 import eslint from '@eslint/js';
 
 // JavaScript-specific configuration
@@ -44,7 +43,6 @@ export function tsRules(options = {}) {
     eslint.configs.recommended,
     ...tseslint.configs.strictTypeChecked,
     ...tseslint.configs.stylisticTypeChecked,
-    prettier,
     {
       rules: {
         "no-unused-vars": "off",
