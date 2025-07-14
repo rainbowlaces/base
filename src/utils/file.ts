@@ -1,6 +1,7 @@
 import path from "path";
-import fs from "fs";
+import type fs from "fs";
 import { fileURLToPath } from "url";
+import { type FileSystem, NodeFileSystem } from "./fileSystem.js";
 
 export function getFilename(metaUrl: string): string {
   return path.resolve(fileURLToPath(metaUrl));
@@ -10,12 +11,12 @@ export function getDirname(metaUrl: string): string {
   const filepath = getFilename(metaUrl);
   return path.dirname(filepath);
 }
-
 export async function findFileUp(
   startingDirectory: string,
   pattern: RegExp | string,
+  fileSystem: FileSystem = new NodeFileSystem(),
 ): Promise<string | null> {
-  const files = await fs.promises.readdir(startingDirectory, {
+  const files = await fileSystem.readdir(startingDirectory, {
     withFileTypes: true,
   });
   for (const file of files) {
@@ -30,19 +31,18 @@ export async function findFileUp(
   }
   const parentDirectory = path.dirname(startingDirectory);
   if (parentDirectory === startingDirectory) {
-    // Root of the filesystem reached without finding a match
     return null;
   }
-  // Recurse into the parent directory
-  return await findFileUp(parentDirectory, pattern);
+  return await findFileUp(parentDirectory, pattern, fileSystem);
 }
 
 export async function loadFile(
   file: string,
+  fileSystem: FileSystem = new NodeFileSystem(),
 ): Promise<{ data: Buffer; stats: fs.Stats }> {
   const [data, stats] = await Promise.all([
-    fs.promises.readFile(file),
-    fs.promises.stat(file),
+    fileSystem.readFile(file),
+    fileSystem.stat(file),
   ]);
   return { data, stats };
 }

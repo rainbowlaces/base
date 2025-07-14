@@ -1,61 +1,63 @@
-import { LogContext, LogLevel } from "./types";
+import { type LogContext, LogLevel } from "./types.js";
+import { registerDi } from "../di/decorators/registerDi.js";
 
 /**
  * Represents a log message.
  */
+@registerDi()
 export class LogMessage {
   /**
    * The default log level.
    */
   static default: LogLevel = LogLevel.DEBUG;
 
-  private _namespace: string;
-  private _message: string;
-  private _tags: string[];
-  private _level: LogLevel;
-  private _context: LogContext;
-  private _timestamp: string = new Date().toISOString();
+  #namespace: string;
+  #message: string;
+  #tags: string[];
+  #level: LogLevel;
+  #context: LogContext;
+  #timestamp: string = new Date().toISOString();
 
   /**
    * Gets the log message.
    */
   get message(): string {
-    return this._message;
+    return this.#message;
   }
 
   /**
    * Gets the tags associated with the log message.
    */
   get tags(): string[] {
-    return this._tags;
+    return this.#tags;
   }
 
   /**
    * Gets the log level as a string.
    */
   get level(): string {
-    return LogLevel[this._level];
+    return LogLevel[this.#level];
   }
 
   /**
    * Gets the timestamp of the log message.
    */
   get timestamp(): string {
-    return this._timestamp;
+    return this.#timestamp;
   }
 
   /**
    * Gets the namespace of the log message.
    */
   get namespace(): string {
-    return this._namespace;
+    return this.#namespace;
   }
 
   /**
    * Gets the context of the log message.
    */
   get context(): LogContext {
-    return this._context;
+    return this.#context;
   }
 
   /**
@@ -93,10 +95,10 @@ export class LogMessage {
     level: LogLevel = LogMessage.default,
     context: LogContext,
   ) {
-    this._message = message;
-    this._tags = tags;
-    this._namespace = namespace;
-    this._level = level;
-    this._context = context;
+    this.#message = message;
+    this.#tags = tags;
+    this.#namespace = namespace;
+    this.#level = level;
+    this.#context = context;
   }
 }

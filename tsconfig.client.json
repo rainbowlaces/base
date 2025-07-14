@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.client.base.json",
+  "compilerOptions": {
+    // No specific overrides needed here
+  },
+  "include": [
+    "testApp/src/elements/**/*.ts"
+  ]
+}

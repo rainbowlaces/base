@@ -1,41 +1,60 @@
-import { BaseLogger } from "../core/logger";
-import { BaseConfig } from "./config";
-import { getDirname } from "../utils/file";
-import { BaseDi } from "./baseDi";
-import { BasePubSub } from "./basePubSub";
-import { BaseModule } from "./baseModule";
-import { BaseInitContext } from "./initContext";
-import { BaseRequestHandler } from "./requestHandler";
-import { getRegisteredModules } from "../decorators/baseModule";
 import path from "node:path";
+import { getDirname } from "../utils/file.js";
+import { BaseClassConfig, type ConfigData } from "./config/types.js";
+import { BaseAutoload, BaseDi, BaseInitializer, di } from "./di/baseDi.js";
+import { BaseLogger } from "./logger/baseLogger.js";
+import { BasePubSub } from "./pubsub/basePubSub.js";
+import { BaseInitContext } from "./module/initContext.js";
+
+class BaseMainConfig extends BaseClassConfig {
+  port: number = 3000;
+  autoloadIgnore: string[] = [];
+  autoload: boolean = true;
+}
+
+declare module "./config/types.js" {
+  interface BaseAppConfig {
+    Base?: ConfigData<BaseMainConfig>;
+  }
+}
 
 export class Base {
-  private _logger!: BaseLogger;
 
-  private _fsRoot: string;
-  private _libRoot: string;
+  private fsRoot: string;
+  private libRoot: string;
+  private isShuttingDown = false;
+
+  @di<BaseLogger>(BaseLogger, "base")
+  private accessor logger!: BaseLogger;
+
+  @di<BasePubSub>(BasePubSub)
+  private accessor pubsub!: BasePubSub;
 
   static start(metaUrl: string) {
     const base = new Base(metaUrl);
     return base.init();
   }
 
-  public get logger(): BaseLogger {
-    return this._logger;
-  }
-
   constructor(metaUrl: string) {
-    this._fsRoot = getDirname(metaUrl);
-    this._libRoot = getDirname(import.meta.url);
-    BaseDi.register(this._fsRoot, "fsRoot");
-    BaseDi.register(this._libRoot, "libRoot");
-    BaseDi.register(process.env.NODE_ENV, "env");
+    this.fsRoot = getDirname(metaUrl);
+    this.libRoot = getDirname(import.meta.url);
+    
+    console.log(`[Base] Registering fsRoot: ${this.fsRoot}`);
+    console.log(`[Base] Registering libRoot: ${this.libRoot}`);
+    
+    BaseDi.register(this.fsRoot, "fsRoot");
+    BaseDi.register(this.libRoot, "libRoot");
+    BaseDi.register(process.env.NODE_ENV ?? "development", "env");
   }
 
-  private initLogger() {
-    BaseLogger.init(BaseConfig.getNamespace("logger"));
+  get config(): BaseMainConfig {
+    return BaseDi.resolve<BaseMainConfig>("Config.Base");
+  }
 
-    this._logger = new BaseLogger("base");
+  async init() {
+    const corePath = path.dirname(this.libRoot);
+    await BaseAutoload.autoload(corePath);
+    await BaseAutoload.autoload(this.fsRoot, ["*/public/*"]);    
 
     process.on("uncaughtException", (err) => {
       this.logger.fatal("Uncaught Exception", [], { err });
@@ -45,68 +64,49 @@ export class Base {
       this.logger.fatal("Unhandled Rejection", [], { promise, reason });
     });
 
-    BaseDi.register(BaseLogger);
-  }
+    // Handle graceful shutdown signals
+    process.on("SIGTERM", () => {
+      this.logger.info("Received SIGTERM signal, initiating graceful shutdown", []);
+      void this.shutdown();
+    });
 
-  private async initConfig() {
-    await BaseConfig.init(this._fsRoot, process.env.NODE_ENV);
-    BaseDi.register(BaseConfig);
-  }
+    process.on("SIGINT", () => {
+      this.logger.info("Received SIGINT signal (Ctrl+C), initiating graceful shutdown", []);
+      void this.shutdown();
+    });
 
-  private initRequestHandler() {
-    BaseDi.register(new BaseRequestHandler());
-  }
-
-  private initPubSub() {
-    BaseDi.register(new BasePubSub());
-  }
-
-  async init() {
-    await this.initConfig();
-
-    const config = BaseConfig.getNamespace("base");
-
-    const autoLoad = config.autoload === undefined || config.autoload;
-
-    if (autoLoad) {
-      console.log("Autoloading core modules...");
-      await BaseDi.autoload(path.dirname(this._libRoot), ["*/testApp/*"]);
-      console.log("***");
-
-      console.log("Autoloading user modules...");
-      await BaseDi.autoload(this._fsRoot, config.autoloadIgnore || []);
-      console.log("***");
-    }
-
-    this.initLogger();
-    this.initPubSub();
-    this.initRequestHandler();
+    process.on("SIGQUIT", () => {
+      this.logger.info("Received SIGQUIT signal, initiating graceful shutdown", []);
+      void this.shutdown();
+    });
 
     BaseDi.register(this);
 
-    const registeredModules = getRegisteredModules();
-    for (const ModuleClass of registeredModules) {
-      this.addModule(ModuleClass);
+    await BaseInitializer.run();    
+
+    void this.pubsub.pub('/init', { context: BaseDi.resolve<BaseInitContext>(BaseInitContext) });
+
+    this.logger.info("Base initialized", []);
+  }
+
+  private async shutdown(): Promise<void> {
+    if (this.isShuttingDown) {
+      this.logger.warn("Shutdown already in progress, ignoring duplicate signal", []);
+      return;
     }
 
-    const bus = BaseDi.create().resolve<BasePubSub>("BasePubSub");
-    if (!bus) throw new Error("BasePubSub is not registered.");
+    this.isShuttingDown = true;
+    this.logger.info("Starting graceful shutdown process", []);
 
-    bus.pub("/base/init", { context: new BaseInitContext() });
+    try {
+      // Teardown all services in reverse dependency order
+      await BaseDi.teardown();
 
-    this.go();
-  }
-
-  addModule<T extends BaseModule>(Module: new () => T) {
-    const module = new Module();
-    BaseDi.register(module);
-  }
-
-  async go() {
-    const requestHandler =
-      BaseDi.create().resolve<BaseRequestHandler>("BaseRequestHandler");
-    if (!requestHandler)
-      throw new Error("BaseRequestHandler is not registered.");
-    await requestHandler.go();
+      this.logger.info("Graceful shutdown completed successfully", []);
+      process.exit(0);
+    } catch (error) {
+      this.logger.fatal("Error during graceful shutdown", [], { error });
+      process.exit(1);
+    }
   }
 }

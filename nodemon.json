@@ -1,5 +1,5 @@
 {
-    "watch": ["src"],
-    "ext": "ts,css",
-    "exec": "npm run build && node -r source-map-support/register dist/src/index.js"
+    "watch": ["src","testApp/src"],
+    "ext": "ts,json",
+    "exec": "npm run start:dev"
 }

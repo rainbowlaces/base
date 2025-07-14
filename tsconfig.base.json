@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    // --- Universal Settings ---
+    "target": "esnext",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "lib": ["ESNext"],
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+
+    // --- Compilation ---
+    "noEmit": true,
+
+    // --- Strictness & Quality ---
+    "strict": true,
+
+    // --- Housekeeping ---
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
+  }
+}

@@ -1,59 +1,55 @@
-import * as http from "http";
-import { BaseError } from "../baseErrors";
-import { Readable } from "stream";
-import { di } from "../../decorators/di";
-import { BaseConfig } from "../config";
-import { BaseLogger } from "../logger";
+import type * as http from "http";
+import { BaseError } from "../../core/baseErrors.js";
+import { type Readable } from "stream";
+import { registerDi } from "../../core/di/decorators/registerDi.js";
+import { di } from "../../core/di/decorators/di.js";
+import { type BaseLogger } from "../../core/logger/baseLogger.js";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
 import signature from "cookie-signature";
+import { type BaseRequestHandlerConfig, type CookieOptions } from "./types.js";
+import { config } from "../config/decorators/config.js";
+import { type MaybeAsync } from "../types.js";
 
-interface CookieOptions {
-  expires?: Date;
-  path?: string;
-  httpOnly?: boolean;
-  secure?: boolean;
-  sameSite?: boolean | "lax" | "strict" | "none";
-}
-
+@registerDi()
 export class BaseResponse extends EventEmitter {
-  private _res: http.ServerResponse;
+  #res: http.ServerResponse;
 
-  private _statusCode = 200;
-  private _statusMessage?: string;
+  #statusCode = 200;
+  #statusMessage?: string;
 
-  private _headersSent = false;
-  private _finished = false;
+  #headersSent = false;
+  #finished = false;
 
-  private _headers: http.OutgoingHttpHeaders = {};
+  #headers: http.OutgoingHttpHeaders = {};
 
-  @di("BaseLogger", "base_response")
-  private accessor _logger!: BaseLogger;
+  @di("BaseLogger", "BaseResponse")
+  private accessor logger!: BaseLogger;
 
-  @di("BaseConfig", "request_handler")
-  private accessor _config!: BaseConfig;
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  private accessor config!: BaseRequestHandlerConfig;
 
-  private _ctxId: string;
+  #ctxId: string;
 
   get headersSent(): boolean {
-    return this._res.headersSent || this._headersSent;
+    return this.#res.headersSent || this.#headersSent;
   }
 
   constructor(ctxId: string, res: http.ServerResponse) {
     super();
-    this._ctxId = ctxId;
+    this.#ctxId = ctxId;
 
-    this._res = res;
+    this.#res = res;
 
-    this._res.on("finish", () => {
-      if (this._finished) return;
+    this.#res.on("finish", () => {
+      if (this.#finished) return;
       this.end();
     });
 
-    this._res.on("close", () => {
-      if (this._finished) return;
-      this._finished = true;
+    this.#res.on("close", () => {
+      if (this.#finished) return;
+      this.#finished = true;
       this.emit(
         "error",
         new BaseError("Client closed before response was finished."),
@@ -62,8 +58,8 @@ export class BaseResponse extends EventEmitter {
   }
 
   redirect(url: string) {
-    if (this._finished) return;
-    this._logger.info(`Redirecting to ${url}`, [this._ctxId]);
+    if (this.#finished) return;
+    this.logger.info(`Redirecting to ${url}`, [this.#ctxId]);
     this.statusCode(302);
     this.header("location", url);
     this.ensureHeadersSent();
@@ -73,15 +69,15 @@ export class BaseResponse extends EventEmitter {
   statusCode(): number;
   statusCode(code: number): void;
   statusCode(code?: number): void | number {
-    if (code === undefined) return this._statusCode;
-    this._statusCode = code ?? this._statusCode;
+    if (code === undefined) return this.#statusCode;
+    this.#statusCode = code;
   }
 
   statusMessage(): string;
   statusMessage(message: string): void;
   statusMessage(message?: string): void | string {
-    if (message === undefined) return this._statusMessage;
-    this._statusMessage = message;
+    if (message === undefined) return this.#statusMessage;
+    this.#statusMessage = message;
   }
 
   header(name: string): http.OutgoingHttpHeader;
@@ -90,19 +86,19 @@ export class BaseResponse extends EventEmitter {
     name: string,
     value?: http.OutgoingHttpHeader,
   ): void | http.OutgoingHttpHeader {
-    if (!value) return this._headers[name.toLowerCase()];
+    if (!value) return this.#headers[name.toLowerCase()];
     if (this.headersSent)
-      this._logger.warn(`Headers already sent when setting header ${name}.`, [
-        this._ctxId,
+      this.logger.warn(`Headers already sent when setting header ${name}.`, [
+        this.#ctxId,
       ]);
-    this._headers[name.toLowerCase()] = value;
+    this.#headers[name.toLowerCase()] = value;
   }
 
   cookie(name: string, value: string, options: CookieOptions = {}) {
-    const secret = this._config.get<string>("cookieSecret", "");
+    const secret = this.config.cookieSecret;
     let finalValue = value;
 
-    if (secret) {
+    if (secret.length > 0) {
       finalValue = "s:" + signature.sign(finalValue, secret);
     }
 
@@ -130,50 +126,51 @@ export class BaseResponse extends EventEmitter {
 
   private ensureHeadersSent() {
     if (!this.headersSent) {
-      if (this._statusMessage)
-        this.rawResponse.statusMessage = this._statusMessage;
-      this.rawResponse.writeHead(this._statusCode, this._headers);
-      this._headersSent = true;
+      if (this.#statusMessage)
+        this.rawResponse.statusMessage = this.#statusMessage;
+      this.rawResponse.writeHead(this.#statusCode, this.#headers);
+      this.#headersSent = true;
       return;
     }
   }
 
   private end(data?: string | Buffer) {
-    if (this._finished) return;
+    if (this.#finished) return;
     this.rawResponse.end(data);
-    this._finished = true;
+    this.#finished = true;
     this.emit("done");
   }
 
-  async html(html: string) {
-    return this.send(html, "text/html; charset=utf-8");
+  async html(html: MaybeAsync<string>) {
+    return this.send(await html, "text/html; charset=utf-8");
   }
 
-  async json(data: object) {
-    return this.send(JSON.stringify(data), "application/json; charset=utf-8");
+  async json(data: MaybeAsync<object>) {
+    return this.send(JSON.stringify(await data), "application/json; charset=utf-8");
   }
 
-  async text(text: string) {
-    return this.send(text, "text/plain; charset=utf-8");
+  async text(text: MaybeAsync<string>) {
+    return this.send(await text, "text/plain; charset=utf-8");
   }
 
   async download(
-    data: Readable,
+    data: MaybeAsync<Readable>,
     fileName: string,
     mimeType = "application/octet-stream",
   ) {
     this.header("content-disposition", `attachment; filename=${fileName}`);
-    return this.send(data, mimeType);
+    return this.send(await data, mimeType);
   }
 
   async  send(
-    data: string | Buffer | Readable,
+    data: MaybeAsync<string | Buffer | Readable>,
     mimeType = "text/plain; charset=utf-8",
   ) {
     this.header("content-type", mimeType);
     this.ensureHeadersSent();
+    data = await data;
     if (data instanceof Buffer || typeof data === "string")
-      return this.end(data);
+      { this.end(data); return; }
     
     // At this point, data must be a Readable stream
     const stream = data as Readable;
@@ -187,14 +184,14 @@ export class BaseResponse extends EventEmitter {
   }
 
   finish() {
-    this._finished = true;
+    this.#finished = true;
   }
 
   get rawResponse(): http.ServerResponse {
-    return this._res;
+    return this.#res;
   }
 
   get finished(): boolean {
-    return this._finished;
+    return this.#finished;
   }
 }

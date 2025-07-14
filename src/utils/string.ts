@@ -12,7 +12,7 @@ export function kebabToLowerCamel(str: string) {
 
 export function camelToKebab(str: string) {
   return str
-    .replace(/^([A-Z])/, (match, p1) => p1.toLowerCase())
+    .replace(/^([A-Z])/, (_match, p1:string) => p1.toLowerCase())
     .replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, "$1-$2")
     .toLowerCase();
 }

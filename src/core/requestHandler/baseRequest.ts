@@ -1,64 +1,60 @@
 import * as http from "http";
-import path from "path";
-import * as os from "os";
 
 import formidable from "formidable";
 import cookie from "cookie";
 import signature from "cookie-signature";
 
-import { di } from "../../decorators/di";
-import { BaseLogger } from "../logger";
-import { BaseConfig } from "../config";
-import { BaseError } from "../baseErrors";
+import { registerDi } from "../../core/di/decorators/registerDi.js";
+import { di } from "../../core/di/decorators/di.js";
+import { type BaseLogger } from "../../core/logger/baseLogger.js";
+import { BaseError } from "../../core/baseErrors.js";
+import { type ParsedForm, type BaseRequestHandlerConfig } from "./types.js";
+import { config } from "../config/decorators/config.js";
 
-export interface ParsedForm<T> {
-  fields: T;
-  files: formidable.Files;
-}
-
+@registerDi()
 export class BaseRequest {
-  private _req!: http.IncomingMessage;
-  private _method: string;
-  private _headers: NodeJS.Dict<string[]>;
-  private _url: URL;
-  private _ctxId: string;
+  #req!: http.IncomingMessage;
+  #method: string;
+  #headers: NodeJS.Dict<string[]>;
+  #url: URL;
+  #ctxId: string;
 
-  @di("BaseLogger", "base_request")
-  private accessor _logger!: BaseLogger;
+  @di("BaseLogger", "BaseRequest")
+  private accessor logger!: BaseLogger;
 
-  @di("BaseConfig", "request_handler")
-  private accessor _config!: BaseConfig;
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  private accessor config!: BaseRequestHandlerConfig;
 
   constructor(ctxId: string, req: http.IncomingMessage) {
-    this._ctxId = ctxId;
-    this._req = req;
-    this._method = (req.method || "").toLowerCase();
-    if (!http.METHODS.includes(this._method.toUpperCase())) {
-      this._logger.error(
-        `Invalid HTTP method: ${this._method}`,
-        [this._ctxId],
+    this.#ctxId = ctxId;
+    this.#req = req;
+    this.#method = (req.method ?? "").toLowerCase();
+    if (!http.METHODS.includes(this.#method.toUpperCase())) {
+      this.logger.error(
+        `Invalid HTTP method: ${this.#method}`,
+        [this.#ctxId],
         { req },
       );
-      throw new BaseError(`Invalid HTTP method: ${this._method}`);
+      throw new BaseError(`Invalid HTTP method: ${this.#method}`);
     }
-    this._headers = req.headersDistinct;
-    this._url = new URL(req.url || "", `http://${req.headers.host}`);
+    this.#headers = req.headersDistinct;
+    this.#url = new URL(req.url ?? "", `http://${req.headers.host}`);
   }
 
   get url(): URL {
-    return this._url;
+    return this.#url;
   }
 
   get headers(): NodeJS.Dict<string[]> {
-    return this._headers;
+    return this.#headers;
   }
 
   get rawRequest(): http.IncomingMessage | undefined {
-    return this._req;
+    return this.#req;
   }
 
   get method(): string {
-    return this._method;
+    return this.#method;
   }
 
   get cleanPath(): string {
@@ -68,31 +64,31 @@ export class BaseRequest {
   }
 
   header(name: string): string | undefined {
-    return this._headers[name.toLowerCase()]?.[0];
+    return this.#headers[name.toLowerCase()]?.[0];
   }
 
   cookie(name: string): string | undefined {
-    const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") || "");
+    const cookies = cookie.parse(this.allHeaders("cookie")?.join(";") ?? "");
     const raw = cookies[name];
-    if (raw && raw.substring(0, 2) === "s:") {
-      const secret = this._config.get<string>("cookieSecret", "");
-      if (secret) {
+    if (raw?.startsWith("s:")) {
+      const secret = this.config.cookieSecret;
+      if (secret.length > 0) {
         const unsignedValue = signature.unsign(raw.slice(2), secret);
         if (unsignedValue !== false) {
           return unsignedValue;
         }
       }
     }
-    return undefined;
+    return raw;
   }
 
   allHeaders(): NodeJS.Dict<string[]>;
   allHeaders(name: string): string[] | undefined;
   allHeaders(name?: string): NodeJS.Dict<string[]> | string[] | undefined {
     if (!name) {
-      return this._headers;
+      return this.#headers;
     }
-    return this._headers[name.toLowerCase()];
+    return this.#headers[name.toLowerCase()];
   }
 
   async rawBody(): Promise<Buffer> {
@@ -101,10 +97,10 @@ export class BaseRequest {
       let totalLength = 0;
       let bodyTooLarge = false;
 
-      this._req.on("data", (chunk) => {
+      this.#req.on("data", (chunk: Buffer) => {
         totalLength += chunk.length;
-        if (totalLength > this._config.get<number>("maxBodySize", 5e6)) {
-          this._req.destroy();
+        if (totalLength > this.config.maxBodySize) {
+          this.#req.destroy();
           bodyTooLarge = true;
           reject(new BaseError("Request body too large"));
           return;
@@ -112,20 +108,20 @@ export class BaseRequest {
         chunks.push(chunk);
       });
 
-      this._req.on("end", () => {
+      this.#req.on("end", () => {
         if (!bodyTooLarge) {
           resolve(Buffer.concat(chunks));
         }
       });
 
-      this._req.on("error", (err) => {
-        this._logger.error(
+      this.#req.on("error", (err) => {
+        this.logger.error(
           "Error occurred during body parsing",
-          [this._ctxId],
+          [this.#ctxId],
           { err },
         );
         reject(
-          new BaseError("Error occurred during body parsing", err as Error),
+          new BaseError("Error occurred during body parsing", err),
         );
       });
     });
@@ -136,7 +132,7 @@ export class BaseRequest {
       const body = await this.rawBody();
       return body.toString("utf-8");
     } catch (err) {
-      this._logger.error("Error parsing text body.", [this._ctxId], { err });
+      this.logger.error("Error parsing text body.", [this.#ctxId], { err });
       throw new BaseError("Error parsing text body.", err as Error);
     }
   }
@@ -146,32 +142,26 @@ export class BaseRequest {
       const body = await this.text();
       return JSON.parse(body) as T;
     } catch (err) {
-      this._logger.error("Error parsing JSON body.", [this._ctxId], { err });
+      this.logger.error("Error parsing JSON body.", [this.#ctxId], { err });
       throw new BaseError("Error parsing JSON body.", err as Error);
     }
   }
 
   async form<T>(): Promise<ParsedForm<T>> {
     const form = formidable({
-      encoding: this._config.get<formidable.BufferEncoding>(
-        "formEncoding",
-        "utf-8" as formidable.BufferEncoding,
-      ),
-      uploadDir: this._config.get<string>(
-        "uploadDir",
-        path.resolve(path.join(os.tmpdir(), "uploads")),
-      ),
-      keepExtensions: this._config.get<boolean>("keepExtensions", true),
-      maxFileSize: this._config.get<number>("maxUploadSize", 5e6),
-      maxFields: this._config.get<number>("maxFormFields", 1000),
+      encoding: this.config.formEncoding,
+      uploadDir: this.config.uploadDir,
+      keepExtensions: this.config.keepExtensions,
+      maxFileSize: this.config.maxUploadSize,
+      maxFields: this.config.maxFields,
     });
     let fields: formidable.Fields;
     let files: formidable.Files;
 
     try {
-      [fields, files] = await form.parse(this._req);
+      [fields, files] = await form.parse(this.#req);
     } catch (err) {
-      this._logger.error("Error parsing form data", [this._ctxId], { err });
+      this.logger.error("Error parsing form data", [this.#ctxId], { err });
       throw new BaseError("Error parsing form data", err as Error);
     }
 

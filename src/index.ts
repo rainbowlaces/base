@@ -1,107 +1,160 @@
-import { Base } from "./core/base";
-import { BaseModule } from "./core/baseModule";
-import {
-  html,
-  LoadedElements,
-  LoadedTags,
-  TemplateData,
-} from "./modules/templates/engine";
+// Core exports
+export { Base } from "./core/base.js";
+export { BaseModule } from "./core/module/baseModule.js";
+export { LogLevel } from "./core/logger/types.js";
+export { BaseContext } from "./core/module/baseContext.js";
+export { BaseError } from "./core/baseErrors.js";
+export { BasePubSub } from "./core/pubsub/basePubSub.js";
+export { BaseLogger } from "./core/logger/baseLogger.js";
+export { LogMessage } from "./core/logger/logMessage.js";
+export { LoggerConfig } from "./core/logger/types.js";
 
-import * as asyncUtils from "./utils/async";
-import * as fileUtils from "./utils/file";
-import * as recursionUtils from "./utils/recursion";
-import * as stringUtils from "./utils/string";
+// Logger transformers and redactors
+export { ErrorSerializer } from "./core/logger/transformers/errorSerializer.js";
+export { ConstructorSerializer } from "./core/logger/transformers/constructorSerializer.js";
+export { ScalarSerializer } from "./core/logger/transformers/scalarSerialiser.js";
+export { PatternRedactor } from "./core/logger/redactors/patternRedactor.js";
+export { EmailRedactor } from "./core/logger/redactors/emailRedactor.js";
+export { PhoneNumberRedactor } from "./core/logger/redactors/phoneNumberRedactor.js";
+export { CreditCardRedactor } from "./core/logger/redactors/creditCardRedactor.js";
+export { IpAddressRedactor } from "./core/logger/redactors/ipAddressRedactor.js";
+export { UkPostCodeRedactor } from "./core/logger/redactors/ukPostCodeRedactor.js";
+export { ZipCodeRedactor } from "./core/logger/redactors/zipCodeRedactor.js";
+export { SsnRedactor } from "./core/logger/redactors/ssnRedactor.js";
+export { NiNumberRedactor } from "./core/logger/redactors/niNumberRedactor.js";
+export { BaseConfig } from "./core/config/baseConfig.js";
+export { BaseClassConfig } from "./core/config/types.js";
+export { BaseConfigProvider, BaseConfigRegistry } from "./core/config/baseConfigRegistry.js";
 
-import { BaseTemplates } from "./modules/templates";
-import { BaseStatic } from "./modules/static";
+// Models exports
+export { BaseModel } from "./core/models/baseModel.js";
+export { BaseIdentifiableModel } from "./core/models/baseIdentifiableModel.js";
+export { BaseModelCollection } from "./core/models/baseModelCollection.js";
+export { UniqueID } from "./core/models/uniqueId.js";
 
-import { LogLevel } from "./core/logger/types";
-import {
-  BaseActionArgs,
+// Request handler exports
+export { BaseRequest } from "./core/requestHandler/baseRequest.js";
+export { BaseResponse } from "./core/requestHandler/baseResponse.js";
+export { BaseRouter } from "./core/requestHandler/baseRouter.js";
+export { BaseHttpContext } from "./core/requestHandler/httpContext.js";
+export { BaseRequestHandlerConfig } from "./core/requestHandler/types.js";
+
+// DI exports
+export { BaseDi } from "./core/di/baseDi.js";
+export { BaseAutoload } from "./core/di/baseAutoload.js";
+export { BaseInitializer } from "./core/di/baseInitializer.js";
+
+// Module exports
+export { BaseInitContext } from "./core/module/initContext.js";
+
+// Template exports
+export { BaseTemplate } from "./modules/templates/baseTemplate.js";
+export { BaseTemplates } from "./modules/templates/baseTemplates.js";
+export { TemplateResult } from "./modules/templates/engine/templateResult.js";
+export { html } from "./modules/templates/engine/html.js";
+
+// Template tags (need to be imported to register with TemplateTags interface)
+export { EachTag } from "./modules/templates/engine/tags/eachTag.js";
+export { IfTag } from "./modules/templates/engine/tags/ifTag.js";
+
+// Decorator exports
+export { provider as config } from "./core/config/decorators/provider.js";
+export { request } from "./core/requestHandler/decorators/request.js";
+export { init } from "./core/module/decorators/init.js";
+export { di } from "./core/di/decorators/di.js";
+export { provider, configClass, getConfigClass, clearConfigClassRegistry } from "./core/config/decorators/provider.js";
+export { registerDi } from "./core/di/decorators/registerDi.js";
+export { dependsOn } from "./core/module/decorators/dependsOn.js";
+export { sub } from "./core/pubsub/decorators/sub.js";
+export { baseModule } from "./core/module/decorators/baseModule.js";
+
+// Model decorators
+export { model } from "./core/models/decorators/model.js";
+export { field } from "./core/models/decorators/field.js";
+export { reference } from "./core/models/decorators/reference.js";
+export { embed } from "./core/models/decorators/embed.js";
+export { meta } from "./core/models/decorators/meta.js";
+
+// Logger decorators
+export { logSerializer } from "./core/logger/decorators/logSerializer.js";
+export { redactor } from "./core/logger/decorators/logRedactor.js";
+
+// Template decorators
+export { template } from "./modules/templates/decorators/template.js";
+export { tag } from "./modules/templates/decorators/tag.js";
+
+// Utils exports
+export * as async from "./utils/async.js";
+export * as file from "./utils/file.js";
+export * as recursion from "./utils/recursion.js";
+export * as string from "./utils/string.js";
+
+export type { MaybeAsync } from "./core/types.js";
+
+// Thunk utilities (top-level exports as they're commonly used)
+export { thunk, resolve, Thunk } from "./utils/thunk.js";
+
+// Type exports
+export type { BasePubSubArgs, Subscriber } from "./core/pubsub/types.js";
+export type { BaseAppConfig, ConfigData } from "./core/config/types.js";
+export type { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/di/types.js";
+
+// Model types
+export type { BaseModelClass } from "./core/models/baseModel.js";
+export type { 
+  ModelConstructor,
+  ModelData,
+  ModelCollection,
+  IdentifiableModel,
+  DefinedId,
+  DefinedIds,
+  AsyncDefinedId,
+  AsyncDefinedIds,
+  Cardinality,
+  RelationType,
+  ModelsEventType,
+  ModelsEventData,
+  Persistable,
+  Deletable,
+  Countable,
+  Slicable,
+  RefOne,
+  RefMany,
+  EmbedOne,
+  EmbedMany
+} from "./core/models/types.js";
+export type { IdentifiableModelClass } from "./core/models/baseIdentifiableModel.js";
+
+// Logger types
+export type { 
+  LogContext, 
+  LogError, 
+  SerializedLogMessage, 
+  LoggerFunction, 
+  LogFormatter,
+  LogObjectTransformer,
+  TypeSerializer,
+  PatternMap
+} from "./core/logger/types.js";
+
+// Request handler types
+export type { 
   BaseHttpActionArgs,
-  BaseAction,
-} from "./core/baseAction";
-import { BaseContext } from "./core/baseContext";
-import { BaseRequest } from "./core/requestHandler/baseRequest";
-import { BaseResponse } from "./core/requestHandler/baseResponse";
-import { BaseHttpContext } from "./core/requestHandler/httpContext";
+  HttpContextData, 
+  UrlParams, 
+  RouteHandler, 
+  RouteTarget, 
+  Routes,
+  CookieOptions,
+  ParsedForm
+} from "./core/requestHandler/types.js";
 
-import { request } from "./decorators/actions/request";
-import { global } from "./decorators/actions/global";
-import { init } from "./decorators/actions/init";
+// Module types
+export type { 
+  BaseActionArgs, 
+  ActionOptions, 
+  BaseAction 
+} from "./core/module/types.js";
 
-import { config } from "./decorators/config";
-import { dependsOn } from "./decorators/dependsOn";
-import { di } from "./decorators/di";
-import { sub } from "./decorators/sub";
-import { baseModule } from "./decorators/baseModule";
-import { BaseDi } from "./core/baseDi";
-import { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/types";
-
-// Add missing framework classes
-import { BaseError } from "./core/baseErrors";
-import { BasePubSub, BasePubSubArgs, Subscriber } from "./core/basePubSub";
-import { BaseLogger } from "./core/logger";
-import { LogMessage } from "./core/logger/logMessage";
-import { BaseConfig } from "./core/config";
-import { ConfigObject } from "./core/config/types";
-import { BaseRequestHandler } from "./core/requestHandler";
-import { BaseRouter } from "./core/requestHandler/baseRouter";
-import { BaseInitContext } from "./core/initContext";
-
-// Export decorators directly
-export {
-  config,
-  request,
-  di,
-  dependsOn,
-  init,
-  sub,
-  global,
-  baseModule,
-};
-
-// Export utils directly
-export {
-  asyncUtils as async,
-  fileUtils as file,
-  recursionUtils as recursion,
-  stringUtils as string,
-};
-
-export {
-  BaseTemplates,
-  BaseStatic,
-  BaseContext,
-  BaseHttpContext,
-  BaseRequest,
-  BaseResponse,
-  BaseDi,
-  BaseError,
-  BasePubSub,
-  BaseLogger,
-  BaseConfig,
-  BaseRequestHandler,
-  BaseRouter,
-  BaseInitContext,
-  LogMessage,
-};
-
-export { LogLevel };
-export { Base };
-export { BaseModule, html };
-export type {
-  LoadedElements,
-  LoadedTags,
-  TemplateData,
-  BaseActionArgs,
-  BaseHttpActionArgs,
-  BaseAction,
-  BasePubSubArgs,
-  Subscriber,
-  ConfigObject,
-  Constructor,
-  Scalar,
-  Instance,
-  BaseDiWrapper,
-};
+// Template types
+export type { Templates, TagFactories } from "./modules/templates/types.js";

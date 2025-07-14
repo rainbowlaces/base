@@ -1,17 +1,35 @@
-import { BaseConfig } from "../config";
-import { di } from "../../decorators/di";
+import { registerDi } from "../di/decorators/registerDi.js";
+import { type RouteTarget, type UrlParams, type Routes } from "./types.js";
+import { BaseClassConfig, type ConfigData } from "../config/types.js";
+import { config } from "../config/decorators/config.js";
+import { configClass } from "../config/decorators/provider.js";
+import { BaseError } from "../baseErrors.js";
 
-type UrlParams = Record<string, string>;
-type RouteHandler = (params: UrlParams) => string;
-type RouteTarget = string | RouteHandler;
-type Routes = Record<string, RouteTarget>;
+@configClass("BaseRouter")
+class BaseRouterConfig extends BaseClassConfig {
+  routes: Routes = {};
+  defaultRoute: string = "/";
+}
 
+declare module "../config/types.js" {
+  interface BaseAppConfig {
+    BaseRouter?: ConfigData<BaseRouterConfig>;
+  }
+}
+
+@registerDi({  setup: true, phase: 90, singleton: true })
 export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
 
-  @di<BaseConfig>("BaseConfig", "base_router")
-  private accessor _config!: BaseConfig;
+  @config<BaseRouterConfig>("BaseRouter")
+  private accessor config!: BaseRouterConfig;
+
+  public async setup(): Promise<void> {
+    this.routes = this.config.routes;
+    this.defaultRoute = this.config.defaultRoute;
+    console.log(`[BaseRouter] Setup complete with routes: ${JSON.stringify(this.routes)}`);
+  }
 
   private cleanPath(path: string): string {
     return path
@@ -20,16 +38,11 @@ export class BaseRouter {
       .join("/");
   }
 
-  constructor() {
-    this.routes = this._config.get<Routes>("routes", {});
-    this.defaultRoute = this._config.get<string>("defaultRoute", "");
-  }
-
   private static createURLPattern(route: string): URLPattern {
     try {
       return new URLPattern({ pathname: route });
     } catch (err) {
-      throw new Error(`Invalid route pattern: ${route}. ${err}`);
+      throw new BaseError(`Invalid route pattern: ${route}. ${String(err)}`);
     }
   }
 
@@ -49,7 +62,7 @@ export class BaseRouter {
     if (!match) return null;
 
     const params: UrlParams = Object.fromEntries(
-      Object.entries(match.pathname.groups || {}).filter(([_, value]) => value !== undefined)
+      Object.entries(match.pathname.groups).filter(([_, value]) => value !== undefined)
     ) as UrlParams;
 
     let target: RouteTarget = this.routes[route];

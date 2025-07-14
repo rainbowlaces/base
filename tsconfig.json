@@ -1,31 +1,19 @@
 {
-    "compilerOptions": {
-        "target": "ESNext",
-        "module": "ESNext",
-        "moduleResolution": "node", 
-        "baseUrl": "src",
-        "outDir": "dist",
-        "declaration": true,
-        "declarationMap": true,
-        "downlevelIteration": true,
-        "resolveJsonModule": true,
-        "emitDeclarationOnly": true,
-        "isolatedModules": true,
-        "strict": true,
-        "noImplicitAny": true,
-        "sourceMap": false,
-        "strictNullChecks": true,
-        "noImplicitReturns": true,
-        "noImplicitThis": true,
-        "alwaysStrict": true,
-        "strictBindCallApply": true,
-        "strictPropertyInitialization": true,
-        "strictFunctionTypes": true,
-        "esModuleInterop": true,
-        "forceConsistentCasingInFileNames": true,
-        "skipLibCheck": true,
-        "lib": ["ESNext"], 
-    }, 
-    "include": [ "src/**/*.ts" ],
-    "exclude": [ "node_modules" ]
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "moduleResolution": "nodenext",
+    "module": "nodenext",
+    "noEmit": true, 
+    "baseUrl": "./"
+  },
+  "include": [
+    "src/**/*",
+    "testApp/src/**/*",
+    "bin/**/*",
+    "test/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

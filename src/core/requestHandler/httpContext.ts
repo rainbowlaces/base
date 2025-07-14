@@ -1,14 +1,15 @@
-import { BaseContext } from "../baseContext";
-import { BaseRequest } from "./baseRequest";
-import { BaseResponse } from "./baseResponse";
-import * as http from "http";
+import type * as http from "http";
+import { registerDi } from "../di/decorators/registerDi.js";
+import { BaseContext } from "../module/baseContext.js";
+import { type HttpContextData } from "./types.js";
+import { BaseRequest } from "./baseRequest.js";
+import { BaseResponse } from "./baseResponse.js";
 
-type HttpContextData = Record<string, unknown>;
-
+@registerDi()
 export class BaseHttpContext extends BaseContext<HttpContextData> {
-  private _req: BaseRequest;
-  private _res: BaseResponse;
-  private _topic: string;
+  #req: BaseRequest;
+  #res: BaseResponse;
+  #topic: string;
 
   constructor(req: http.IncomingMessage, res: http.ServerResponse) {
     super(
@@ -16,29 +17,48 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
         `/request/${id}/${module}/${action}/${status}`,
     );
 
-    this._req = new BaseRequest(this.id, req);
-    this._res = new BaseResponse(this.id, res);
+    this.#req = new BaseRequest(this.id, req);
+    this.#res = new BaseResponse(this.id, res);
 
-    this._topic = `/request/${this.id}/${this._req.method}${this._req.cleanPath}`;
+    this.#topic = `/request/${this.id}/${this.#req.method}${this.#req.cleanPath}`;
 
-    this._res.on("done", () => {
+    this.#res.on("done", () => {
       this.done();
     });
 
-    this._res.on("error", () => {
+    this.#res.on("error", () => {
+      this.error();
+    });
+
+    void this.coordinateAndRun(this.#topic).catch((error: unknown) => {
+      // Check if this is a "no handlers found" error (404 case)
+      if (error instanceof Error && error.message.includes("No handlers were found for topic")) {
+        this.logger.debug("Returning 404 for unhandled route:", [], { error });
+      } else {
+        this.logger.error("HTTP context coordination failed:", [], { error });
+      }
+      // For HTTP contexts, respond with 404 or 501
+      if (!this.#res.headersSent) {
+        this.#res.statusCode(404);
+        void this.#res.send("Not Found");
+      }
       this.error();
     });
   }
 
+  protected getContextType(): string {
+    return "http";
+  }
+
   get topic(): string {
-    return this._topic;
+    return this.#topic;
   }
 
   get req() {
-    return this._req;
+    return this.#req;
   }
 
   get res() {
-    return this._res;
+    return this.#res;
   }
 }
