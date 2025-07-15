@@ -29,10 +29,8 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
         const className = this.constructor.name;
         const id = this.id.toString();
         const data = this.serialise();
-        
-        console.log(`DEBUG: Persisting ${className} with ID ${id}. Store currently has ${store.size} items.`);
+
         store.set(id, data);
-        console.log(`DEBUG: After persist, store has ${store.size} items. Keys: [${Array.from(store.keys()).join(', ')}]`);
     }
 
 
@@ -81,16 +79,13 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     ): Promise<MemoryModelCollection<T>> {
         const store = MemoryModel.getClassStore(this.name);
         const matchingData: ModelData<T>[] = [];
-        
-        console.log(`DEBUG: Querying ${this.name}. Store has ${store.size} items. Keys: [${Array.from(store.keys()).join(', ')}]`);
-        
+                
         for (const data of store.values()) {
             if (query(data)) {
                 matchingData.push(data as ModelData<T>);
             }
         }
         
-        console.log(`DEBUG: Query found ${matchingData.length} matching items`);
         return new MemoryModelCollection(matchingData, this);
     }
 
