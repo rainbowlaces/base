@@ -7,7 +7,7 @@
 import { registerDi } from "../../di/decorators/registerDi.js";
 import { FIELD_METADATA_SYMBOL } from "./field.js";
 import { type BaseModel } from "../baseModel.js";
-import { type ModelConstructor } from "../types.js";
+import { type ModelConstructor, type FieldMetadata } from "../types.js";
 
 export function model<T extends BaseModel>(ctor: ModelConstructor<T>): void {
   // Collect field metadata from entire prototype chain
@@ -19,8 +19,8 @@ export function model<T extends BaseModel>(ctor: ModelConstructor<T>): void {
 
       if (!info) continue; // not a @field accessor
 
-      // Register the collected field with the static schema
-      (ctor as typeof BaseModel).addField(info.name, info.meta); 
+      // Register the collected field with the static schema using type assertion to access private method
+      (ctor as unknown as { addField: (name: string, meta: FieldMetadata) => void }).addField(info.name, info.meta); 
     }
     
     // Move up the prototype chain

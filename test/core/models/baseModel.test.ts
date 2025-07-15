@@ -3,6 +3,9 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { setupTestTeardown, TestProfile, type MockPubSub } from './setup.js';
 import { BaseDi } from '../../../src/core/di/baseDi.js';
+import { BaseModel } from '../../../src/core/models/baseModel.js';
+import { field } from '../../../src/core/models/decorators/field.js';
+import { model } from '../../../src/core/models/decorators/model.js';
 import type { Persistable, Deletable } from '../../../src/core/models/types.js';
 
 // Setup test isolation
@@ -510,5 +513,185 @@ describe('BaseModel: Static Schema Methods', () => {
         assert.strictEqual(Object.keys(finalParentFields).length, 3, 'Parent should still have 3 fields');
         assert.strictEqual(finalChildSchema.fields.childField.type, 'boolean', 'Child should have its own field');
         assert.strictEqual(finalParentSchema.fields.childField, undefined, 'Parent should not have child field');
+    });
+});
+
+describe('BaseModel: Field Converters and Validators', () => {
+    it('should apply converters during set operations', () => {
+        class TestConvertModel extends BaseModel {
+            @field({ 
+                converter: (value: unknown): string => {
+                    if (typeof value === 'number') return value.toString();
+                    if (typeof value === 'string') return value.toUpperCase();
+                    throw new Error('Invalid type');
+                }
+            })
+            accessor convertedField!: string;
+        }
+        model(TestConvertModel);
+        
+        const instance = new TestConvertModel();
+        
+        // Test number to string conversion
+        instance.set('convertedField', 42);
+        assert.strictEqual(instance.get('convertedField'), '42');
+        
+        // Test string to uppercase conversion
+        instance.set('convertedField', 'hello');
+        assert.strictEqual(instance.get('convertedField'), 'HELLO');
+    });
+
+    it('should apply converters during hydration', async () => {
+        class TestHydrateModel extends BaseModel {
+            @field({ 
+                converter: (value: unknown): number => {
+                    if (typeof value === 'string') return parseInt(value, 10);
+                    if (typeof value === 'number') return value;
+                    throw new Error('Cannot convert to number');
+                }
+            })
+            accessor numericField!: number;
+        }
+        model(TestHydrateModel);
+        
+        // Test hydration with string that should be converted to number
+        const instance = await TestHydrateModel.fromData({ numericField: '123' as any });
+        assert.strictEqual(instance.get('numericField'), 123);
+        assert.strictEqual(typeof instance.get('numericField'), 'number');
+    });
+
+    it('should apply validators and reject invalid values', () => {
+        class TestValidatorModel extends BaseModel {
+            @field({ 
+                validator: (value: string): boolean => {
+                    return typeof value === 'string' && value.length > 0;
+                }
+            })
+            accessor validatedField!: string;
+        }
+        model(TestValidatorModel);
+        
+        const instance = new TestValidatorModel();
+        
+        // Valid value should work
+        instance.set('validatedField', 'valid');
+        assert.strictEqual(instance.get('validatedField'), 'valid');
+        
+        // Invalid value should throw
+        assert.throws(() => {
+            instance.set('validatedField', '');
+        }, /Validation failed for field "validatedField"/);
+    });
+
+    it('should apply validators during hydration and reject invalid data', async () => {
+        class TestHydrateValidatorModel extends BaseModel {
+            @field({ 
+                validator: (value: number): boolean => {
+                    return typeof value === 'number' && value > 0;
+                }
+            })
+            accessor positiveNumber!: number;
+        }
+        model(TestHydrateValidatorModel);
+        
+        // Valid data should work
+        const validInstance = await TestHydrateValidatorModel.fromData({ positiveNumber: 42 });
+        assert.strictEqual(validInstance.get('positiveNumber'), 42);
+        
+        // Invalid data should throw
+        await assert.rejects(
+            () => TestHydrateValidatorModel.fromData({ positiveNumber: -5 }),
+            /Validation failed for field "positiveNumber" during hydration/
+        );
+    });
+
+    it('should apply both converter and validator in sequence', () => {
+        class TestConvertAndValidateModel extends BaseModel {
+            @field({ 
+                converter: (value: unknown): number => {
+                    if (typeof value === 'string') return parseInt(value, 10);
+                    if (typeof value === 'number') return value;
+                    throw new Error('Cannot convert to number');
+                },
+                validator: (value: number): boolean => {
+                    return value >= 0 && value <= 100;
+                }
+            })
+            accessor percentage!: number;
+        }
+        model(TestConvertAndValidateModel);
+        
+        const instance = new TestConvertAndValidateModel();
+        
+        // Valid string that converts to valid number
+        instance.set('percentage', '50');
+        assert.strictEqual(instance.get('percentage'), 50);
+        
+        // Valid number
+        instance.set('percentage', 75);
+        assert.strictEqual(instance.get('percentage'), 75);
+        
+        // String that converts to invalid number
+        assert.throws(() => {
+            instance.set('percentage', '150');
+        }, /Validation failed for field "percentage"/);
+        
+        // Invalid number directly
+        assert.throws(() => {
+            instance.set('percentage', -10);
+        }, /Validation failed for field "percentage"/);
+    });
+
+    it('should handle converter errors gracefully', () => {
+        class TestConverterErrorModel extends BaseModel {
+            @field({ 
+                converter: (value: unknown): string => {
+                    if (typeof value === 'string') return value;
+                    throw new Error('Only strings allowed');
+                }
+            })
+            accessor stringField!: string;
+        }
+        model(TestConverterErrorModel);
+        
+        const instance = new TestConverterErrorModel();
+        
+        // Valid value should work
+        instance.set('stringField', 'hello');
+        assert.strictEqual(instance.get('stringField'), 'hello');
+        
+        // Invalid value should propagate converter error
+        assert.throws(() => {
+            instance.set('stringField', 123);
+        }, /Only strings allowed/);
+    });
+
+    it('should not mark model dirty when converter returns same value', () => {
+        class TestDirtyModel extends BaseModel {
+            @field({ 
+                converter: (value: unknown): string => {
+                    if (typeof value === 'string') return value.trim();
+                    return String(value);
+                }
+            })
+            accessor trimmedField!: string;
+        }
+        model(TestDirtyModel);
+        
+        const instance = new TestDirtyModel();
+        
+        // Simulate a loaded model with existing data by hydrating
+        (instance as any).hydrate({ trimmedField: 'hello' });
+        
+        // Verify the model is not dirty after hydration
+        assert.strictEqual((instance as any).dirty, false, 'Should not be dirty after hydration');
+        
+        // Setting a value that converts to the same result should not mark dirty
+        instance.set('trimmedField', ' hello '); 
+        assert.strictEqual((instance as any).dirty, false, 'Should not be dirty when converter returns same value');
+        
+        // Setting a value that converts to different result should mark dirty
+        instance.set('trimmedField', ' world ');
+        assert.strictEqual((instance as any).dirty, true, 'Should be dirty when converter returns different value');
     });
 });

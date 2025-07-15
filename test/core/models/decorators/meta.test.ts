@@ -29,8 +29,8 @@ describe('@meta decorator', () => {
             // Static method will be called during decoration
         }
 
-        // Spy on setMetaValue
-        const setMetaValueSpy = test.mock.method(TestModel, 'setMetaValue');
+        // Spy on setMetaValue using type assertion to access private method
+        const setMetaValueSpy = test.mock.method(TestModel as any, 'setMetaValue');
 
         // Apply the @meta decorator with a test key/value
         const metaDecorator = meta('testKey', 'testValue');

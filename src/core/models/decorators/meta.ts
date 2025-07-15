@@ -8,7 +8,8 @@ import { type ModelMetadata } from "../types.js";
  * class User extends BaseModel<User> { }
  */
 export function meta<K extends keyof ModelMetadata>(key: K, value: ModelMetadata[K]) {
-    return (target: { setMetaValue: (key: K, value: ModelMetadata[K]) => void }, _context: ClassDecoratorContext) => {
-        target.setMetaValue(key, value);
+    return (target: unknown, _context: ClassDecoratorContext) => {
+        // Use type assertion to access private static method
+        (target as { setMetaValue: (key: K, value: ModelMetadata[K]) => void }).setMetaValue(key, value);
     };
 }

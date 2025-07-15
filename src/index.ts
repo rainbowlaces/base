@@ -123,7 +123,6 @@ export type {
   EmbedOne,
   EmbedMany
 } from "./core/models/types.js";
-export type { IdentifiableModelClass } from "./core/models/baseIdentifiableModel.js";
 
 // Logger types
 export type { 

@@ -25,8 +25,8 @@ describe('@model decorator', () => {
             accessor createdAt!: Date;
         }
 
-        // Spy on addField to see what gets collected
-        const addFieldSpy = test.mock.method(TestModel, 'addField');
+        // Spy on addField to see what gets collected using type assertion to access private method
+        const addFieldSpy = test.mock.method(TestModel as any, 'addField');
 
         // Apply the @model decorator
         model(TestModel);
@@ -36,20 +36,20 @@ describe('@model decorator', () => {
 
         // Check that each field was added with correct metadata
         const calls = addFieldSpy.mock.calls;
-        const fieldNames = calls.map(call => call.arguments[0]);
+        const fieldNames = calls.map((call: any) => call.arguments[0]);
         assert(fieldNames.includes('name'));
         assert(fieldNames.includes('status'));
         assert(fieldNames.includes('createdAt'));
 
         // Check metadata for readOnly field
-        const statusCall = calls.find(call => call.arguments[0] === 'status');
+        const statusCall = calls.find((call: any) => call.arguments[0] === 'status');
         assert(statusCall);
-        assert.strictEqual(statusCall.arguments[1].options.readOnly, true);
+        assert.strictEqual((statusCall).arguments[1].options.readOnly, true);
 
         // Check metadata for field with default
-        const createdAtCall = calls.find(call => call.arguments[0] === 'createdAt');
+        const createdAtCall = calls.find((call: any) => call.arguments[0] === 'createdAt');
         assert(createdAtCall);
-        assert.strictEqual(typeof createdAtCall.arguments[1].options.default, 'function');
+        assert.strictEqual(typeof (createdAtCall).arguments[1].options.default, 'function');
     });
 
     it('should collect metadata from parent classes (inheritance)', () => {
@@ -64,7 +64,7 @@ describe('@model decorator', () => {
         }
 
         // Spy on addField for child class
-        const addFieldSpy = test.mock.method(ChildModel, 'addField');
+        const addFieldSpy = test.mock.method(ChildModel as any, 'addField');
 
         // Apply the @model decorator to child
         model(ChildModel);
@@ -73,7 +73,7 @@ describe('@model decorator', () => {
         assert.strictEqual(addFieldSpy.mock.callCount(), 2);
 
         const calls = addFieldSpy.mock.calls;
-        const fieldNames = calls.map(call => call.arguments[0]);
+        const fieldNames = calls.map((call: any) => call.arguments[0] as string);
         assert(fieldNames.includes('parentField'));
         assert(fieldNames.includes('childField'));
     });
@@ -107,7 +107,7 @@ describe('@model decorator', () => {
             accessor email!: string;
         }
 
-        const addFieldSpy = test.mock.method(TestUser, 'addField');
+        const addFieldSpy = test.mock.method(TestUser as any, 'addField');
         const registerSpy = test.mock.method(BaseDi, 'register');
 
         // Apply the @model decorator
@@ -116,7 +116,7 @@ describe('@model decorator', () => {
         // Should collect the decorated fields (including id field from BaseIdentifiableModel)
         assert.strictEqual(addFieldSpy.mock.callCount(), 3);
         
-        const fieldNames = addFieldSpy.mock.calls.map(call => call.arguments[0]);
+        const fieldNames = addFieldSpy.mock.calls.map((call: any) => call.arguments[0] as string);
         assert(fieldNames.includes('id'));
         assert(fieldNames.includes('name'));
         assert(fieldNames.includes('email'));
@@ -134,7 +134,7 @@ describe('@model decorator', () => {
             }
         }
 
-        const addFieldSpy = test.mock.method(EmptyModel, 'addField');
+        const addFieldSpy = test.mock.method(EmptyModel as any, 'addField');
         const registerSpy = test.mock.method(BaseDi, 'register');
 
         // Apply the @model decorator
@@ -164,7 +164,7 @@ describe('@model decorator', () => {
             accessor childField!: string;
         }
 
-        const addFieldSpy = test.mock.method(Child, 'addField');
+        const addFieldSpy = test.mock.method(Child as any, 'addField');
 
         // Apply the @model decorator
         model(Child);
@@ -172,7 +172,7 @@ describe('@model decorator', () => {
         // Should collect all fields from entire inheritance chain
         assert.strictEqual(addFieldSpy.mock.callCount(), 3);
 
-        const fieldNames = addFieldSpy.mock.calls.map(call => call.arguments[0]);
+        const fieldNames = addFieldSpy.mock.calls.map((call: any) => call.arguments[0] as string);
         assert(fieldNames.includes('grandParentField'));
         assert(fieldNames.includes('parentField'));
         assert(fieldNames.includes('childField'));
@@ -184,7 +184,7 @@ describe('@model decorator', () => {
             accessor name!: string;
         }
 
-        const addFieldSpy = test.mock.method(TestModel, 'addField');
+        const addFieldSpy = test.mock.method(TestModel as any, 'addField');
 
         // Apply the @model decorator multiple times
         model(TestModel);

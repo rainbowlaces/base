@@ -21,53 +21,46 @@ export class ModelsModule extends BaseModule {
         MemoryModel.clearStore();
 
         // Create and save sample users
-        const alice = new User();
-        await alice.setData({ name: 'Alice', email: 'alice@example.com' });
+        const alice = await User.create({ name: 'Alice', email: 'alice@example.com' });
         await alice.save();
+        this.logger.info(`Alice saved with ID: ${alice.id.toString()}`);
 
-        const bob = new User();
-        await bob.setData({ name: 'Bob', email: 'bob@example.com' });
+        const bob = await User.create({ name: 'Bob', email: 'bob@example.com' });
         await bob.save();
+        this.logger.info(`Bob saved with ID: ${bob.id.toString()}`);
 
-        const charlie = new User();
-        await charlie.setData({ name: 'Charlie', email: 'charlie@example.com', active: false });
+        const charlie = await User.create({ name: 'Charlie', email: 'charlie@example.com', active: false });
         await charlie.save();
+        this.logger.info(`Charlie saved with ID: ${charlie.id.toString()}`);
 
         // Create and save group types
-        const workGroupType = new GroupType();
-        await workGroupType.setData({ name: 'Work Team' });
+        const workGroupType = await GroupType.create({ name: 'Work Team' });
         await workGroupType.save();
 
-        const socialGroupType = new GroupType();
-        await socialGroupType.setData({ name: 'Social Group' });
+        const socialGroupType = await GroupType.create({ name: 'Social Group' });
         await socialGroupType.save();
 
         // Create and save groups with references
-        const devTeam = new Group();
-        await devTeam.setData({ name: 'Development Team' });
+        const devTeam = await Group.create({ name: 'Development Team' });
         await devTeam.type(workGroupType);
         await devTeam.members([alice, bob]);
         await devTeam.save();  
 
         // Create articles with embedded comments
-        const article1 = new Article();
-        await article1.setData({ title: 'Getting Started with Memory Models', content: 'This article explains how to use the memory model implementation...' });
+        const article1 = await Article.create({ title: 'Getting Started with Memory Models', content: 'This article explains how to use the memory model implementation...' });
         
         // Create comments for the article
-        const comment1 = new Comment();
-        await comment1.setData({ text: 'Great article!', postedAt: new Date() });
+        const comment1 = await Comment.create({ text: 'Great article!', postedAt: new Date() });
         await comment1.author(alice);
 
-        const comment2 = new Comment();
-        await comment2.setData({ text: 'Very helpful, thanks!', postedAt: new Date() });
+        const comment2 = await Comment.create({ text: 'Very helpful, thanks!', postedAt: new Date() });
         await comment2.author(bob);
 
         await article1.comments([comment1, comment2]);
         await article1.save();
 
         // Create another article
-        const article2 = new Article();
-        await article2.setData({ title: 'Advanced Query Patterns', content: 'Learn how to write complex queries...' });
+        const article2 = await Article.create({ title: 'Advanced Query Patterns', content: 'Learn how to write complex queries...' });
         await article2.save();
 
         // Set some bookmarks
@@ -89,7 +82,9 @@ export class ModelsModule extends BaseModule {
         try {
             // Query all users (predicate always returns true)
             const usersCollection = await User.query(() => true);
+            this.logger.info(`Users collection created, getting array...`);
             const users = await usersCollection.toArray();
+            this.logger.info(`Found ${users.length} users in store`);
             
             const response = users.map(user => ({
                 id: user.id.toString(),
@@ -149,8 +144,7 @@ export class ModelsModule extends BaseModule {
         try {
             const body = await context.req.json<{ name: string; email: string }>();
             
-            const newUser = new User();
-            await newUser.setData({ name: body.name, email: body.email });
+            const newUser = await User.create({ name: body.name, email: body.email });
             await newUser.save();
 
             context.res.statusCode(201);
@@ -220,11 +214,10 @@ export class ModelsModule extends BaseModule {
         this.logger.info(`GET /users/search/${name} - Searching users`);
         
         try {
-            const usersCollection = await User.query(data => {
-                const userData = data as { name?: string };
-                return !!(userData.name && 
-                         typeof userData.name === 'string' && 
-                         userData.name.toLowerCase().includes(name.toLowerCase()));
+            const usersCollection = await User.query((data: Record<string, unknown>) => {
+                return !!(data.name && 
+                         typeof data.name === 'string' && 
+                         data.name.toLowerCase().includes(name.toLowerCase()));
             });
             const users = await usersCollection.toArray();
             

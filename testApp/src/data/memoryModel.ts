@@ -1,4 +1,4 @@
-import { BaseIdentifiableModel, type Deletable, type ModelConstructor, type ModelData, type Persistable, type UniqueID } from '../../../src/index.js';
+import { BaseIdentifiableModel, type BaseModel, type Deletable, type ModelConstructor, type ModelData, type Persistable, type UniqueID } from '../../../src/index.js';
 import { MemoryModelCollection } from './memoryModelCollection.js';
 
 // A simple, global in-memory store.
@@ -23,20 +23,18 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
         return MEMORY_STORE.get(className)!;
     }
 
-    // Public API to set model data
-    public async setData(data: ModelData<this>): Promise<void> {
-        await this.hydrate(data);
-    }
-
     // --- Implementation of Persistable and Deletable ---
     public async persist(): Promise<void> {
         const store = this.getClassStore();
-        store.set(this.id.toString(), this.serialise());
+        const className = this.constructor.name;
+        const id = this.id.toString();
+        const data = this.serialise();
+        
+        console.log(`DEBUG: Persisting ${className} with ID ${id}. Store currently has ${store.size} items.`);
+        store.set(id, data);
+        console.log(`DEBUG: After persist, store has ${store.size} items. Keys: [${Array.from(store.keys()).join(', ')}]`);
     }
 
-    public async save(): Promise<void> {
-        return this.persist();
-    }
 
     public async delete(): Promise<void> {
         const store = this.getClassStore();
@@ -77,19 +75,22 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
         return new MemoryModelCollection(foundData, this);
     }
 
-    public static async query<T extends BaseIdentifiableModel>(
+    public static async query<T extends BaseModel>(
         this: ModelConstructor<T>,
-        predicate: (data: ModelData) => boolean
+        query: (data: Record<string, unknown>) => boolean
     ): Promise<MemoryModelCollection<T>> {
         const store = MemoryModel.getClassStore(this.name);
         const matchingData: ModelData<T>[] = [];
         
+        console.log(`DEBUG: Querying ${this.name}. Store has ${store.size} items. Keys: [${Array.from(store.keys()).join(', ')}]`);
+        
         for (const data of store.values()) {
-            if (predicate(data)) {
+            if (query(data)) {
                 matchingData.push(data as ModelData<T>);
             }
         }
         
+        console.log(`DEBUG: Query found ${matchingData.length} matching items`);
         return new MemoryModelCollection(matchingData, this);
     }
 

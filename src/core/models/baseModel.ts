@@ -20,7 +20,6 @@ import { UniqueID } from "./uniqueId.js";
 export type BaseModelClass = typeof BaseModel;
 
 export abstract class BaseModel {
-    // A unique, private key to store metadata on the class constructor.
     private static readonly modelSchemaKey = Symbol("modelSchema");
 
     @di("BasePubSub")
@@ -31,14 +30,6 @@ export abstract class BaseModel {
     #dirty: boolean = false;
     #new: boolean = true;
 
-    // public static getCollection<T extends BaseModel<T>>(
-    // this: ModelConstructor<T>,
-    // src: Iterable<ModelData<T>> | AsyncIterable<ModelData<T>>
-    // ): ModelCollection<T> {
-    //     // Drop-in concrete collection we wrote earlier
-    //     return new SimpleModelCollection(src, this);
-    // }
-
 
     constructor() {
         this.setDefaults();
@@ -48,17 +39,11 @@ export abstract class BaseModel {
     protected init() {
         // Initialization logic if needed
     }
-    
-    // Collection method removed - will be implemented by specific model types that need it
-    // Models should implement Queryable interface if they need collection functionality
-
-    // Factory method removed from instance - will be static on specific model types
 
     // --- METADATA HANDLING LOGIC ---
 
     /**
      * A simple recursive clone function that correctly handles functions.
-     * This is not a perfect deep clone, but it's what's needed here.
      */
     private static _cloneWithFunctions<T>(source: T): T {
         if (typeof source !== 'object' || source === null) {
@@ -78,18 +63,14 @@ export abstract class BaseModel {
 
     /**
      * Safely retrieves or initializes the schema object on a class constructor.
-     * This is the core utility that prevents shared state between models.
      */
     private static getOrInitSchema(constructor: typeof BaseModel): BaseModelSchema {
-        // Use `Object.hasOwnProperty.call` for safety.
         if (!Object.prototype.hasOwnProperty.call(constructor, this.modelSchemaKey)) {
             const parentConstructor = Object.getPrototypeOf(constructor) as Record<symbol, BaseModelSchema> | null;
             let newSchema: BaseModelSchema = { fields: {}, meta: {} };
 
-            // If there's a parent with a schema, clone it.
             if (parentConstructor?.[this.modelSchemaKey]) {
                 const parentSchema = parentConstructor[this.modelSchemaKey];
-                // Use the CORRECT cloning function.
                 newSchema = this._cloneWithFunctions(parentSchema);
             }
 
@@ -104,17 +85,19 @@ export abstract class BaseModel {
     }
 
     /**
-     * A static method for decorators to add a key-value pair to the model's metadata.
+     * A private method for decorators to add a key-value pair to the model's metadata.
+     * Decorators should access this via (target as any).setMetaValue()
      */
-    public static setMetaValue<K extends keyof ModelMetadata>(key: K, value: ModelMetadata[K]) {
+    private static setMetaValue<K extends keyof ModelMetadata>(key: K, value: ModelMetadata[K]) {
         const schema = BaseModel.getOrInitSchema(this);
         schema.meta[key] = value;
     }
 
     /**
-     * A static method for decorators to add field metadata.
+     * A private method for decorators to add field metadata.
+     * Decorators should access this via (target as any).addField()
      */
-    public static addField(propertyName: string, meta: FieldMetadata) {
+    private static addField(propertyName: string, meta: FieldMetadata) {
         const schema = BaseModel.getOrInitSchema(this);
         schema.fields[propertyName] = meta;
     }
@@ -124,20 +107,6 @@ export abstract class BaseModel {
      */
     public static getProcessedSchema(): BaseModelSchema {
         return BaseModel.getOrInitSchema(this);
-    }
-
-    /**
-     * TEMPORARY: Backward compatibility method for tests.
-     * TODO: Remove this once tests are updated to use decorators.
-     */
-    public static registerField<T>(
-        fieldName: string,
-        options: FieldOptions<T>,
-    ) {
-        const fieldMetadata: FieldMetadata = {
-            options,
-        };
-        this.addField(fieldName, fieldMetadata);
     }
 
     private setDefaults() {
@@ -161,26 +130,31 @@ export abstract class BaseModel {
         return this.#dirty;
     }
 
-    protected async hydrate(data: ModelData<this>): Promise<void> {
+    protected async hydrate(data: ModelData<this>, isNew: boolean = false): Promise<void> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         
-        // Cast to allow for the generic iteration
         const dataRecord = data as Record<string, unknown>;
         
-        // First, validate that all provided fields exist in the schema using getMeta
         for (const key in dataRecord) {
-            this.getMeta(key); // This will throw if field is not in schema
+            this.getMeta(key);
         }
         
         // Then process the fields
         for (const key in schema.fields) {
             if (key in dataRecord) {
-                let value = dataRecord[key];
+                const rawValue = dataRecord[key];
+                const fieldMeta = schema.fields[key];
                 
-                // Special handling for 'id' field: convert string to UniqueID
-                if (key === 'id' && typeof value === 'string') {
-                    value = new UniqueID(value);
+                // Apply converter if available
+                let value = rawValue;
+                if (fieldMeta.options.converter) {
+                    value = fieldMeta.options.converter(rawValue);
+                }
+                
+                // Apply validator if available
+                if (fieldMeta.options.validator && !fieldMeta.options.validator(value)) {
+                    throw new BaseError(`Validation failed for field "${key}" during hydration`);
                 }
                 
                 this.#originalData[key] = value;
@@ -188,7 +162,7 @@ export abstract class BaseModel {
             }
         }
         this.#dirty = false;
-        this.#new = false;
+        this.#new = isNew;
     }
 
     public reset() {
@@ -202,6 +176,7 @@ export abstract class BaseModel {
     /**
      * Static factory method to create a model instance pre-populated with data.
      * This provides a clean public interface for model instantiation.
+     * Use this for hydrating existing data (e.g., from database).
      */
     public static async fromData<T extends BaseModel>(
         this: new () => T, 
@@ -212,17 +187,59 @@ export abstract class BaseModel {
         return instance;
     }
 
+    /**
+     * Static factory method to create a NEW model instance that will be persisted.
+     * This marks the model as new and dirty, so it will be saved when save() is called.
+     * Use this when creating new entities that need to be persisted.
+     */
+    public static async create<T extends BaseModel>(
+        this: new () => T,
+        data: ModelData<T> = {} as ModelData<T>
+    ): Promise<T> {
+        const instance = new this();
+        await instance.hydrate(data, true); // Pass true to mark as new
+        return instance;
+    }
+
     private getMeta(
         key: string,
     ): { constructor: typeof BaseModel; fieldOptions: FieldOptions } {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         const fieldMeta = schema.fields[key];
+
         // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
         if (!fieldMeta) {
             throw new BaseError(`Field "${key}" is not defined in the schema.`);
         }
         return { constructor, fieldOptions: fieldMeta.options };
+    }
+
+    /**
+     * Determines if a value is a scalar type that can be safely compared with ===
+     */
+    private isScalarValue(value: unknown): boolean {
+        const type = typeof value;
+        return value === null || 
+               value === undefined || 
+               type === 'string' || 
+               type === 'number' || 
+               type === 'boolean' || 
+               value instanceof Date;
+    }
+
+    /**
+     * Compares two values to determine if they are effectively equal.
+     * For scalar values, uses strict equality. For complex types, always returns false (assumes dirty).
+     */
+    private valuesEqual(oldValue: unknown, newValue: unknown): boolean {
+        // If both are scalar types, compare with strict equality
+        if (this.isScalarValue(oldValue) && this.isScalarValue(newValue)) {
+            return oldValue === newValue;
+        }
+        
+        // For complex types, always assume they're different (dirty)
+        return false;
     }
 
     public unset(key: string): boolean {
@@ -249,15 +266,29 @@ export abstract class BaseModel {
         if (fieldOptions.readOnly) {
             throw new BaseError(`Field "${key}" is readonly and cannot be set.`);
         }
-        if (!this.beforeSet(key, value, fieldOptions)) return;
         
-        // Only mark as dirty if the value is actually different
+        // Apply converter if available
+        let convertedValue = value;
+        if (fieldOptions.converter) {
+            convertedValue = fieldOptions.converter(value) as T;
+        }
+        
+        // Apply validator if available
+        if (fieldOptions.validator && !fieldOptions.validator(convertedValue)) {
+            throw new BaseError(`Validation failed for field "${key}"`);
+        }
+        
+        if (!this.beforeSet(key, convertedValue, fieldOptions)) return;
+        
+        // Smart dirty checking: only mark dirty if value actually changed
         const currentValue = this.#data[key];
-        if (currentValue !== value) {
+        
+        // If no current value exists, or values are not equal, mark dirty
+        if (!(key in this.#data) || !this.valuesEqual(currentValue, convertedValue)) {
             this.#dirty = true;
         }
         
-        this.#data[key] = value;
+        this.#data[key] = convertedValue;
     }
 
     public has(key: string): boolean {
@@ -382,6 +413,5 @@ export abstract class BaseModel {
         };
         await this.#pubSub.pub(this.getEventTopic(type), { event });
     }
-
 
 }

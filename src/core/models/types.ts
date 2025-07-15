@@ -77,6 +77,8 @@ export type ModelConstructor<T extends BaseModel = BaseModel> = (new () => T) & 
 export interface FieldOptions<T = unknown> {
     readOnly?: boolean;
     default?: (() => T);
+    converter?: (value: unknown) => T;
+    validator?: (value: T) => boolean;
 }
 
 export type AsyncDefinedId<T extends BaseIdentifiableModel> = DefinedId<T> | Promise<DefinedId<T>>;
@@ -93,28 +95,6 @@ export interface Persistable {
 export interface Deletable {
     delete(): Promise<void>;
 }
-
-export interface Collectable<T extends BaseModel> {
-  getCollection(
-    src: Iterable<ModelData<T>> | AsyncIterable<ModelData<T>>
-  ): BaseModelCollection<T>;
-}
-
-export interface Hydratable<T extends BaseModel> {
-    hydrate(data: ModelData<T>): Promise<void>;
-}
-
-export interface FindableById<T extends BaseIdentifiableModel, I> {
-    byId(id: I): Promise<T | undefined>;
-}
-
-export interface FindableByIds<T extends BaseIdentifiableModel, I> {
-    byIds(ids: I[]): Promise<BaseModelCollection<T>>;
-}
-
-export interface Queryable<T extends BaseModel, Q> {
-    query(query: Q): Promise<BaseModelCollection<T>>;
-} 
 
 // Collection Capabilities
 export interface Slicable {

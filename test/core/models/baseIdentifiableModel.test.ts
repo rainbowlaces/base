@@ -84,7 +84,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byId(id);
                     },
                     {
-                        message: 'byId not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byId' is not implemented. Override the static 'byId' method in your base class."
                     }
                 );
             });
@@ -97,7 +97,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byId(id);
                     },
                     {
-                        message: 'byId not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byId' is not implemented. Override the static 'byId' method in your base class."
                     }
                 );
             });
@@ -110,7 +110,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byId(id);
                     },
                     {
-                        message: 'byId not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byId' is not implemented. Override the static 'byId' method in your base class."
                     }
                 );
             });
@@ -124,7 +124,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestPost.byId(id);
                     },
                     {
-                        message: 'byId not implemented for TestPost. Implement Queryable interface.'
+                        message: "'TestPost.byId' is not implemented. Override the static 'byId' method in your base class."
                     }
                 );
             });
@@ -139,7 +139,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byIds(ids);
                     },
                     {
-                        message: 'byIds not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byIds' is not implemented. Override the static 'byIds' method in your base class."
                     }
                 );
             });
@@ -152,7 +152,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byIds(ids);
                     },
                     {
-                        message: 'byIds not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byIds' is not implemented. Override the static 'byIds' method in your base class."
                     }
                 );
             });
@@ -165,7 +165,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byIds(ids);
                     },
                     {
-                        message: 'byIds not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byIds' is not implemented. Override the static 'byIds' method in your base class."
                     }
                 );
             });
@@ -178,7 +178,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byIds(ids);
                     },
                     {
-                        message: 'byIds not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byIds' is not implemented. Override the static 'byIds' method in your base class."
                     }
                 );
             });
@@ -191,7 +191,7 @@ describe('BaseIdentifiableModel', () => {
                         await TestUser.byIds(ids);
                     },
                     {
-                        message: 'byIds not implemented for TestUser. Implement Queryable interface.'
+                        message: "'TestUser.byIds' is not implemented. Override the static 'byIds' method in your base class."
                     }
                 );
             });
