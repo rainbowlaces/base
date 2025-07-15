@@ -29,4 +29,7 @@ export function model<T extends BaseModel>(ctor: ModelConstructor<T>): void {
 
   // Register with DI container
   registerDi({ singleton: false, tags: ["Model"] })(ctor, {} as ClassDecoratorContext);
+  
+  // Call the hook method to allow subclasses to perform post-registration initialization
+  (ctor as unknown as { onModelRegistered: () => void }).onModelRegistered();
 }

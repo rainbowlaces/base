@@ -109,6 +109,16 @@ export abstract class BaseModel {
         return BaseModel.getOrInitSchema(this);
     }
 
+    /**
+     * Hook method called after a model is registered with the @model decorator.
+     * Subclasses can override this to perform custom initialization based on the schema.
+     * This is called once per model class during the decorator application phase.
+     */
+    protected static onModelRegistered(): void {
+        // Default implementation does nothing
+        // Subclasses can override to add custom logic like schema validation
+    }
+
     private setDefaults() {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
