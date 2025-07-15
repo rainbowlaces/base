@@ -121,7 +121,7 @@ export class BaseDi {
       }
 
       debugLog(`[BaseDi] Instantiating constructor for ${keyStr} with args:`, args);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+       
       const instance = new (wrapper.value as Constructor<T>)(...args);
       debugLog(`[BaseDi] ✅ Successfully instantiated ${keyStr}`);
 

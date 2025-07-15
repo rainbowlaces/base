@@ -19,7 +19,7 @@ export abstract class BaseClassConfig {
     if (data) {
       for (const key in data) {
         if (key in this) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+           
           (this as any)[key] = data[key];
         }
       }

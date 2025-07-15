@@ -53,7 +53,7 @@ export function dependsOn<T extends BaseModule>(
 
     context.addInitializer(function () {
       if (context.kind !== "method") return;
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       target.dependsOn = deps.map((dep) => {
         // For cross-module dependencies, dep.module is already set to the target module name
         // For same-module dependencies, use the current module name

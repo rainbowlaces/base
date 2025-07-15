@@ -186,12 +186,12 @@ export class BaseLogger {
       namespace: logMessage.namespace,
       message: logMessage.message,
       tags: logMessage.tags,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       context: this._applyTransformers(logMessage.context, this.serializers),
     };
 
     // Stage 2: Redact the entire plain object if redaction is enabled.
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const redacted =
       this.config.redaction
         ? this._applyTransformers(serializable, this.redactors)
@@ -243,11 +243,11 @@ export class BaseLogger {
 
       // If no transformer is found, and it's an object, we recurse into its children.
       if (typeof val === "object" && val !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+         
         if (seen.has(val)) {
           return "[CircularReference]";
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+         
         seen.add(val);
 
         const result: Record<string, unknown> | unknown[] = Array.isArray(val)
@@ -256,7 +256,7 @@ export class BaseLogger {
         for (const key in val) {
           if (Object.prototype.hasOwnProperty.call(val, key)) {
             const newKey = Array.isArray(result) ? parseInt(key, 10) : key;
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+             
             result[newKey as keyof typeof result] = recurse(
               (val as Record<string, unknown>)[key]
             );

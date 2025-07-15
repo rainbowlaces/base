@@ -21,31 +21,31 @@ export interface Console {
 export class NodeConsole implements Console {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public log(message?: any, ...optionalParams: any[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+     
     console.log(message, ...optionalParams);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public error(message?: any, ...optionalParams: any[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+     
     console.error(message, ...optionalParams);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public warn(message?: any, ...optionalParams: any[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+     
     console.warn(message, ...optionalParams);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public debug(message?: any, ...optionalParams: any[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+     
     console.debug(message, ...optionalParams);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public trace(message?: any, ...optionalParams: any[]): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+     
     console.trace(message, ...optionalParams);
   }
 }

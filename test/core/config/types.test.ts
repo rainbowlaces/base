@@ -45,7 +45,7 @@ test('BaseClassConfig', (t) => {
       }
       
       const config = new TestConfig();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+       
       config.hydrate({
         message: "custom message",
         unknownProperty: "should be ignored",

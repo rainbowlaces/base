@@ -72,7 +72,7 @@ export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
         return BaseDi.resolve<Tag>(diKey, value, params);
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.tagFactories[tagName as keyof TagFactories] = factory as any;
       this.logger.debug(`Registered tag '${tagName}'...`);
     }
@@ -98,7 +98,7 @@ export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
         return templateInstance.render();
       };
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+       
       this.templateFactories[templateName as keyof TemplateFactories] =
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         factory as any;

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
+ 
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { setupTestTeardown, TestProfile, type MockPubSub } from './setup.js';

@@ -350,7 +350,7 @@ test('BaseConfigRegistry', (t) => {
       const originalRegister = BaseDi.register.bind(BaseDi);
       BaseDi.register = (value: any, options: any) => {
         registrations.push({ value, options });
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+         
         originalRegister(value, options);
       };
 
