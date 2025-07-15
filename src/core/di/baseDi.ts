@@ -1,8 +1,9 @@
-import { type BaseDiWrapper, type Constructor, type Instance, type Scalar, type DiTeardown } from "./types.js";
+import { type BaseDiWrapper, type Constructor, type Instance, type DiTeardown } from "./types.js";
 import { BaseInitializer } from "./baseInitializer.js";
 import { debugLog } from "../../utils/debugLog.js";
 import { delay } from "../../utils/async.js";
 import { BaseError } from "../baseErrors.js";
+import { type Scalar } from "../types.js";
 
 export { BaseAutoload } from "./baseAutoload.js";
 export { BaseInitializer } from "./baseInitializer.js";

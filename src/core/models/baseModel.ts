@@ -341,13 +341,24 @@ export abstract class BaseModel {
         return true;
     }
 
+    private serializeField(
+        key: string,
+        value: unknown,
+        schema: BaseModelSchema,
+    ): unknown {
+        const serializer = schema.fields[key].options.serializer;
+        return serializer ? serializer(value) : value;
+    }
+
     public serialise(): ModelData<this> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         const data: Record<string, unknown> = {};
         for (const key in schema.fields) {
             if (this.has(key)) {
-                data[key] = this.get(key);
+                const value = this.serializeField(key, this.get(key), schema);
+                if (value === undefined) continue;
+                data[key] = value;
             }
         }
         return data as ModelData<this>;

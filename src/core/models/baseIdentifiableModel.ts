@@ -11,9 +11,10 @@ import { toUniqueID } from "./converters.js";
  */
 export abstract class BaseIdentifiableModel extends BaseModel {
     @field({ 
-        readOnly: true, 
+        readOnly: true,
         default: () => new UniqueID(),
-        converter: toUniqueID 
+        converter: toUniqueID,
+        serializer: (value: UniqueID) => value.toString() 
     })
     accessor id!: UniqueID;
 

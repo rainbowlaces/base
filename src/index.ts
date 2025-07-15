@@ -89,7 +89,7 @@ export * as file from "./utils/file.js";
 export * as recursion from "./utils/recursion.js";
 export * as string from "./utils/string.js";
 
-export type { MaybeAsync } from "./core/types.js";
+export type { MaybeAsync, Scalar } from "./core/types.js";
 
 // Thunk utilities (top-level exports as they're commonly used)
 export { thunk, resolve, Thunk } from "./utils/thunk.js";
@@ -97,7 +97,7 @@ export { thunk, resolve, Thunk } from "./utils/thunk.js";
 // Type exports
 export type { BasePubSubArgs, Subscriber } from "./core/pubsub/types.js";
 export type { BaseAppConfig, ConfigData } from "./core/config/types.js";
-export type { Constructor, Scalar, Instance, BaseDiWrapper } from "./core/di/types.js";
+export type { Constructor, Instance, BaseDiWrapper } from "./core/di/types.js";
 
 // Model types
 export type { BaseModelClass } from "./core/models/baseModel.js";
