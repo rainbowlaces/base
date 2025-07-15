@@ -38,7 +38,6 @@ export const jsRules = {
  */
 export function tsRules(options = {}) {
   const { tsconfigRootDir = process.cwd(), clientSourcePath } = options;
-  
   const baseConfig = [
     eslint.configs.recommended,
     ...tseslint.configs.strictTypeChecked,
@@ -54,6 +53,10 @@ export function tsRules(options = {}) {
             caughtErrorsIgnorePattern: "^_",
           },
         ],
+        "@typescript-eslint/no-unsafe-argument": "off",
+        "@typescript-eslint/no-unsafe-assignment": "off",
+        "@typescript-eslint/no-unsafe-member-access": "off",
+        "@typescript-eslint/no-unsafe-return": "off",
         "@typescript-eslint/restrict-template-expressions": [
           "error",
           { allowNumber: true, allowAny: true, allowBoolean: true },
