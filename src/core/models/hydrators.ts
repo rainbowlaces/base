@@ -2,7 +2,7 @@ import { UniqueID } from "./uniqueId.js";
 import { BaseError } from "../baseErrors.js";
 
 /**
- * Common field converters for type transformation during hydration and setting
+ * Common field hydrators for type transformation during hydration and setting
  */
 
 /**

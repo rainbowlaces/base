@@ -6,11 +6,11 @@ import {
     toNumber,
     toString,
     toBoolean,
-} from '../../../src/core/models/converters.js';
+} from '../../../src/core/models/hydrators.js';
 import { UniqueID } from '../../../src/core/models/uniqueId.js';
 
-describe('Model Converters', () => {
-    describe('toUniqueID converter', () => {
+describe('Model Hydrators', () => {
+    describe('toUniqueID hydrator', () => {
         it('should pass through UniqueID instances unchanged', () => {
             const id = new UniqueID();
             const result = toUniqueID(id);
@@ -46,7 +46,7 @@ describe('Model Converters', () => {
         });
     });
 
-    describe('toDate converter', () => {
+    describe('toDate hydrator', () => {
         it('should pass through Date instances unchanged', () => {
             const date = new Date();
             const result = toDate(date);
@@ -84,7 +84,7 @@ describe('Model Converters', () => {
         });
     });
 
-    describe('toNumber converter', () => {
+    describe('toNumber hydrator', () => {
         it('should pass through numbers unchanged', () => {
             assert.strictEqual(toNumber(42), 42);
             assert.strictEqual(toNumber(3.14), 3.14);
@@ -120,7 +120,7 @@ describe('Model Converters', () => {
         });
     });
 
-    describe('toString converter', () => {
+    describe('toString hydrator', () => {
         it('should pass through strings unchanged', () => {
             assert.strictEqual(toString('hello'), 'hello');
             assert.strictEqual(toString(''), '');
@@ -158,7 +158,7 @@ describe('Model Converters', () => {
         });
     });
 
-    describe('toBoolean converter', () => {
+    describe('toBoolean hydrator', () => {
         it('should pass through booleans unchanged', () => {
             assert.strictEqual(toBoolean(true), true);
             assert.strictEqual(toBoolean(false), false);

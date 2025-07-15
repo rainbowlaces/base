@@ -26,7 +26,6 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     // --- Implementation of Persistable and Deletable ---
     public async persist(): Promise<void> {
         const store = this.getClassStore();
-        const className = this.constructor.name;
         const id = this.id.toString();
         const data = this.serialise();
 
@@ -85,7 +84,7 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
                 matchingData.push(data as ModelData<T>);
             }
         }
-        
+
         return new MemoryModelCollection(matchingData, this);
     }
 

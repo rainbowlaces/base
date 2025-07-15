@@ -78,7 +78,7 @@ export type ModelConstructor<T extends BaseModel = BaseModel> = (new () => T) & 
 export interface FieldOptions<T = unknown> {
     readOnly?: boolean;
     default?: (() => T);
-    converter?: (value: unknown) => T;
+    hydrator?: (value: unknown) => T;
     validator?: (value: T) => boolean;
     serializer?: (value: T) => Scalar | object | undefined;
 }

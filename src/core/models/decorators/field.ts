@@ -14,9 +14,9 @@ export function field<T>(opts: ExtendedFieldOptions<T> = {} as ExtendedFieldOpti
     _ignored: unknown,
     ctx: ClassAccessorDecoratorContext<M, T>
   ) {
-    const { readOnly, default: def, converter, validator, ...rest } = opts;
+    const { readOnly, default: def, hydrator, validator, serializer, ...rest } = opts;
     const meta: FieldMetadata = {
-      options: { readOnly, default: def, converter, validator },
+      options: { readOnly, default: def, hydrator, validator, serializer },
       ...rest,
     };
     const name = ctx.name as string;

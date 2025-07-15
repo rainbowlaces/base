@@ -4,7 +4,7 @@ import { UniqueID } from "./uniqueId.js";
 import { BaseError } from "../baseErrors.js";
 import { type BaseModelCollection } from "./baseModelCollection.js";
 import { type ModelConstructor } from "./types.js";
-import { toUniqueID } from "./converters.js";
+import { toUniqueID } from "./hydrators.js";
 
 /**
  * BaseIdentifiableModel extends BaseModel with an `id` field.
@@ -13,7 +13,7 @@ export abstract class BaseIdentifiableModel extends BaseModel {
     @field({ 
         readOnly: true,
         default: () => new UniqueID(),
-        converter: toUniqueID,
+        hydrator: toUniqueID,
         serializer: (value: UniqueID) => value.toString() 
     })
     accessor id!: UniqueID;

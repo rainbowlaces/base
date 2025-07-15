@@ -516,11 +516,11 @@ describe('BaseModel: Static Schema Methods', () => {
     });
 });
 
-describe('BaseModel: Field Converters and Validators', () => {
-    it('should apply converters during set operations', () => {
-        class TestConvertModel extends BaseModel {
+describe('BaseModel: Field Hydrators and Validators', () => {
+    it('should apply hydrators during set operations', () => {
+        class TestHydrateModel extends BaseModel {
             @field({ 
-                converter: (value: unknown): string => {
+                hydrator: (value: unknown): string => {
                     if (typeof value === 'number') return value.toString();
                     if (typeof value === 'string') return value.toUpperCase();
                     throw new Error('Invalid type');
@@ -528,9 +528,9 @@ describe('BaseModel: Field Converters and Validators', () => {
             })
             accessor convertedField!: string;
         }
-        model(TestConvertModel);
+        model(TestHydrateModel);
         
-        const instance = new TestConvertModel();
+        const instance = new TestHydrateModel();
         
         // Test number to string conversion
         instance.set('convertedField', 42);
@@ -541,10 +541,10 @@ describe('BaseModel: Field Converters and Validators', () => {
         assert.strictEqual(instance.get('convertedField'), 'HELLO');
     });
 
-    it('should apply converters during hydration', async () => {
+    it('should apply hydrators during hydration', async () => {
         class TestHydrateModel extends BaseModel {
             @field({ 
-                converter: (value: unknown): number => {
+                hydrator: (value: unknown): number => {
                     if (typeof value === 'string') return parseInt(value, 10);
                     if (typeof value === 'number') return value;
                     throw new Error('Cannot convert to number');
@@ -605,10 +605,10 @@ describe('BaseModel: Field Converters and Validators', () => {
         );
     });
 
-    it('should apply both converter and validator in sequence', () => {
-        class TestConvertAndValidateModel extends BaseModel {
+    it('should apply both hydrator and validator in sequence', () => {
+        class TestHydrateAndValidateModel extends BaseModel {
             @field({ 
-                converter: (value: unknown): number => {
+                hydrator: (value: unknown): number => {
                     if (typeof value === 'string') return parseInt(value, 10);
                     if (typeof value === 'number') return value;
                     throw new Error('Cannot convert to number');
@@ -619,9 +619,9 @@ describe('BaseModel: Field Converters and Validators', () => {
             })
             accessor percentage!: number;
         }
-        model(TestConvertAndValidateModel);
+        model(TestHydrateAndValidateModel);
         
-        const instance = new TestConvertAndValidateModel();
+        const instance = new TestHydrateAndValidateModel();
         
         // Valid string that converts to valid number
         instance.set('percentage', '50');
@@ -642,34 +642,34 @@ describe('BaseModel: Field Converters and Validators', () => {
         }, /Validation failed for field "percentage"/);
     });
 
-    it('should handle converter errors gracefully', () => {
-        class TestConverterErrorModel extends BaseModel {
+    it('should handle hydrator errors gracefully', () => {
+        class TestHydratorErrorModel extends BaseModel {
             @field({ 
-                converter: (value: unknown): string => {
+                hydrator: (value: unknown): string => {
                     if (typeof value === 'string') return value;
                     throw new Error('Only strings allowed');
                 }
             })
             accessor stringField!: string;
         }
-        model(TestConverterErrorModel);
+        model(TestHydratorErrorModel);
         
-        const instance = new TestConverterErrorModel();
+        const instance = new TestHydratorErrorModel();
         
         // Valid value should work
         instance.set('stringField', 'hello');
         assert.strictEqual(instance.get('stringField'), 'hello');
         
-        // Invalid value should propagate converter error
+        // Invalid value should propagate hydrator error
         assert.throws(() => {
             instance.set('stringField', 123);
         }, /Only strings allowed/);
     });
 
-    it('should not mark model dirty when converter returns same value', () => {
+    it('should not mark model dirty when hydrator returns same value', () => {
         class TestDirtyModel extends BaseModel {
             @field({ 
-                converter: (value: unknown): string => {
+                hydrator: (value: unknown): string => {
                     if (typeof value === 'string') return value.trim();
                     return String(value);
                 }
@@ -688,10 +688,10 @@ describe('BaseModel: Field Converters and Validators', () => {
         
         // Setting a value that converts to the same result should not mark dirty
         instance.set('trimmedField', ' hello '); 
-        assert.strictEqual((instance as any).dirty, false, 'Should not be dirty when converter returns same value');
+        assert.strictEqual((instance as any).dirty, false, 'Should not be dirty when hydrator returns same value');
         
         // Setting a value that converts to different result should mark dirty
         instance.set('trimmedField', ' world ');
-        assert.strictEqual((instance as any).dirty, true, 'Should be dirty when converter returns different value');
+        assert.strictEqual((instance as any).dirty, true, 'Should be dirty when hydrator returns different value');
     });
 });

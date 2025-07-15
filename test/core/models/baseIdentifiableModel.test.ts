@@ -227,11 +227,9 @@ describe('BaseIdentifiableModel', () => {
             const serialized = user.serialise();
             
             assert('id' in serialized);
-            // Current limitation: ID field returns UniqueID object, not string
-            // In a full implementation, this should probably be: 
-            // assert.strictEqual(serialized.id, user.id.toString());
-            assert(serialized.id instanceof UniqueID);
-            assert.strictEqual(serialized.id.toString(), user.id.toString());
+            // ID field should be serialized to string via the serializer
+            assert.strictEqual(typeof serialized.id, 'string');
+            assert.strictEqual(serialized.id, user.id.toString());
             assert.strictEqual(serialized.name, 'Test User');
             assert.strictEqual(serialized.email, 'test@example.com');
         });

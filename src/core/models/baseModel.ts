@@ -146,10 +146,10 @@ export abstract class BaseModel {
                 const rawValue = dataRecord[key];
                 const fieldMeta = schema.fields[key];
                 
-                // Apply converter if available
+                // Apply hydrator if available
                 let value = rawValue;
-                if (fieldMeta.options.converter) {
-                    value = fieldMeta.options.converter(rawValue);
+                if (fieldMeta.options.hydrator) {
+                    value = fieldMeta.options.hydrator(rawValue);
                 }
                 
                 // Apply validator if available
@@ -267,10 +267,10 @@ export abstract class BaseModel {
             throw new BaseError(`Field "${key}" is readonly and cannot be set.`);
         }
         
-        // Apply converter if available
+        // Apply hydrator if available
         let convertedValue = value;
-        if (fieldOptions.converter) {
-            convertedValue = fieldOptions.converter(value) as T;
+        if (fieldOptions.hydrator) {
+            convertedValue = fieldOptions.hydrator(value) as T;
         }
         
         // Apply validator if available
