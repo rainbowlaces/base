@@ -121,7 +121,12 @@ export type {
   RefOne,
   RefMany,
   EmbedOne,
-  EmbedMany
+  EmbedMany,
+  ModelMetadata,
+  FieldMetadata,
+  BaseModelSchema,
+  ModelsEvent,
+  FieldOptions
 } from "./core/models/types.js";
 
 // Logger types
@@ -156,4 +161,22 @@ export type {
 } from "./core/module/types.js";
 
 // Template types
-export type { Templates, TagFactories } from "./modules/templates/types.js";
+export type { 
+  Templates, 
+  TagFactories,
+  TemplateTags,
+  TemplateElements,
+  TagFactory,
+  TemplateFactory,
+  TemplateFactories,
+  TagConstructor,
+  TemplateConstructor,
+  SimpleTagConstructor,
+  ElementFactory,
+  ElementFunction,
+  TemplateOrString,
+  Optional
+} from "./modules/templates/types.js";
+
+// Template config
+export { BaseTemplatesConfig } from "./modules/templates/types.js";
