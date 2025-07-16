@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
  
 
 import { describe, it, test } from 'node:test';
@@ -9,14 +10,14 @@ import { setupTestTeardown } from '../setup.js';
 // For testing, extend the ModelMetadata interface
 declare module '../../../../src/core/models/types.js' {
     interface ModelMetadata {
-        testKey?: string;
-        source?: string;
-        version?: number;
-        mongo?: { collection: string; indexes: string[] };
-        config?: () => { dynamic: boolean };
-        author?: string;
-        tags?: string[];
-        environment?: string;
+        __TEST_KEY?: string;
+        __TEST_SOURCE?: string;
+        __TEST_VERSION?: number;
+        __TEST_MONGO?: { collection: string; indexes: string[] };
+        __TEST_CONFIG?: () => { dynamic: boolean };
+        __TEST_AUTHOR?: string;
+        __TEST_TAGS?: string[];
+        __TEST_ENVIRONMENT?: string;
     }
 }
 
@@ -33,12 +34,12 @@ describe('@meta decorator', () => {
         const setMetaValueSpy = test.mock.method(TestModel as any, 'setMetaValue');
 
         // Apply the @meta decorator with a test key/value
-        const metaDecorator = meta('testKey', 'testValue');
+        const metaDecorator = meta('__TEST_KEY', 'testValue');
         metaDecorator(TestModel, {} as ClassDecoratorContext);
 
         // Should have called setMetaValue with correct arguments
         assert.strictEqual(setMetaValueSpy.mock.callCount(), 1);
-        assert.strictEqual(setMetaValueSpy.mock.calls[0]?.arguments[0], 'testKey');
+        assert.strictEqual(setMetaValueSpy.mock.calls[0]?.arguments[0], '__TEST_KEY');
         assert.strictEqual(setMetaValueSpy.mock.calls[0]?.arguments[1], 'testValue');
     });
 
@@ -48,8 +49,8 @@ describe('@meta decorator', () => {
         }
 
         // Apply multiple @meta decorators
-        const metaDecorator1 = meta('source', 'database');
-        const metaDecorator2 = meta('version', 1);
+        const metaDecorator1 = meta('__TEST_SOURCE', 'database');
+        const metaDecorator2 = meta('__TEST_VERSION', 1);
 
         metaDecorator1(TestModel, {} as ClassDecoratorContext);
         metaDecorator2(TestModel, {} as ClassDecoratorContext);
@@ -58,8 +59,8 @@ describe('@meta decorator', () => {
         const schema = (TestModel as typeof BaseModel).getProcessedSchema();
 
         // Should contain the metadata
-        assert.strictEqual(schema.meta.source, 'database');
-        assert.strictEqual(schema.meta.version, 1);
+        assert.strictEqual(schema.meta.__TEST_SOURCE, 'database');
+        assert.strictEqual(schema.meta.__TEST_VERSION, 1);
     });
 
     it('should work with object values', () => {
@@ -68,11 +69,11 @@ describe('@meta decorator', () => {
         }
 
         const complexValue = { collection: 'users', indexes: ['email', 'name'] };
-        const metaDecorator = meta('mongo', complexValue);
+        const metaDecorator = meta('__TEST_MONGO', complexValue);
         metaDecorator(TestModel, {} as ClassDecoratorContext);
 
         const schema = (TestModel as typeof BaseModel).getProcessedSchema();
-        assert.deepStrictEqual(schema.meta.mongo, complexValue);
+        assert.deepStrictEqual(schema.meta.__TEST_MONGO, complexValue);
     });
 
     it('should work with function values', () => {
@@ -80,12 +81,12 @@ describe('@meta decorator', () => {
             // Empty model for testing
         }
 
-        const configFunction = () => ({ dynamic: true });
-        const metaDecorator = meta('config', configFunction);
+        const testConfigFunction = () => ({ dynamic: true });
+        const metaDecorator = meta('__TEST_CONFIG', testConfigFunction);
         metaDecorator(TestModel, {} as ClassDecoratorContext);
 
         const schema = (TestModel as typeof BaseModel).getProcessedSchema();
-        assert.strictEqual(schema.meta.config, configFunction);
+        assert.strictEqual(schema.meta.__TEST_CONFIG, testConfigFunction);
     });
 
     it('should support multiple metadata keys on the same class', () => {
@@ -95,10 +96,10 @@ describe('@meta decorator', () => {
 
         // Apply multiple different metadata decorators
         const decorators = [
-            meta('source', 'api'),
-            meta('version', 2),
-            meta('author', 'test-user'),
-            meta('tags', ['model', 'user-data'])
+            meta('__TEST_SOURCE', 'api'),
+            meta('__TEST_VERSION', 2),
+            meta('__TEST_AUTHOR', 'test-user'),
+            meta('__TEST_TAGS', ['model', 'user-data'])
         ];
 
         decorators.forEach(decorator => {
@@ -107,10 +108,10 @@ describe('@meta decorator', () => {
 
         const schema = (TestModel as typeof BaseModel).getProcessedSchema();
         
-        assert.strictEqual(schema.meta.source, 'api');
-        assert.strictEqual(schema.meta.version, 2);
-        assert.strictEqual(schema.meta.author, 'test-user');
-        assert.deepStrictEqual(schema.meta.tags, ['model', 'user-data']);
+        assert.strictEqual(schema.meta.__TEST_SOURCE, 'api');
+        assert.strictEqual(schema.meta.__TEST_VERSION, 2);
+        assert.strictEqual(schema.meta.__TEST_AUTHOR, 'test-user');
+        assert.deepStrictEqual(schema.meta.__TEST_TAGS, ['model', 'user-data']);
     });
 
     it('should allow overriding metadata values', () => {
@@ -119,8 +120,8 @@ describe('@meta decorator', () => {
         }
 
         // Apply same key multiple times
-        const decorator1 = meta('environment', 'development');
-        const decorator2 = meta('environment', 'production');
+        const decorator1 = meta('__TEST_ENVIRONMENT', 'development');
+        const decorator2 = meta('__TEST_ENVIRONMENT', 'production');
 
         decorator1(TestModel, {} as ClassDecoratorContext);
         decorator2(TestModel, {} as ClassDecoratorContext);
@@ -128,7 +129,7 @@ describe('@meta decorator', () => {
         const schema = (TestModel as typeof BaseModel).getProcessedSchema();
         
         // Should have the last value
-        assert.strictEqual(schema.meta.environment, 'production');
+        assert.strictEqual(schema.meta.__TEST_ENVIRONMENT, 'production');
     });
 
     it('should work with inheritance - child class can have its own metadata', () => {
@@ -141,8 +142,8 @@ describe('@meta decorator', () => {
         }
 
         // Add metadata to both parent and child
-        const parentDecorator = meta('source', 'parent');
-        const childDecorator = meta('source', 'child');
+        const parentDecorator = meta('__TEST_SOURCE', 'parent');
+        const childDecorator = meta('__TEST_SOURCE', 'child');
 
         parentDecorator(ParentModel, {} as ClassDecoratorContext);
         childDecorator(ChildModel, {} as ClassDecoratorContext);
@@ -151,7 +152,7 @@ describe('@meta decorator', () => {
         const parentSchema = (ParentModel as typeof BaseModel).getProcessedSchema();
         const childSchema = (ChildModel as typeof BaseModel).getProcessedSchema();
 
-        assert.strictEqual(parentSchema.meta.source, 'parent');
-        assert.strictEqual(childSchema.meta.source, 'child');
+        assert.strictEqual(parentSchema.meta.__TEST_SOURCE, 'parent');
+        assert.strictEqual(childSchema.meta.__TEST_SOURCE, 'child');
     });
 });
