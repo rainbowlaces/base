@@ -13,7 +13,7 @@ export { diByTag } from "./decorators/diByTag.js";
 
 export * from "./types.js";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+ 
 export class BaseDi {
   private static registrations = new Map<string, BaseDiWrapper<unknown>>();
   private static instances = new Map<string, unknown>();

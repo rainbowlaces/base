@@ -44,7 +44,7 @@ describe("BaseLogger", () => {
     processExitCalled = false;
 
     // Mock process.exit
-    // eslint-disable-next-line @typescript-eslint/unbound-method
+     
     originalProcessExit = process.exit;
     process.exit = (() => {
       processExitCalled = true;

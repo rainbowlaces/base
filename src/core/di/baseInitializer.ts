@@ -9,7 +9,7 @@ interface InitializerItem {
   phase: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+ 
 export class BaseInitializer {
   private static initializers: InitializerItem[] = [];
 

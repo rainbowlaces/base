@@ -4,9 +4,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
  
  
-/* eslint-disable @typescript-eslint/no-unsafe-call */
  
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+ 
+ 
 
 import { type BaseModel } from "../baseModel.js";
 import { type BaseIdentifiableModel } from "../baseIdentifiableModel.js";

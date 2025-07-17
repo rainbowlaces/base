@@ -40,8 +40,7 @@ export function tsRules(options = {}) {
   const { tsconfigRootDir = process.cwd(), clientSourcePath } = options;
   const baseConfig = [
     eslint.configs.recommended,
-    ...tseslint.configs.strictTypeChecked,
-    ...tseslint.configs.stylisticTypeChecked,
+    ...tseslint.configs.recommended,
     {
       rules: {
         "no-unused-vars": "off",

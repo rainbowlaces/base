@@ -42,7 +42,7 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   private isAction(action: any): action is BaseAction {
     if (typeof action !== "function") return false;
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+     
     if (!(action as BaseAction).action) return false;
     return true;
   }

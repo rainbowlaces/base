@@ -14,7 +14,7 @@ export class TemplateValue extends Renderable {
     }
 
     if (typeof resolvedValue === 'object') {
-        // eslint-disable-next-line @typescript-eslint/no-base-to-string
+         
         return String(resolvedValue);
     }
     

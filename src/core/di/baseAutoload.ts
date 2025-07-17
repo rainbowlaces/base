@@ -1,7 +1,7 @@
 import { type FileSystem, NodeFileSystem } from "../../utils/fileSystem.js";
 import { debugLog } from "../../utils/debugLog.js";
 
-// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+ 
 export class BaseAutoload {
   private static autoloadedFiles = new Set<string>();
 

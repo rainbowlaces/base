@@ -44,7 +44,7 @@ export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
       data,
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+     
     if (!factory) {
       const errorMessage = `Template '${templateName}' is not registered. Did you forget the @template decorator or to merge the type declaration?`;
       const e = new BaseError(errorMessage);

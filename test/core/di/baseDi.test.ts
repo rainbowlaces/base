@@ -79,7 +79,7 @@ test('BaseDi', (t) => {
       assert.strictEqual(BaseDi.resolve<boolean>('boolean'), true);
       assert.strictEqual(BaseDi.resolve<null>('null'), null);
       
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+       
       const undefinedValue = BaseDi.resolve<undefined>('undefined');
       assert.strictEqual(undefinedValue, undefined);
     });

@@ -32,7 +32,7 @@ export class MemoryModelCollection<T extends BaseModel> extends BaseModelCollect
         const sourceArray = await this.getSourceAsArray();
         const slicedData = sourceArray.slice(offset, offset + limit);
         // Return a new instance using the protected modelConstructor
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return new (this.constructor as any)(slicedData, this.modelConstructor) as this;
     }
 }

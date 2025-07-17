@@ -132,7 +132,7 @@ function clearModelSchemas() {
         // Access the private schema key and delete it to force fresh schemas
         const schemaKey = Symbol.for('modelSchema');
         if (schemaKey in model) {
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+             
             delete (model as any)[schemaKey];
         }
     }

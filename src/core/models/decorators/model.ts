@@ -2,7 +2,7 @@
  
  
  
-/* eslint-disable @typescript-eslint/no-unnecessary-condition */
+ 
 
 import { registerDi } from "../../di/decorators/registerDi.js";
 import { FIELD_METADATA_SYMBOL } from "./field.js";

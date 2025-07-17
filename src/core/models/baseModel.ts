@@ -218,7 +218,7 @@ export abstract class BaseModel {
         const schema = constructor.getProcessedSchema();
         const fieldMeta = schema.fields[key];
 
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+         
         if (!fieldMeta) {
             throw new BaseError(`Field "${key}" is not defined in the schema.`);
         }
