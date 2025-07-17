@@ -128,12 +128,9 @@ export interface EmbedMany<T extends BaseModel> {
     (values: T[] | Promise<T[]>): Promise<void>;
 }
 
-
-// --- Properly typed ModelData (as per architect feedback) ---
 export type ModelData<T extends BaseModel = BaseModel> = {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [P in keyof T]?: T[P] extends RefOne<any> | RefMany<any>
-        ? UniqueID | UniqueID[]
+    [P in keyof T]?: T[P] extends RefOne<infer U> | RefMany<infer U>
+        ? DefinedId<U> | DefinedId<U>[]
         : T[P] extends EmbedOne<infer U>
         ? ModelData<U>
         : T[P] extends EmbedMany<infer U>
