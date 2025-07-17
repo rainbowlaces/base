@@ -94,6 +94,9 @@ export type { MaybeAsync, Scalar } from "./core/types.js";
 // Thunk utilities (top-level exports as they're commonly used)
 export { thunk, resolve, Thunk } from "./utils/thunk.js";
 
+
+export { toUniqueId, toUniqueIdAsync, toUniqueIds, toUniqueIdsAsync } from "./core/models/utils.js";
+
 // Type exports
 export type { BasePubSubArgs, Subscriber } from "./core/pubsub/types.js";
 export type { BaseAppConfig, ConfigData } from "./core/config/types.js";
