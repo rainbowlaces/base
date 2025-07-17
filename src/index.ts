@@ -56,6 +56,7 @@ export { html } from "./modules/templates/engine/html.js";
 // Template tags (need to be imported to register with TemplateTags interface)
 export { EachTag } from "./modules/templates/engine/tags/eachTag.js";
 export { IfTag } from "./modules/templates/engine/tags/ifTag.js";
+export { UnsafeTag } from "./modules/templates/engine/tags/unsafeTag.js";
 
 // Decorator exports
 export { provider as config } from "./core/config/decorators/provider.js";
