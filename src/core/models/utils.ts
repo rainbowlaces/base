@@ -26,6 +26,6 @@ export function toUniqueIds<T extends BaseIdentifiableModel>(ids: DefinedId<T>[]
 export async function toUniqueIdsAsync<T extends BaseIdentifiableModel>(
     ids: AsyncDefinedIds<T>,
 ): Promise<UniqueID[]> {
-    const resolvedUniqueIds = await Promise.all(ids.map(id => toUniqueIdAsync(id)));
-    return resolvedUniqueIds;
+    const resolvedIds = await ids;
+    return toUniqueIds<T>(resolvedIds);
 }

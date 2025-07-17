@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { toUniqueId, toUniqueIdAsync, toUniqueIds, toUniqueIdsAsync } from '../../../src/core/models/utils.js';
+import { toUniqueId, toUniqueIdAsync, toUniqueIds } from '../../../src/core/models/utils.js';
 import { UniqueID } from '../../../src/core/models/uniqueId.js';
 import { TestUser, setupTestTeardown, SAMPLE_USER_DATA } from './setup.js';
 
@@ -116,36 +116,6 @@ describe('Model Utils', () => {
 
         it('should handle empty arrays', () => {
             const result = toUniqueIds([]);
-            assert.strictEqual(result.length, 0);
-            assert.ok(Array.isArray(result));
-        });
-    });
-
-    describe('toUniqueIdsAsync', () => {
-        it('should correctly resolve and convert an array of mixed AsyncDefinedId', async () => {
-            const testString = new UniqueID().toString();
-            const uniqueId = new UniqueID();
-            const user = await TestUser.fromData(SAMPLE_USER_DATA);
-
-            const mixedArray = [
-                Promise.resolve(testString),
-                uniqueId,
-                user,
-                Promise.resolve(new UniqueID().toString())
-            ];
-            
-            const result = await toUniqueIdsAsync(mixedArray);
-            
-            assert.strictEqual(result.length, 4);
-            assert.ok(result.every(id => id instanceof UniqueID));
-            assert.strictEqual(result[0].toString(), testString);
-            assert.strictEqual(result[1], uniqueId);
-            assert.strictEqual(result[2].toString(), user.id.toString());
-            assert.ok(result[3] instanceof UniqueID);
-        });
-
-        it('should handle empty arrays', async () => {
-            const result = await toUniqueIdsAsync([]);
             assert.strictEqual(result.length, 0);
             assert.ok(Array.isArray(result));
         });

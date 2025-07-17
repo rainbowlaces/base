@@ -3,7 +3,7 @@ import { BaseModel } from "./baseModel.js";
 import { UniqueID } from "./uniqueId.js";
 import { BaseError } from "../baseErrors.js";
 import { type BaseModelCollection } from "./baseModelCollection.js";
-import { type ModelConstructor } from "./types.js";
+import { type AsyncDefinedId, type AsyncDefinedIds, type ModelConstructor } from "./types.js";
 import { toUniqueID } from "./hydrators.js";
 
 /**
@@ -20,14 +20,14 @@ export abstract class BaseIdentifiableModel extends BaseModel {
 
     static async byId<T extends BaseIdentifiableModel>(
         this: ModelConstructor<T>,
-        _id: UniqueID | string
-    ): Promise<T | undefined> {
+        _id: AsyncDefinedId<T>
+        ): Promise<T | undefined> {
         throw new BaseError(`'${this.name}.byId' is not implemented. Override the static 'byId' method in your base class.`);
     }
 
     static async byIds<T extends BaseIdentifiableModel>(
         this: ModelConstructor<T>,
-        _ids: (UniqueID | string)[]
+        _ids: AsyncDefinedIds<T>
     ): Promise<BaseModelCollection<T>> {
         throw new BaseError(`'${this.name}.byIds' is not implemented. Override the static 'byIds' method in your base class.`);
     }

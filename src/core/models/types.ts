@@ -3,7 +3,7 @@ import { type BaseIdentifiableModel } from './baseIdentifiableModel.js';
 import { type BaseModelCollection } from './baseModelCollection.js';
 import { type UniqueID } from './uniqueId.js';
 import { type Thunk } from '../../utils/thunk.js';
-import { type Scalar } from '../types.js';
+import { type MaybeAsync, type Scalar } from '../types.js';
 
 export type Cardinality = 'one' | 'many';
 export type RelationType = 'reference' | 'embed';
@@ -83,8 +83,8 @@ export interface FieldOptions<T = unknown> {
     serializer?: (value: T) => Scalar | object | undefined;
 }
 
-export type AsyncDefinedId<T extends BaseIdentifiableModel> = DefinedId<T> | Promise<DefinedId<T>>;
-export type AsyncDefinedIds<T extends BaseIdentifiableModel> = AsyncDefinedId<T>[];
+export type AsyncDefinedId<T extends BaseIdentifiableModel> = MaybeAsync<DefinedId<T>>;
+export type AsyncDefinedIds<T extends BaseIdentifiableModel> = MaybeAsync<DefinedId<T>[]>;
 export type DefinedId<T extends BaseIdentifiableModel> = T | UniqueID | string;
 export type DefinedIds<T extends BaseIdentifiableModel> = DefinedId<T>[];
 
