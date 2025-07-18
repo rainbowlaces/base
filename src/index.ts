@@ -90,7 +90,7 @@ export * as file from "./utils/file.js";
 export * as recursion from "./utils/recursion.js";
 export * as string from "./utils/string.js";
 
-export type { MaybeAsync, Scalar } from "./core/types.js";
+export type { MaybeAsync, MaybeOptionalAsync, Scalar } from "./core/types.js";
 
 // Thunk utilities (top-level exports as they're commonly used)
 export { thunk, resolve, Thunk } from "./utils/thunk.js";
