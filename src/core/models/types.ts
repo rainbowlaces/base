@@ -120,12 +120,12 @@ export interface RefMany<T extends BaseIdentifiableModel> {
 
 export interface EmbedOne<T extends BaseModel> {
     (): Promise<T | undefined>;
-    (value: T | Promise<T>): Promise<void>;
+    (value: MaybeAsync<T>): Promise<void>;
 }
 
 export interface EmbedMany<T extends BaseModel> {
     (): Promise<BaseModelCollection<T>>;
-    (values: T[] | Promise<T[]>): Promise<void>;
+    (values: MaybeAsync<T[] | BaseModelCollection<T>>): Promise<void>;
 }
 
 export type ModelData<T extends BaseModel = BaseModel> = {

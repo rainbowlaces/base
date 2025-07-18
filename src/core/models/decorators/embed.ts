@@ -66,12 +66,15 @@ export function embed<T extends BaseModel>(
                     }
                 }.bind(this) as EmbedOne<T>;
             } else {
-                return async function(this: BaseModel, values?: T[]): Promise<BaseModelCollection<T>> {
+                return async function(this: BaseModel, values?: T[] | BaseModelCollection<T>): Promise<BaseModelCollection<T>> {
                     if (arguments.length > 0) {
                         // Setter: store the serialized data array
-                        const dataToSet = values ? 
-                            values.map(item => item.serialise()) : 
-                            [];
+                        let dataToSet: ModelData<T>[] = [];
+                        if (values) {
+                            // Convert BaseModelCollection to array if needed
+                            const modelsArray = Array.isArray(values) ? values : await values.toArray();
+                            dataToSet = modelsArray.map(item => item.serialise());
+                        }
                         this.set(propertyName, dataToSet);
                         return new BaseModelCollection([], resolvedModel) as BaseModelCollection<T>; // Return empty collection for setter
                     } else {

@@ -1,7 +1,9 @@
 import { Tag, type TagConfig } from '../tag.js';
 import type { Renderable } from '../renderable.js';
 import { tag } from '../../decorators/tag.js';
-import { type Optional, type TemplateOrString } from '../../types.js';
+import { type Optional, type TemplateOrString, type MaybeAsync } from '../../types.js';
+
+type MaybeAsyncIterable<T> = MaybeAsync<Iterable<T> | AsyncIterable<T>>;
 
 interface EachTagParams<I = unknown> extends TagConfig{
   do?: (item: I) => Promise<Renderable> | Renderable;
@@ -12,7 +14,7 @@ interface EachTagParams<I = unknown> extends TagConfig{
 export class EachTag<TItem = unknown> extends Tag<Optional<Iterable<TItem> | AsyncIterable<TItem>>, EachTagParams<TItem>> {
   readonly name = 'each';  
 
-  async pre(value: Iterable<TItem> | AsyncIterable<TItem> | Promise<Iterable<TItem> | AsyncIterable<TItem>> | null | undefined): Promise<unknown> {
+  async pre(value: MaybeAsyncIterable<TItem> | null | undefined): Promise<unknown> {
     const resolvedValue = await value;
     
     if (!resolvedValue) {

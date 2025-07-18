@@ -1,13 +1,14 @@
+import { type MaybeAsync } from '../core/types.js';
+
+type MaybeAsyncIterable<T> = MaybeAsync<Iterable<T> | AsyncIterable<T>>;
+
 export async function delay(timeout = 0) {
   if (!timeout) return new Promise((resolve) => setImmediate(resolve));
   return new Promise((resolve) => setTimeout(resolve, timeout));
 }
 
 export async function asyncMap<T, R = void>(
-  iterable:
-    | Iterable<T>
-    | AsyncIterable<T>
-    | Promise<Iterable<T> | AsyncIterable<T>>,
+  iterable: MaybeAsyncIterable<T>,
   fn: (item: T) => Promise<R | undefined>,
 ): Promise<R[]> {
   iterable = await iterable;
@@ -29,10 +30,7 @@ export async function asyncMap<T, R = void>(
 type AsyncPredicate<T> = (item: T) => Promise<boolean>;
 
 export async function asyncFilter<T>(
-  iterable:
-    | Iterable<T>
-    | AsyncIterable<T>
-    | Promise<Iterable<T> | AsyncIterable<T>>,
+  iterable: MaybeAsyncIterable<T>,
   predicate: AsyncPredicate<T> = async (v) => !!v,
 ): Promise<T[]> {
   iterable = await iterable;
