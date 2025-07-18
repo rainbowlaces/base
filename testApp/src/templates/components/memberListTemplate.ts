@@ -1,8 +1,8 @@
-import { template, BaseTemplate, type TemplateResult, html, type BaseModelCollection } from "../../../../src/index.js";
+import { template, BaseTemplate, type TemplateResult, html, type BaseModelCollection, type MaybeAsync } from "../../../../src/index.js";
 import { type User } from '../../models/user.js';
 
 export interface MemberListTemplateData {
-  members: BaseModelCollection<User>;
+  members: MaybeAsync<BaseModelCollection<User>>;
 }
 
 @template()

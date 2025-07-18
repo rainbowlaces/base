@@ -1,18 +1,29 @@
-import { template, BaseTemplate, type TemplateResult, html } from "../../../../src/index.js";
+import { template, BaseTemplate, type TemplateResult, html, type MaybeOptionalAsync } from "../../../../src/index.js";
 import { type GroupType } from '../../models/groupType.js';
 
 export interface GroupTypeTemplateData {
-  groupType: GroupType | null;
+  groupType: MaybeOptionalAsync<GroupType>;
+}
+
+async function resolve<T>(promiseOrValue: MaybeOptionalAsync<T>): Promise<T | undefined> {
+  if (!promiseOrValue) return undefined;
+  return await promiseOrValue;
+}
+
+async function resolveProperty<T,K>(data: MaybeOptionalAsync<T>, property: keyof T): Promise<K | undefined> {
+  const resolvedData = await resolve(data);
+  if (!resolvedData) return undefined;
+  return resolvedData[property] as K;
 }
 
 @template()
 export class GroupTypeTemplate extends BaseTemplate<GroupTypeTemplateData> {
   public render(): TemplateResult {
     return html`
-        ${this.tags.if(this.data.groupType !== null, {
+        ${this.tags.if(this.data.groupType !== undefined, {
           then: html`
             <span class="group-type">
-                ${this.data.groupType!.name}
+                ${resolveProperty<GroupType, string>(this.data.groupType, 'name') || 'No Type'}
             </span>
           `,
           else: html`

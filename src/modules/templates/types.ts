@@ -92,9 +92,22 @@ export interface Templates {
   // Intentionally empty. Modules will add their templates here via declaration merging.
 }
 
-// Factory function that takes data and returns a TemplateResult
+/**
+ * A mapped type that creates a correctly typed factory function for a given
+ * template component instance type `T`. It infers the data type `D` that the
+ * component's constructor expects.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type TemplateFactory<D = any> = (data: D) => TemplateResult;
+export type TemplateFactory<T extends BaseTemplate<any>> =
+    T extends BaseTemplate<infer D>
+        ? (data: D) => TemplateResult
+        : never;
 
-// Map of template names (strings) to their factory functions
-export type TemplateFactories = { [K in keyof Templates]: TemplateFactory };
+/**
+ * A map of template names to their corresponding, fully type-safe factory functions.
+ */
+export type TemplateFactories = {
+    [K in keyof Templates]: TemplateFactory<Templates[K]>;
+};
+
+

@@ -1,5 +1,6 @@
-import { template, BaseTemplate, type TemplateResult, html, type BaseModelCollection, type MaybeAsync } from "../../../src/index.js";
+import { template, BaseTemplate, type TemplateResult, html, type BaseModelCollection, type MaybeAsync, type MaybeOptionalAsync } from "../../../src/index.js";
 import { type Group } from '../models/group.js';
+import { type GroupType } from "../models/groupType.js";
 
 export interface GroupListTemplateData {
   groups: MaybeAsync<BaseModelCollection<Group>>;
@@ -18,7 +19,7 @@ export class GroupListTemplate extends BaseTemplate<GroupListTemplateData> {
                   <div class="group-header">
                       <h2 class="group-title">${group.name}</h2>
                       ${this.templates.GroupTypeTemplate({
-                        groupType: group.type()
+                        groupType: group.type() as MaybeOptionalAsync<GroupType>
                       })}
                   </div>
                   ${this.templates.MemberListTemplate({
