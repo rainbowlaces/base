@@ -128,7 +128,7 @@ export interface Countable {
     count(): Promise<number | undefined>;
 }
 
-export type Derived<T> = Promise<T>;
+export type Derived<T> = T;
 
 // --- Relationship Types ---
 export interface RefOne<T extends BaseIdentifiableModel> {
