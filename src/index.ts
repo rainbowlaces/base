@@ -117,6 +117,7 @@ export type {
   AsyncDefinedId,
   AsyncDefinedIds,
   Cardinality,
+  Derived,
   RelationType,
   ModelsEventType,
   ModelsEventData,
