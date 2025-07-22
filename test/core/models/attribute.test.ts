@@ -55,7 +55,7 @@ describe('Attribute Model', () => {
 
             assert.equal(attr.name, 'eventDate');
             assert.ok(attr.value instanceof Date);
-            assert.equal((attr.value as Date).getTime(), testDate.getTime());
+            assert.equal((attr.value).getTime(), testDate.getTime());
         });
 
         it('should create attribute with UniqueID value', async () => {
@@ -68,7 +68,7 @@ describe('Attribute Model', () => {
 
             assert.equal(attr.name, 'relatedId');
             assert.ok(attr.value instanceof UniqueID);
-            assert.ok((attr.value as UniqueID).equals(testId));
+            assert.ok((attr.value).equals(testId));
         });
 
         it('should auto-create timestamp if not provided', async () => {
@@ -125,7 +125,7 @@ describe('Attribute Model', () => {
             });
 
             assert.ok(attr.value instanceof UniqueID);
-            assert.ok((attr.value as UniqueID).equals(originalId));
+            assert.ok((attr.value).equals(originalId));
         });
 
         it('should hydrate ISO string back to Date', async () => {
@@ -139,7 +139,7 @@ describe('Attribute Model', () => {
             });
 
             assert.ok(attr.value instanceof Date);
-            assert.equal((attr.value as Date).getTime(), originalDate.getTime());
+            assert.equal((attr.value).getTime(), originalDate.getTime());
         });
 
         it('should preserve primitive values during serialization/hydration', async () => {
