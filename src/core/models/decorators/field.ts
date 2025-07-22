@@ -4,27 +4,26 @@ import { type FieldOptions, type FieldMetadata } from "../types.js";
 export const FIELD_METADATA_SYMBOL = Symbol.for("model.field-meta");
 
 export function field<T>(opts: FieldOptions<T> = {}) {
+  // The signature now only accepts an accessor context.
   return function <M extends BaseModel>(
-    target: unknown,
-    ctx: ClassAccessorDecoratorContext<M, T> | ClassMethodDecoratorContext<M, () => Promise<T>>
+    _target: unknown,
+    ctx: ClassAccessorDecoratorContext<M, T>
   ) {
-    const name = String(ctx.name);
-
-    // If the decorator is on a method, it is implicitly a derived field.
-    if (ctx.kind === 'method') {
-        const meta: FieldMetadata = { options: { ...opts, derived: true } };
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (target as any)[FIELD_METADATA_SYMBOL] = { name, meta };
-        return;
+    // The check for method kind is now removed.
+    if (ctx.kind !== 'accessor') {
+      // This is defensive, as the type signature should enforce it.
+      throw new Error("@field can only be used on class accessors.");
     }
+
+    const name = String(ctx.name);
     
-    // Extract relation from options if present (for extended field options)
     const optsWithRelation = opts as FieldOptions<T> & { relation?: FieldMetadata['relation'] };
     const { relation, ...fieldOptions } = optsWithRelation;
     const meta: FieldMetadata = { 
         options: fieldOptions,
         ...(relation && { relation })
     };
+
     function getter(this: M): T { return this.get(name); }
     function setter(this: M, v: T) { this.set(name, v); }
 

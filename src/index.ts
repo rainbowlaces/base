@@ -77,6 +77,7 @@ export { baseModule } from "./core/module/decorators/baseModule.js";
 export { model } from "./core/models/decorators/model.js";
 export { field } from "./core/models/decorators/field.js";
 export { reference } from "./core/models/decorators/reference.js";
+export { derived } from "./core/models/decorators/derived.js";
 export { embed } from "./core/models/decorators/embed.js";
 export { meta } from "./core/models/decorators/meta.js";
 

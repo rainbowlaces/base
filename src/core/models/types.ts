@@ -158,20 +158,16 @@ type DerivedFieldKeys<T> = {
 
 export type NoDerivedModelData<T extends BaseModel> = Omit<ModelData<T>, DerivedFieldKeys<T>>;
 
-// The definitive ModelData<T> type in src/core/models/types.ts
+type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
+
 export type ModelData<T extends BaseModel> = {
     [P in keyof T]?:
-        // 1. Handle Derived Fields
-        T[P] extends () => Derived<infer U> ? U
-        // 2. Handle Relationships (these break circular dependencies)
+        T[P] extends () => Derived<infer U> ? Awaited<U>
         : T[P] extends RefOne<infer U> ? DefinedId<U>
         : T[P] extends RefMany<infer U> ? DefinedId<U>[]
-        // 3. Handle Embeds (these are intentionally recursive)
         : T[P] extends EmbedOne<infer U> ? ModelData<U>
         : T[P] extends EmbedMany<infer U> ? ModelData<U>[]
-        // 4. THE GUARD: Handle all other methods
         // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         : T[P] extends Function ? never
-        // 5. Handle all standard data properties
         : T[P];
 };
