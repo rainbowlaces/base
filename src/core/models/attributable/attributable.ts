@@ -47,15 +47,23 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>(Base: TBas
                 created: new Date() 
             });
 
+            // Helper function to compare values with special handling for UniqueID and Date
+            const compareValues = (v: unknown, target: unknown): boolean => {
+                if (v instanceof UniqueID && target instanceof UniqueID) {
+                    return v.equals(target);
+                }
+                if (v instanceof Date && target instanceof Date) {
+                    return v.getTime() === target.getTime();
+                }
+                return v === target;
+            };
+
             const filtered = allCurrent.filter(attr => {
                 if (attr.name !== name) return true; // Keep attributes with different names
                 if (isSingle) return false; // Remove all with this name if 'single'
                 
-                // For 'many', remove only if value matches - handle UniqueID comparison
-                if (attr.value instanceof UniqueID && value instanceof UniqueID) {
-                    return !attr.value.equals(value);
-                }
-                return attr.value !== value;
+                // For 'many', remove only if value matches
+                return !compareValues(attr.value, value);
             });
 
             await this.attributes([...filtered, newAttribute]);
@@ -81,19 +89,21 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>(Base: TBas
                 return Array.isArray(values) ? values.length > 0 : values !== undefined;
             }
             
-            // Handle UniqueID comparison
-            if (Array.isArray(values)) {
-                return values.some(v => {
-                    if (v instanceof UniqueID && value instanceof UniqueID) {
-                        return v.equals(value);
-                    }
-                    return v === value;
-                });
-            } else {
-                if (values instanceof UniqueID && value instanceof UniqueID) {
-                    return values.equals(value);
+            // Helper function to compare values with special handling for UniqueID and Date
+            const compareValues = (v: unknown, target: unknown): boolean => {
+                if (v instanceof UniqueID && target instanceof UniqueID) {
+                    return v.equals(target);
                 }
-                return values === value;
+                if (v instanceof Date && target instanceof Date) {
+                    return v.getTime() === target.getTime();
+                }
+                return v === target;
+            };
+
+            if (Array.isArray(values)) {
+                return values.some(v => compareValues(v, value));
+            } else {
+                return compareValues(values, value);
             }
         }
 
@@ -101,15 +111,22 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>(Base: TBas
             const collection = await this.attributes();
             const allCurrent = await collection.toArray();
 
+            // Helper function to compare values with special handling for UniqueID and Date
+            const compareValues = (v: unknown, target: unknown): boolean => {
+                if (v instanceof UniqueID && target instanceof UniqueID) {
+                    return v.equals(target);
+                }
+                if (v instanceof Date && target instanceof Date) {
+                    return v.getTime() === target.getTime();
+                }
+                return v === target;
+            };
+
             const remaining = allCurrent.filter(attr => {
                 if (attr.name !== name) return true;
                 // If value is specified, remove only that one. If not, remove all with that name.
                 if (value !== undefined) {
-                    // Handle UniqueID comparison
-                    if (attr.value instanceof UniqueID && value instanceof UniqueID) {
-                        return !attr.value.equals(value);
-                    }
-                    return attr.value !== value;
+                    return !compareValues(attr.value, value);
                 }
                 return false; // Remove all with that name
             });
