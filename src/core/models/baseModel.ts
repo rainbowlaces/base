@@ -13,9 +13,15 @@ import {
     type BaseModelSchema,
     type ModelMetadata,
     type FieldMetadata,
+    type NoDerivedModelData,
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
+
+// Interface to avoid circular import with BaseIdentifiableModel
+interface HasId {
+    id: UniqueID;
+}
 
 export type BaseModelClass = typeof BaseModel;
 
@@ -42,12 +48,9 @@ export abstract class BaseModel {
 
     // --- METADATA HANDLING LOGIC ---
 
-    /**
-     * A simple recursive clone function that correctly handles functions.
-     */
     private static _cloneWithFunctions<T>(source: T): T {
         if (typeof source !== 'object' || source === null) {
-            return source; // Primitives and functions are returned as-is
+            return source;
         }
 
         const clone = (Array.isArray(source) ? [] : {}) as T;
@@ -61,9 +64,6 @@ export abstract class BaseModel {
         return clone;
     }
 
-    /**
-     * Safely retrieves or initializes the schema object on a class constructor.
-     */
     private static getOrInitSchema(constructor: typeof BaseModel): BaseModelSchema {
         if (!Object.prototype.hasOwnProperty.call(constructor, this.modelSchemaKey)) {
             const parentConstructor = Object.getPrototypeOf(constructor) as Record<symbol, BaseModelSchema> | null;
@@ -102,9 +102,6 @@ export abstract class BaseModel {
         schema.fields[propertyName] = meta;
     }
 
-    /**
-     * Get the processed schema directly from the constructor.
-     */
     public static getProcessedSchema(): BaseModelSchema {
         return BaseModel.getOrInitSchema(this);
     }
@@ -140,7 +137,7 @@ export abstract class BaseModel {
         return this.#dirty;
     }
 
-    protected async hydrate(data: ModelData<this>, isNew: boolean = false): Promise<void> {
+    protected async hydrate(data: NoDerivedModelData<this>, isNew: boolean = false): Promise<void> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         
@@ -163,8 +160,13 @@ export abstract class BaseModel {
                 }
                 
                 // Apply validator if available
-                if (fieldMeta.options.validator && !fieldMeta.options.validator(value)) {
-                    throw new BaseError(`Validation failed for field "${key}" during hydration`);
+                if (fieldMeta.options.validator) {
+                    try {
+                        fieldMeta.options.validator(value);
+                    }                    
+                    catch (error: Error | unknown) {
+                        throw new BaseError(`Validation failed for field "${key}" during hydration`, error as Error);
+                    }
                 }
                 
                 this.#originalData[key] = value;
@@ -190,7 +192,7 @@ export abstract class BaseModel {
      */
     public static async fromData<T extends BaseModel>(
         this: new () => T, 
-        data: ModelData<T>
+        data: NoDerivedModelData<T>
     ): Promise<T> {
         const instance = new this();
         await instance.hydrate(data);
@@ -284,8 +286,12 @@ export abstract class BaseModel {
         }
         
         // Apply validator if available
-        if (fieldOptions.validator && !fieldOptions.validator(convertedValue)) {
-            throw new BaseError(`Validation failed for field "${key}"`);
+        if (fieldOptions.validator) {
+            try {
+                fieldOptions.validator(convertedValue);
+            } catch (_error) {
+                throw new BaseError(`Validation failed for field "${key}"`);
+            }
         }
         
         if (!this.beforeSet(key, convertedValue, fieldOptions)) return;
@@ -299,6 +305,40 @@ export abstract class BaseModel {
         }
         
         this.#data[key] = convertedValue;
+    }
+
+    protected appendTo<T extends BaseModel>(
+        relationName: keyof this,
+        itemsToAdd: T | T[]
+    ): void {
+        const constructor = this.constructor as typeof BaseModel;
+        const schema = constructor.getProcessedSchema();
+        const fieldMeta = schema.fields[relationName as string];
+
+        if (!fieldMeta?.relation || fieldMeta.relation.cardinality !== 'many') {
+            throw new BaseError(`'appendTo' can only be used on a 'many' relationship field.`);
+        }
+
+        const currentRawData = this.get<unknown[]>(relationName as string) || [];
+
+        const items = Array.isArray(itemsToAdd) ? itemsToAdd : [itemsToAdd];
+        let newRawItems: unknown[];
+
+        if (fieldMeta.relation.type === 'reference') {
+            newRawItems = items.map(item => {
+                // Check if item has an id field (duck typing to avoid circular import)
+                if (!('id' in item)) {
+                    throw new BaseError('Cannot append a non-identifiable model to a reference relation.');
+                }
+                const hasId = item as unknown as HasId;
+                return hasId.id;
+            });
+        } else {
+            newRawItems = items.map(item => item.serialize());
+        }
+
+        const newRawData = [...currentRawData, ...newRawItems];
+        this.set(relationName as string, newRawData);
     }
 
     public has(key: string): boolean {
@@ -360,10 +400,11 @@ export abstract class BaseModel {
         return serializer ? serializer(value) : value;
     }
 
-    public serialise(): ModelData<this> {
+    public serialize<T extends BaseModel>(this: T): NoDerivedModelData<T> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
         const data: Record<string, unknown> = {};
+        
         for (const key in schema.fields) {
             if (this.has(key)) {
                 const value = this.serializeField(key, this.get(key), schema);
@@ -371,8 +412,32 @@ export abstract class BaseModel {
                 data[key] = value;
             }
         }
-        return data as ModelData<this>;
+        
+        return data as ModelData<T>;
     }
+
+   public async derive<T extends this>(): Promise<ModelData<T>> {
+        const constructor = this.constructor as typeof BaseModel;
+        const schema = constructor.getProcessedSchema();
+        const data: Record<string, unknown> = this.serialize();
+        const promises: Promise<void>[] = [];
+
+        for (const key in schema.fields) {
+            if (schema.fields[key].options.derived) {
+                promises.push((async () => {
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const method = (this as any)[key];
+                    if (typeof method === 'function') {
+                        data[key] = await method.call(this);
+                    }
+                })());
+            }
+        }
+
+        await Promise.all(promises);
+        return data as ModelData<T>;
+    }
+
 
     public async save(): Promise<void> {
         if (!this.dirty) return;
@@ -384,7 +449,7 @@ export abstract class BaseModel {
             this.#dirty = false;
             this.#originalData = { ...this.#data };
 
-            await this.publishDataEvent(newItem ? "create" : "update", this.serialise());
+            await this.publishDataEvent(newItem ? "create" : "update", this.serialize());
 
         } else {
             throw new BaseError(`Model '${this.constructor.name}' does not implement the Persistable interface.`);
@@ -394,7 +459,7 @@ export abstract class BaseModel {
     public async remove(): Promise<void> {
 
         if (this.isDeletable()) {
-            const originalData = this.serialise();
+            const originalData = this.serialize();
             await this.delete();
             this.#new = true;
             this.#dirty = false;

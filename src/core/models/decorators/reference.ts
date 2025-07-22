@@ -1,18 +1,11 @@
-// We use the same 'any' escape hatch to keep the implementation simple.
-
- 
+// We use the same 'any' escape hatch to keep the implementation simple. 
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
- 
- 
- 
- 
 
 import { type BaseModel } from "../baseModel.js";
 import { type BaseIdentifiableModel } from "../baseIdentifiableModel.js";
 import { type BaseModelCollection } from "../baseModelCollection.js";
 import { BaseError } from "../../baseErrors.js";
-import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds, type RefOne, type RefMany, type ModelConstructor } from "../types.js";
+import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds, type RefOne, type RefMany, type ModelConstructor, type FieldMetadata } from "../types.js";
 import { type UniqueID } from "../uniqueId.js";
 import { toUniqueIdAsync, toUniqueIdsAsync } from "../utils.js";
 import { field, FIELD_METADATA_SYMBOL } from "./field.js";
@@ -37,19 +30,24 @@ export function reference<T extends BaseIdentifiableModel>(
         const propertyName = context.name as string;
 
         // 1. Delegate to the @field decorator factory.
-        const fieldDecorator = field<any>({
-            ...options,
-            relation: { 
-                type: 'reference', 
-                model: model,
-                cardinality: options.cardinality 
-            }
-        });
+        const fieldDecorator = field<any>(options);
 
         // 2. Apply the base decorator to get the getter with metadata.
         const fieldResult = fieldDecorator(target, context);
 
-        // 3. Create the custom function-like accessor.
+        if (!fieldResult?.get) {
+            throw new BaseError(`@reference decorator can only be used on accessors.`);
+        }
+
+        // 3. Add relation metadata
+        const fieldInfo = (fieldResult.get as any)[FIELD_METADATA_SYMBOL] as { name: string; meta: FieldMetadata };
+        fieldInfo.meta.relation = { 
+            type: 'reference', 
+            model: model,
+            cardinality: options.cardinality 
+        };
+
+        // 4. Create the custom function-like accessor.
         const accessor = function(this: M): RefOne<T> | RefMany<T> {
             // Resolve the model constructor from Thunk if needed
             const resolvedModel = resolve(model);
@@ -97,10 +95,10 @@ export function reference<T extends BaseIdentifiableModel>(
             }
         };
 
-        // 4. Copy the metadata from @field's getter to our new accessor.
-        (accessor as any)[FIELD_METADATA_SYMBOL] = (fieldResult.get as any)[FIELD_METADATA_SYMBOL];
+        // 5. Copy the metadata from @field's getter to our new accessor.
+        (accessor as any)[FIELD_METADATA_SYMBOL] = fieldInfo;
 
-        // 5. Return the final descriptor.
+        // 6. Return the final descriptor.
         return {
             get: accessor,
             set() {

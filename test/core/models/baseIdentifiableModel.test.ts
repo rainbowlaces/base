@@ -206,7 +206,7 @@ describe('BaseIdentifiableModel', () => {
             assert.strictEqual(typeof user.get, 'function');
             assert.strictEqual(typeof user.set, 'function');
             assert.strictEqual(typeof user.has, 'function');
-            assert.strictEqual(typeof user.serialise, 'function');
+            assert.strictEqual(typeof user.serialize, 'function');
             assert.strictEqual(typeof user.save, 'function');
             assert.strictEqual(typeof user.remove, 'function');
         });
@@ -224,7 +224,7 @@ describe('BaseIdentifiableModel', () => {
             user.set('name', 'Test User');
             user.set('email', 'test@example.com');
             
-            const serialized = user.serialise();
+            const serialized = user.serialize();
             
             assert('id' in serialized);
             // ID field should be serialized to string via the serializer

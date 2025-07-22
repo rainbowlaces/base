@@ -1,7 +1,4 @@
- 
- 
 /* eslint-disable @typescript-eslint/no-explicit-any */
- 
 
 import { type BaseModel } from "../baseModel.js";
 import { BaseModelCollection } from "../baseModelCollection.js";
@@ -12,7 +9,9 @@ import {
     type ModelData, 
     type ModelConstructor, 
     type EmbedOne, 
-    type EmbedMany 
+    type EmbedMany, 
+    type NoDerivedModelData,
+    type FieldMetadata
 } from "../types.js";
 import { field, FIELD_METADATA_SYMBOL } from "./field.js";
 import { type Thunk, resolve } from "../../../utils/thunk.js";
@@ -38,58 +37,64 @@ export function embed<T extends BaseModel>(
         const propertyName = context.name as string;
 
         // 1. Attach metadata using @field decorator
-        const fieldDecorator = field({
-            ...options,
-            relation: { type: 'embed', model, cardinality: options.cardinality }
-        });
+        const fieldDecorator = field(options);
 
         // 2. Apply the base decorator to attach metadata
         const fieldResult = fieldDecorator(target, context);
 
-        // 3. Create the function-like accessor for the embedded relationship
+        if (!fieldResult?.get) {
+            // This should not happen for an accessor decorator
+            throw new BaseError(`@embed decorator can only be used on accessors.`);
+        }
+
+        // 3. Add relation metadata
+        const fieldMetadata = (fieldResult.get as any)[FIELD_METADATA_SYMBOL] as FieldMetadata;
+        fieldMetadata.relation = { type: 'embed', model, cardinality: options.cardinality };
+
+        // 4. Create the function-like accessor for the embedded relationship
         const accessor = function(this: BaseModel): EmbedOne<T> | EmbedMany<T> {
             // Resolve the model constructor from Thunk if needed
-            const resolvedModel = resolve(model);
+            const resolvedModel = resolve(model) as ModelConstructor<T>;
             
             if (options.cardinality === 'one') {
                 return async function(this: BaseModel, value?: T): Promise<T | undefined> {
                     if (arguments.length > 0) {
                         // Setter: store the serialized data
-                        const dataToSet = value ? value.serialise() : undefined;
+                        const dataToSet = value ? value.serialize() : undefined;
                         this.set(propertyName, dataToSet);
                         return;
                     } else {
                         // Getter: deserialize and return the model
-                        const rawData = this.get<ModelData<T>>(propertyName);
+                        const rawData = this.get<NoDerivedModelData<T>>(propertyName);
                         if (rawData === undefined || rawData === null) return undefined;
-                        return await resolvedModel.fromData(rawData) as T;
+                        return await resolvedModel.fromData(rawData as ModelData<T>);
                     }
                 }.bind(this) as EmbedOne<T>;
             } else {
-                return async function(this: BaseModel, values?: T[] | BaseModelCollection<T>): Promise<BaseModelCollection<T>> {
+                return async function(this: BaseModel, values?: T[] | BaseModelCollection<T>): Promise<BaseModelCollection<T> | void> {
                     if (arguments.length > 0) {
-                        // Setter: store the serialized data array
-                        let dataToSet: ModelData<T>[] = [];
-                        if (values) {
-                            // Convert BaseModelCollection to array if needed
-                            const modelsArray = Array.isArray(values) ? values : await values.toArray();
-                            dataToSet = modelsArray.map(item => item.serialise());
+                        let dataToSet: NoDerivedModelData<T>[] = [];
+                        if (values instanceof BaseModelCollection) {
+                            dataToSet = await values.serialize();
+                        }
+                        else {
+                            dataToSet = (values ?? []).map(v => v.serialize());
                         }
                         this.set(propertyName, dataToSet);
-                        return new BaseModelCollection([], resolvedModel) as BaseModelCollection<T>; // Return empty collection for setter
+                        return;
                     } else {
                         // Getter: deserialize and return the collection
                         const rawDataArray = this.get<ModelData<T>[]>(propertyName);
-                        return new BaseModelCollection(rawDataArray ?? [], resolvedModel) as BaseModelCollection<T>;
+                        return new BaseModelCollection(rawDataArray ?? [], resolvedModel);
                     }
                 }.bind(this) as EmbedMany<T>;
             }
         };
 
-        // 4. Copy the metadata from the field decorator to our accessor
-        (accessor as any)[FIELD_METADATA_SYMBOL] = (fieldResult.get as any)[FIELD_METADATA_SYMBOL];
+        // 5. Copy the metadata from the field decorator to our accessor
+        (accessor as any)[FIELD_METADATA_SYMBOL] = fieldMetadata;
 
-        // 5. Return the descriptor with function-like accessor
+        // 6. Return the descriptor with function-like accessor
         return {
             get: accessor,
             set() { 

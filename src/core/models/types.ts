@@ -8,6 +8,26 @@ import { type MaybeAsync, type Scalar } from '../types.js';
 export type Cardinality = 'one' | 'many';
 export type RelationType = 'reference' | 'embed';
 
+// --- ATTRIBUTABLE TYPES ---
+
+/** A union of supported attribute type constructors. */
+export type AttributeTypeConstructor = StringConstructor | NumberConstructor | BooleanConstructor | DateConstructor | typeof UniqueID;
+
+/**
+ * Defines the specification for a model's attributes. Maps an attribute
+ * name to a tuple containing its [TypeConstructor, Cardinality].
+ */
+export interface AttributeSpec {
+    readonly [key: string]: readonly [type: AttributeTypeConstructor, cardinality: 'single' | 'many'];
+}
+
+/** Helper to get the instance type (e.g., string) from a constructor type (e.g., StringConstructor) */
+export type AttributeValue<T extends AttributeSpec, K extends keyof T> = InstanceType<T[K][0]>;
+
+/** Helper to determine the return type of getAttribute based on cardinality */
+export type GetAttributeReturn<T extends AttributeSpec, K extends keyof T> =
+    T[K][1] extends 'single' ? AttributeValue<T, K> | undefined : AttributeValue<T, K>[];
+
 // --- METADATA INTERFACES (Designed for Extension) ---
 
 /**
@@ -77,9 +97,10 @@ export type ModelConstructor<T extends BaseModel = BaseModel> = (new () => T) & 
 // Options for the @field decorator
 export interface FieldOptions<T = unknown> {
     readOnly?: boolean;
+    derived?: boolean;
     default?: (() => T);
     hydrator?: (value: unknown) => T;
-    validator?: (value: T) => boolean;
+    validator?: (value: T) => true;
     serializer?: (value: T) => Scalar | object | undefined;
 }
 
@@ -107,6 +128,8 @@ export interface Countable {
     count(): Promise<number | undefined>;
 }
 
+export type Derived<T> = Promise<T>;
+
 // --- Relationship Types ---
 export interface RefOne<T extends BaseIdentifiableModel> {
     (): Promise<T | undefined>;
@@ -128,16 +151,27 @@ export interface EmbedMany<T extends BaseModel> {
     (values: MaybeAsync<T[] | BaseModelCollection<T>>): Promise<void>;
 }
 
-export type ModelData<T extends BaseModel = BaseModel> = {
-    [P in keyof T]?: T[P] extends RefOne<infer U> | RefMany<infer U>
-        ? DefinedId<U> | DefinedId<U>[]
-        : T[P] extends EmbedOne<infer U>
-        ? ModelData<U>
-        : T[P] extends EmbedMany<infer U>
-        ? ModelData<U>[]
+type DerivedFieldKeys<T> = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [P in keyof T]: T[P] extends () => Derived<any> ? P : never;
+}[keyof T];
+
+export type NoDerivedModelData<T extends BaseModel> = Omit<ModelData<T>, DerivedFieldKeys<T>>;
+
+// The definitive ModelData<T> type in src/core/models/types.ts
+export type ModelData<T extends BaseModel> = {
+    [P in keyof T]?:
+        // 1. Handle Derived Fields
+        T[P] extends () => Derived<infer U> ? U
+        // 2. Handle Relationships (these break circular dependencies)
+        : T[P] extends RefOne<infer U> ? DefinedId<U>
+        : T[P] extends RefMany<infer U> ? DefinedId<U>[]
+        // 3. Handle Embeds (these are intentionally recursive)
+        : T[P] extends EmbedOne<infer U> ? ModelData<U>
+        : T[P] extends EmbedMany<infer U> ? ModelData<U>[]
+        // 4. THE GUARD: Handle all other methods
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+        : T[P] extends Function ? never
+        // 5. Handle all standard data properties
         : T[P];
 };
-
-// Backward compatibility aliases
-export type ModelCollection<T extends BaseModel> = BaseModelCollection<T>;
-export type IdentifiableModel<T extends BaseIdentifiableModel> = T;

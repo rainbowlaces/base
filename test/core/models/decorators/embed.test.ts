@@ -136,12 +136,12 @@ describe('@embed decorator', () => {
         const comment = new TestComment();
         const serializedData = { content: 'Serialized comment' };
         
-        // Mock the serialise method to return known data
-        const serialiseSpy = mock.method(comment, 'serialise', () => serializedData);
+        // Mock the serialize method to return known data
+        const serializeSpy = mock.method(comment, 'serialize', () => serializedData);
 
         await post.comment(comment);
 
-        assert.strictEqual(serialiseSpy.mock.callCount(), 1, 'comment.serialise should be called once');
+        assert.strictEqual(serializeSpy.mock.callCount(), 1, 'comment.serialize should be called once');
         assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
         assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comment', serializedData], 'post.set should be called with property name and serialized data');
     });
@@ -201,14 +201,14 @@ describe('@embed decorator', () => {
         const serializedData1 = { content: 'First serialized comment' };
         const serializedData2 = { content: 'Second serialized comment' };
         
-        // Mock the serialise methods to return known data
-        const serialiseSpy1 = mock.method(comment1, 'serialise', () => serializedData1);
-        const serialiseSpy2 = mock.method(comment2, 'serialise', () => serializedData2);
+        // Mock the serialize methods to return known data
+        const serializeSpy1 = mock.method(comment1, 'serialize', () => serializedData1);
+        const serializeSpy2 = mock.method(comment2, 'serialize', () => serializedData2);
 
         await post.comments([comment1, comment2]);
 
-        assert.strictEqual(serialiseSpy1.mock.callCount(), 1, 'comment1.serialise should be called once');
-        assert.strictEqual(serialiseSpy2.mock.callCount(), 1, 'comment2.serialise should be called once');
+        assert.strictEqual(serializeSpy1.mock.callCount(), 1, 'comment1.serialize should be called once');
+        assert.strictEqual(serializeSpy2.mock.callCount(), 1, 'comment2.serialize should be called once');
         assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
         assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comments', [serializedData1, serializedData2]], 'post.set should be called with property name and serialized data array');
     });

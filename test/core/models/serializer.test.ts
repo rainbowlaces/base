@@ -44,7 +44,7 @@ describe('BaseModel: Serializer Feature', () => {
         instance.set('dateField', testDate);
         instance.set('uppercaseField', 'hello world');
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual(serialized.normalField, 'test', 'Normal field should serialize as-is');
         assert.strictEqual(serialized.dateField, '2025-07-15T10:00:00.000Z', 'Date should be serialized to ISO string');
@@ -57,7 +57,7 @@ describe('BaseModel: Serializer Feature', () => {
         
         instance.set('objectField', testObject);
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual(serialized.objectField, JSON.stringify(testObject), 'Object should be serialized to JSON string');
     });
@@ -67,13 +67,13 @@ describe('BaseModel: Serializer Feature', () => {
         
         instance.set('conditionalField', 50); // Below threshold
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual('conditionalField' in serialized, false, 'Field returning undefined from serializer should be excluded');
         
         // Test with value above threshold
         instance.set('conditionalField', 150);
-        const serialized2 = instance.serialise();
+        const serialized2 = instance.serialize();
         
         assert.strictEqual(serialized2.conditionalField, 150, 'Field returning value from serializer should be included');
     });
@@ -87,7 +87,7 @@ describe('BaseModel: Serializer Feature', () => {
         // Check that it was converted properly
         assert.strictEqual(instance.get('convertAndSerializeField'), 42, 'Hydrator should parse string to number');
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual(serialized.convertAndSerializeField, '42', 'Serializer should convert number back to string');
     });
@@ -111,7 +111,7 @@ describe('BaseModel: Serializer Feature', () => {
         instance.set('booleanField', 'true');
         instance.set('timestampField', new Date('2025-07-15'));
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual(serialized.stringLengthField, 5, 'Should serialize to number');
         assert.strictEqual(serialized.booleanField, true, 'Should serialize to boolean');
@@ -130,7 +130,7 @@ describe('BaseModel: Serializer Feature', () => {
         instance.set('errorField', 'test');
         
         // Should throw during serialization
-        assert.throws(() => instance.serialise(), /Serializer error/, 'Should propagate serializer errors');
+        assert.throws(() => instance.serialize(), /Serializer error/, 'Should propagate serializer errors');
     });
     
     it('should handle complex nested serialization', () => {
@@ -150,7 +150,7 @@ describe('BaseModel: Serializer Feature', () => {
         const instance = new NestedTestModel();
         instance.set('complexField', { items: ['a', 'b', 'c'] });
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.deepStrictEqual(
             serialized.complexField, 
@@ -177,13 +177,13 @@ describe('BaseModel: Serializer Feature', () => {
         instance.set('baseField', 'BASE');
         instance.set('extendedField', 'extended');
         
-        const serialized = instance.serialise();
+        const serialized = instance.serialize();
         
         assert.strictEqual(serialized.baseField, 'base', 'Base field should use lowercase serializer');
         assert.strictEqual(serialized.extendedField, 'EXTENDED', 'Extended field should use uppercase serializer');
     });
     
-    it('should only apply serializer during serialise() call, not during get()', () => {
+    it('should only apply serializer during serialize() call, not during get()', () => {
         const instance = new TestSerializerModel();
         const testDate = new Date('2025-07-15T10:00:00Z');
         
@@ -194,10 +194,10 @@ describe('BaseModel: Serializer Feature', () => {
         assert.strictEqual(getValue, testDate, 'get() should return original Date object');
         assert.strictEqual(getValue instanceof Date, true, 'get() should return Date instance');
         
-        // Only serialise() should apply the serializer
-        const serialized = instance.serialise();
-        assert.strictEqual(serialized.dateField, '2025-07-15T10:00:00.000Z', 'serialise() should return serialized string');
-        assert.strictEqual(typeof serialized.dateField, 'string', 'serialise() should return string type');
+        // Only serialize() should apply the serializer
+        const serialized = instance.serialize();
+        assert.strictEqual(serialized.dateField, '2025-07-15T10:00:00.000Z', 'serialize() should return serialized string');
+        assert.strictEqual(typeof serialized.dateField, 'string', 'serialize() should return string type');
     });
     
     it('should handle null and undefined values in serializer', () => {
@@ -211,11 +211,11 @@ describe('BaseModel: Serializer Feature', () => {
         const instance = new NullTestModel();
         
         instance.set('nullableField', 'test');
-        let serialized = instance.serialise();
+        let serialized = instance.serialize();
         assert.strictEqual(serialized.nullableField, 'TEST', 'Should serialize non-null value');
         
         instance.set('nullableField', null);
-        serialized = instance.serialise();
+        serialized = instance.serialize();
         assert.strictEqual(serialized.nullableField, 'NULL_VALUE', 'Should handle null value in serializer');
     });
 });

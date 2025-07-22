@@ -32,6 +32,10 @@ export { BaseIdentifiableModel } from "./core/models/baseIdentifiableModel.js";
 export { BaseModelCollection } from "./core/models/baseModelCollection.js";
 export { UniqueID } from "./core/models/uniqueId.js";
 
+// Attributable exports
+export { Attributable } from "./core/models/attributable/attributable.js";
+export { Attribute } from "./core/models/attributable/attribute.js";
+
 // Request handler exports
 export { BaseRequest } from "./core/requestHandler/baseRequest.js";
 export { BaseResponse } from "./core/requestHandler/baseResponse.js";
@@ -108,8 +112,6 @@ export type { BaseModelClass } from "./core/models/baseModel.js";
 export type { 
   ModelConstructor,
   ModelData,
-  ModelCollection,
-  IdentifiableModel,
   DefinedId,
   DefinedIds,
   AsyncDefinedId,
@@ -130,7 +132,11 @@ export type {
   FieldMetadata,
   BaseModelSchema,
   ModelsEvent,
-  FieldOptions
+  FieldOptions,
+  AttributeSpec,
+  AttributeValue,
+  GetAttributeReturn,
+  AttributeTypeConstructor
 } from "./core/models/types.js";
 
 // Logger types

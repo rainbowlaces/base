@@ -2,12 +2,12 @@ import { BaseIdentifiableModel, type BaseModel, type Deletable, type ModelConstr
 import { MemoryModelCollection } from './memoryModelCollection.js';
 
 // A simple, global in-memory store.
-const MEMORY_STORE = new Map<string, Map<string, ModelData>>();
+const MEMORY_STORE = new Map<string, Map<string, ModelData<BaseModel>>>();
 
 export abstract class MemoryModel extends BaseIdentifiableModel implements Persistable, Deletable {
 
     // Helper to get the specific store for this model type.
-    private getClassStore(): Map<string, ModelData> {
+    private getClassStore(): Map<string, ModelData<BaseModel>> {
         const className = this.constructor.name;
         if (!MEMORY_STORE.has(className)) {
             MEMORY_STORE.set(className, new Map());
@@ -16,7 +16,7 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     }
 
     // Helper to get store for a specific class (static version)
-    private static getClassStore(className: string): Map<string, ModelData> {
+    private static getClassStore(className: string): Map<string, ModelData<BaseModel>> {
         if (!MEMORY_STORE.has(className)) {
             MEMORY_STORE.set(className, new Map());
         }
@@ -27,7 +27,7 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     public async persist(): Promise<void> {
         const store = this.getClassStore();
         const id = this.id.toString();
-        const data = this.serialise();
+        const data = this.serialize();
 
         store.set(id, data);
     }

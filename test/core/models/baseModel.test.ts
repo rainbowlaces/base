@@ -147,16 +147,16 @@ describe('BaseModel: Instance State & Data Management', () => {
         assert.strictEqual(profile.get('bio'), 'Valid field', 'Should hydrate valid schema fields');
     });
     
-    it('should serialise model data correctly', async () => {
+    it('should serialize model data correctly', async () => {
         const profile = new TestProfile();
         
         // Empty model should serialize to empty object (no fields set)
-        let serialized = profile.serialise();
+        let serialized = profile.serialize();
         assert.deepStrictEqual(serialized, {}, 'Empty model should serialize to empty object');
         
         // Set some data and serialize
         profile.set('bio', 'Software engineer from London');
-        serialized = profile.serialise();
+        serialized = profile.serialize();
         assert.deepStrictEqual(serialized, { bio: 'Software engineer from London' }, 'Should serialize set fields');
         
         // Should only include fields that are actually set (not all schema fields)
@@ -167,7 +167,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         const hydratedProfile = new TestProfile();
         await (hydratedProfile as any).hydrate(hydratedData);
         
-        const hydratedSerialized = hydratedProfile.serialise();
+        const hydratedSerialized = hydratedProfile.serialize();
         // Should only serialize fields that are in the schema and set
         assert.deepStrictEqual(hydratedSerialized, { bio: 'Original bio' }, 'Should only serialize schema fields that are set');
     });
@@ -563,8 +563,11 @@ describe('BaseModel: Field Hydrators and Validators', () => {
     it('should apply validators and reject invalid values', () => {
         class TestValidatorModel extends BaseModel {
             @field({ 
-                validator: (value: string): boolean => {
-                    return typeof value === 'string' && value.length > 0;
+                validator: (value: string): true => {
+                    if (typeof value === 'string' && value.length > 0) {
+                        return true;
+                    }
+                    throw new Error('Value must be a non-empty string');
                 }
             })
             accessor validatedField!: string;
@@ -586,8 +589,11 @@ describe('BaseModel: Field Hydrators and Validators', () => {
     it('should apply validators during hydration and reject invalid data', async () => {
         class TestHydrateValidatorModel extends BaseModel {
             @field({ 
-                validator: (value: number): boolean => {
-                    return typeof value === 'number' && value > 0;
+                validator: (value: number): true => {
+                    if (typeof value === 'number' && value > 0) {
+                        return true;
+                    }
+                    throw new Error('Value must be a positive number');
                 }
             })
             accessor positiveNumber!: number;
@@ -613,8 +619,11 @@ describe('BaseModel: Field Hydrators and Validators', () => {
                     if (typeof value === 'number') return value;
                     throw new Error('Cannot convert to number');
                 },
-                validator: (value: number): boolean => {
-                    return value >= 0 && value <= 100;
+                validator: (value: number): true => {
+                    if (value >= 0 && value <= 100) {
+                        return true;
+                    }
+                    throw new Error('Value must be between 0 and 100');
                 }
             })
             accessor percentage!: number;
