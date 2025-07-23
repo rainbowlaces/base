@@ -197,7 +197,7 @@ describe('Attributable Mixin', () => {
     });
 
     describe('Edge Cases & Error Handling', () => {
-        it('should handle models without Attributes spec gracefully', async () => {
+        it('should throw error when accessing attributes without Attributes spec', async () => {
             @model
             class ModelWithoutAttributes extends Attributable(BaseModel) {
                 @field()
@@ -207,10 +207,14 @@ describe('Attributable Mixin', () => {
 
             const testModel = await ModelWithoutAttributes.create({ name: 'Test' });
             
-            // Should not throw when setting attributes even without spec
-            await testModel.setAttribute('anyKey', 'anyValue');
-            const value = await testModel.getAttribute('anyKey');
-            assert.deepEqual(value, ['anyValue']); // Should default to 'many' behavior
+            // Should throw when trying to get attributes without spec
+            await assert.rejects(
+                async () => await testModel.getAttribute('anyKey'),
+                {
+                    name: 'BaseError',
+                    message: /Attribute "anyKey" is not defined in the AttributeSpec for model "ModelWithoutAttributes"/
+                }
+            );
         });
 
         it('should handle empty attributes array', async () => {
