@@ -4,7 +4,6 @@ import { type EmbedMany } from "../types.js";
 import { Attribute } from "./attribute.js";
 import { UniqueID } from "../uniqueId.js";
 import {
-  type AttributeSpec,
   type AttributeValue,
   type GetAttributeReturn,
 } from "../types.js";
@@ -16,21 +15,30 @@ type AnyConstructor<T = object> = abstract new (...args: any[]) => T;
 // Define the public interface for attributable functionality
 export interface AttributableInterface {
   attributes: EmbedMany<Attribute>;
-  readonly Attributes: AttributeSpec;
-  setAttribute<K extends keyof AttributeSpec>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  readonly Attributes: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setAttribute<K extends keyof any>(
     name: K,
-    value: AttributeValue<AttributeSpec, K>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value: any
   ): Promise<void>;
-  getAttribute<K extends keyof AttributeSpec>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getAttribute<K extends keyof any>(
     name: K
-  ): Promise<GetAttributeReturn<AttributeSpec, K>>;
-  hasAttribute<K extends keyof AttributeSpec>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ): Promise<any>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  hasAttribute<K extends keyof any>(
     name: K,
-    value?: AttributeValue<AttributeSpec, K>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value?: any
   ): Promise<boolean>;
-  deleteAttribute<K extends keyof AttributeSpec>(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  deleteAttribute<K extends keyof any>(
     name: K,
-    value?: AttributeValue<AttributeSpec, K>
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    value?: any
   ): Promise<void>;
 }
 
@@ -47,7 +55,9 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBa
     @embed(Attribute, { cardinality: "many", default: () => [] })
     accessor attributes!: EmbedMany<Attribute>;
 
-    public readonly Attributes!: AttributeSpec;
+    // Allow specific types to be inferred from subclass implementations
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public readonly Attributes!: any;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...args: any[]) {

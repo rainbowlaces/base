@@ -74,8 +74,8 @@ describe('Attributable Mixin', () => {
             assert.equal(relatedProducts.length, 2);
             
             // Check if the UniqueIDs are in the array by using equals() method
-            const hasId1 = relatedProducts.some((id) => id instanceof UniqueID && id.equals(relatedId1));
-            const hasId2 = relatedProducts.some((id) => id instanceof UniqueID && id.equals(relatedId2));
+            const hasId1 = relatedProducts.some((id: any) => id instanceof UniqueID && id.equals(relatedId1));
+            const hasId2 = relatedProducts.some((id: any) => id instanceof UniqueID && id.equals(relatedId2));
             assert.ok(hasId1, 'relatedId1 should be in the array');
             assert.ok(hasId2, 'relatedId2 should be in the array');
         });
@@ -115,7 +115,7 @@ describe('Attributable Mixin', () => {
             
             const tags = await product.getAttribute('tags');
             assert.equal(tags.length, 2);
-            const duplicates = tags.filter((tag) => tag === 'duplicate');
+            const duplicates = tags.filter((tag: any) => tag === 'duplicate');
             assert.equal(duplicates.length, 1);
         });
     });
@@ -186,9 +186,9 @@ describe('Attributable Mixin', () => {
             const related = await product.getAttribute('relatedProducts');
             assert.equal(related.length, 2);
             
-            const hasId1 = related.some(id => id instanceof UniqueID && id.equals(id1));
-            const hasId2 = related.some(id => id instanceof UniqueID && id.equals(id2));
-            const hasId3 = related.some(id => id instanceof UniqueID && id.equals(id3));
+            const hasId1 = related.some((id: any) => id instanceof UniqueID && id.equals(id1));
+            const hasId2 = related.some((id: any) => id instanceof UniqueID && id.equals(id2));
+            const hasId3 = related.some((id: any) => id instanceof UniqueID && id.equals(id3));
             
             assert.ok(hasId1, 'Should still have id1');
             assert.ok(!hasId2, 'Should not have id2');
@@ -262,7 +262,7 @@ describe('Attributable Mixin', () => {
             
             // Set single date
             await event.setAttribute('eventDate', eventDate);
-            const retrievedDate = await event.getAttribute('eventDate') as unknown as Date;
+            const retrievedDate = await event.getAttribute('eventDate');
             assert.ok(retrievedDate instanceof Date);
             assert.equal(retrievedDate.getTime(), eventDate.getTime());
             
@@ -270,9 +270,9 @@ describe('Attributable Mixin', () => {
             await event.setAttribute('reminders', reminder1);
             await event.setAttribute('reminders', reminder2);
             
-            const reminders = await event.getAttribute('reminders') as Date[];
+            const reminders = await event.getAttribute('reminders');
             assert.equal(reminders.length, 2);
-            assert.ok(reminders.every(date => date instanceof Date));
+            assert.ok(reminders.every((date: any) => date instanceof Date));
             
             // Check date comparison in hasAttribute
             assert.equal(await event.hasAttribute('eventDate', eventDate), true);
@@ -295,7 +295,7 @@ describe('Attributable Mixin', () => {
             const originalDate = new Date('2025-07-22T14:30:45.123Z');
             
             await dateModel.setAttribute('timestamp', originalDate);
-            const retrieved = await dateModel.getAttribute('timestamp') as unknown as Date;
+            const retrieved = await dateModel.getAttribute('timestamp');
             
             assert.ok(retrieved instanceof Date);
             assert.equal(retrieved.getTime(), originalDate.getTime());
@@ -386,13 +386,13 @@ describe('Attributable Mixin', () => {
             
             // Set single UniqueID
             await uniqueModel.setAttribute('primaryId', id1);
-            const retrievedId = await uniqueModel.getAttribute('primaryId') as unknown as UniqueID;
+            const retrievedId = await uniqueModel.getAttribute('primaryId');
             assert.ok(retrievedId instanceof UniqueID);
             assert.ok(retrievedId.equals(id1));
             
             // Replace single UniqueID
             await uniqueModel.setAttribute('primaryId', id2);
-            const newRetrievedId = await uniqueModel.getAttribute('primaryId') as unknown as UniqueID;
+            const newRetrievedId = await uniqueModel.getAttribute('primaryId');
             assert.ok(newRetrievedId.equals(id2));
             assert.ok(!newRetrievedId.equals(id1));
         });

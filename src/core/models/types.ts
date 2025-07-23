@@ -22,7 +22,13 @@ export interface AttributeSpec {
 }
 
 /** Helper to get the instance type (e.g., string) from a constructor type (e.g., StringConstructor) */
-export type AttributeValue<T extends AttributeSpec, K extends keyof T> = InstanceType<T[K][0]>;
+export type AttributeValue<T extends AttributeSpec, K extends keyof T> = 
+    T[K][0] extends StringConstructor ? string :
+    T[K][0] extends NumberConstructor ? number :
+    T[K][0] extends BooleanConstructor ? boolean :
+    T[K][0] extends DateConstructor ? Date :
+    T[K][0] extends typeof UniqueID ? UniqueID :
+    InstanceType<T[K][0]>;
 
 /** Helper to determine the return type of getAttribute based on cardinality */
 export type GetAttributeReturn<T extends AttributeSpec, K extends keyof T> =
