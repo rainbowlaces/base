@@ -34,6 +34,9 @@ export type AttributeValue<T extends AttributeSpec, K extends keyof T> =
 export type GetAttributeReturn<T extends AttributeSpec, K extends keyof T> =
     T[K][1] extends 'single' ? AttributeValue<T, K> | undefined : AttributeValue<T, K>[];
 
+/** Helper type to extract the Attributes property type from an attributable instance */
+export type ExtractAttributeSpec<T> = T extends { readonly Attributes: infer A } ? A : AttributeSpec;
+
 // --- METADATA INTERFACES (Designed for Extension) ---
 
 /**

@@ -4,6 +4,7 @@ import { type EmbedMany } from "../types.js";
 import { Attribute } from "./attribute.js";
 import { UniqueID } from "../uniqueId.js";
 import {
+  type AttributeSpec,
   type AttributeValue,
   type GetAttributeReturn,
 } from "../types.js";
@@ -13,60 +14,53 @@ import { BaseError } from "../../baseErrors.js";
 type AnyConstructor<T = object> = abstract new (...args: any[]) => T;
 
 // Define the public interface for attributable functionality
-export interface AttributableInterface {
+export interface AttributableInterface<TSpec extends AttributeSpec> {
   attributes: EmbedMany<Attribute>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  readonly Attributes: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setAttribute<K extends keyof any>(
+  readonly Attributes: TSpec;
+  setAttribute<K extends keyof TSpec>(
     name: K,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    value: any
+    value: AttributeValue<TSpec, K>
   ): Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getAttribute<K extends keyof any>(
+  getAttribute<K extends keyof TSpec>(
     name: K
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ): Promise<any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  hasAttribute<K extends keyof any>(
+  ): Promise<GetAttributeReturn<TSpec, K>>;
+  hasAttribute<K extends keyof TSpec>(
     name: K,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    value?: any
+    value?: AttributeValue<TSpec, K>
   ): Promise<boolean>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  deleteAttribute<K extends keyof any>(
+  deleteAttribute<K extends keyof TSpec>(
     name: K,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    value?: any
+    value?: AttributeValue<TSpec, K>
   ): Promise<void>;
 }
 
 // Create a named return type for the mixin
-export type AttributableMixin<TBase extends AnyConstructor<BaseModel>> = TBase &
-  AnyConstructor<AttributableInterface>;
+export type AttributableMixin<TSpec extends AttributeSpec, TBase extends AnyConstructor<BaseModel>> = TBase &
+  AnyConstructor<AttributableInterface<TSpec>>;
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
-export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBase ): AttributableMixin<TBase> {
+export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConstructor<BaseModel>>(
+  base: TBase
+): AttributableMixin<TSpec, TBase> {
   abstract class AttributableClass
-    extends Base
-    implements AttributableInterface
+    extends base
+    implements AttributableInterface<TSpec>
   {
     @embed(Attribute, { cardinality: "many", default: () => [] })
     accessor attributes!: EmbedMany<Attribute>;
 
     // Allow specific types to be inferred from subclass implementations
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public readonly Attributes!: any;
+    public readonly Attributes!: TSpec;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     constructor(...args: any[]) {
       super(...args);
     }
 
-    async setAttribute<K extends keyof this["Attributes"]>(
+    // Use the generic TSpec type for proper type inference
+    async setAttribute<K extends keyof TSpec>(
       name: K,
-      value: AttributeValue<this["Attributes"], K>
+      value: AttributeValue<TSpec, K>
     ): Promise<void> {
       const collection = await this.attributes();
       const allCurrent = await collection.toArray();
@@ -98,9 +92,10 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBa
       await this.attributes([...filtered, newAttribute]);
     }
 
-    async getAttribute<K extends keyof this["Attributes"]>(
+    // Use the generic TSpec type for proper type inference
+    async getAttribute<K extends keyof TSpec>(
       name: K
-    ): Promise<GetAttributeReturn<this["Attributes"], K>> {
+    ): Promise<GetAttributeReturn<TSpec, K>> {
       const collection = await this.attributes();
       const allCurrent = await collection.toArray();
       const spec = this.Attributes?.[name as string];
@@ -127,18 +122,19 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBa
           if (typeConstructor === Date) return value instanceof Date;
           if (typeConstructor === UniqueID) return value instanceof UniqueID;
           return false;
-        }) as AttributeValue<this["Attributes"], K>[];
+        });
 
       if (cardinality === "single") {
-        return values[0] as GetAttributeReturn<this["Attributes"], K>;
+        return values[0] as GetAttributeReturn<TSpec, K>;
       }
 
-      return values as GetAttributeReturn<this["Attributes"], K>;
+      return values as GetAttributeReturn<TSpec, K>;
     }
 
-    async hasAttribute<K extends keyof this["Attributes"]>(
+    // Use the generic TSpec type for proper type inference
+    async hasAttribute<K extends keyof TSpec>(
       name: K,
-      value?: AttributeValue<this["Attributes"], K>
+      value?: AttributeValue<TSpec, K>
     ): Promise<boolean> {
       const values = await this.getAttribute(name);
       if (value === undefined) {
@@ -162,9 +158,10 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBa
       }
     }
 
-    async deleteAttribute<K extends keyof this["Attributes"]>(
+    // Use the generic TSpec type for proper type inference
+    async deleteAttribute<K extends keyof TSpec>(
       name: K,
-      value?: AttributeValue<this["Attributes"], K>
+      value?: AttributeValue<TSpec, K>
     ): Promise<void> {
       const collection = await this.attributes();
       const allCurrent = await collection.toArray();
@@ -191,5 +188,5 @@ export function Attributable<TBase extends AnyConstructor<BaseModel>>( Base: TBa
     }
   }
 
-  return AttributableClass as AttributableMixin<TBase>;
+  return AttributableClass as AttributableMixin<TSpec, TBase>;
 }
