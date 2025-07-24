@@ -32,6 +32,9 @@ export interface AttributableInterface<TSpec extends AttributeSpec> {
     name: K,
     value?: AttributeValue<TSpec, K>
   ): Promise<void>;
+  getRawAttributes<K extends keyof TSpec>(
+    name?: K
+  ): Promise<Attribute[]>;
 }
 
 // Create a named return type for the mixin
@@ -185,6 +188,18 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       });
 
       await this.attributes(remaining);
+    }
+
+    // Use the generic TSpec type for proper type inference
+    async getRawAttributes<K extends keyof TSpec>(
+      name?: K
+    ): Promise<Attribute[]> {
+      const collection = await this.attributes();
+      const allCurrent = await collection.toArray();
+      
+      if (name === undefined) return allCurrent;
+
+      return allCurrent.filter((attr) => attr.name === name);
     }
   }
 

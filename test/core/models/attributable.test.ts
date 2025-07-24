@@ -409,4 +409,119 @@ describe('Attributable Mixin', () => {
             assert.ok(!newRetrievedId.equals(id1));
         });
     });
+
+    describe('getRawAttributes', () => {
+        it('should return all raw attributes when no name specified', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            
+            await product.setAttribute('color', 'red');
+            await product.setAttribute('tags', 'electronics');
+            await product.setAttribute('tags', 'gadget');
+            await product.setAttribute('inventoryCount', 50);
+            
+            const allRaw = await product.getRawAttributes();
+            assert.equal(allRaw.length, 4);
+            
+            // Check that we get actual Attribute objects
+            allRaw.forEach(attr => {
+                assert.ok(attr.name);
+                assert.ok(attr.value !== undefined);
+                assert.ok(attr.created instanceof Date);
+            });
+            
+            // Check specific attributes exist
+            const colorAttrs = allRaw.filter(attr => attr.name === 'color');
+            const tagAttrs = allRaw.filter(attr => attr.name === 'tags');
+            const inventoryAttrs = allRaw.filter(attr => attr.name === 'inventoryCount');
+            
+            assert.equal(colorAttrs.length, 1);
+            assert.equal(tagAttrs.length, 2);
+            assert.equal(inventoryAttrs.length, 1);
+        });
+
+        it('should return filtered raw attributes when name specified', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            
+            await product.setAttribute('color', 'red');
+            await product.setAttribute('tags', 'electronics');
+            await product.setAttribute('tags', 'gadget');
+            await product.setAttribute('inventoryCount', 50);
+            
+            const tagRaw = await product.getRawAttributes('tags');
+            assert.equal(tagRaw.length, 2);
+            
+            // All returned attributes should be for 'tags'
+            tagRaw.forEach(attr => {
+                assert.equal(attr.name, 'tags');
+                assert.ok(['electronics', 'gadget'].includes(attr.value as string));
+                assert.ok(attr.created instanceof Date);
+            });
+        });
+
+        it('should return empty array for non-existent attribute name', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            
+            const nonExistentRaw = await product.getRawAttributes('color');
+            assert.equal(nonExistentRaw.length, 0);
+            assert.ok(Array.isArray(nonExistentRaw));
+        });
+
+        it('should return raw attributes with creation timestamps', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            const beforeTime = new Date();
+            
+            await product.setAttribute('color', 'blue');
+            
+            const colorRaw = await product.getRawAttributes('color');
+            assert.equal(colorRaw.length, 1);
+            
+            const attr = colorRaw[0];
+            assert.equal(attr.name, 'color');
+            assert.equal(attr.value, 'blue');
+            assert.ok(attr.created instanceof Date);
+            assert.ok(attr.created.getTime() >= beforeTime.getTime());
+        });
+
+        it('should handle UniqueID attributes in raw form', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            const id1 = new UniqueID();
+            const id2 = new UniqueID();
+            
+            await product.setAttribute('relatedProducts', id1);
+            await product.setAttribute('relatedProducts', id2);
+            
+            const relatedRaw = await product.getRawAttributes('relatedProducts');
+            assert.equal(relatedRaw.length, 2);
+            
+            relatedRaw.forEach(attr => {
+                assert.equal(attr.name, 'relatedProducts');
+                assert.ok(attr.value instanceof UniqueID);
+                assert.ok(attr.created instanceof Date);
+            });
+            
+            const ids = relatedRaw.map(attr => attr.value as UniqueID);
+            assert.ok(ids.some(id => id.equals(id1)));
+            assert.ok(ids.some(id => id.equals(id2)));
+        });
+
+        it('should preserve order of attribute creation', async () => {
+            const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+            
+            // Add tags in specific order with small delays to ensure different timestamps
+            await product.setAttribute('tags', 'first');
+            await new Promise(resolve => setTimeout(resolve, 1));
+            await product.setAttribute('tags', 'second');
+            await new Promise(resolve => setTimeout(resolve, 1));
+            await product.setAttribute('tags', 'third');
+            
+            const tagRaw = await product.getRawAttributes('tags');
+            assert.equal(tagRaw.length, 3);
+            
+            // Should be ordered by creation time (first added = earliest timestamp)
+            const sortedByCreation = [...tagRaw].sort((a, b) => a.created.getTime() - b.created.getTime());
+            assert.equal(sortedByCreation[0].value, 'first');
+            assert.equal(sortedByCreation[1].value, 'second');
+            assert.equal(sortedByCreation[2].value, 'third');
+        });
+    });
 });
