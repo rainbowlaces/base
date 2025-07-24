@@ -180,3 +180,21 @@ export type ModelData<T extends BaseModel> = {
         : T[P] extends Function ? never
         : T[P];
 };
+
+// --- TYPE-SAFE KEY UTILITIES ---
+
+/** Extract valid field keys from a model instance - only data fields, not methods */
+export type ModelFieldKeys<T extends BaseModel> = string & keyof ModelData<T>;
+
+/** Extract the type of a specific field from a model */
+export type ModelFieldValue<T extends BaseModel, K extends ModelFieldKeys<T>> = 
+    K extends keyof ModelData<T> ? ModelData<T>[K] : unknown;
+
+/** Extract only relation field keys that support 'many' cardinality for appendTo */
+export type ModelRelationKeys<T extends BaseModel> = {
+    [P in ModelFieldKeys<T>]: ModelData<T>[P] extends (infer _U)[] ? P : never;
+}[ModelFieldKeys<T>];
+
+/** Extract the item type for a many-relation field */
+export type ModelRelationItemType<T extends BaseModel, K extends ModelRelationKeys<T>> = 
+    ModelData<T>[K] extends (infer U)[] ? U : never;

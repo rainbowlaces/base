@@ -24,8 +24,8 @@ export function field<T>(opts: FieldOptions<T> = {}) {
         ...(relation && { relation })
     };
 
-    function getter(this: M): T { return this.get(name); }
-    function setter(this: M, v: T) { this.set(name, v); }
+    function getter(this: M): T { return this._internalGet<T>(name); }
+    function setter(this: M, v: T) { this._internalSet<T>(name, v); }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (getter as any)[FIELD_METADATA_SYMBOL] = { name, meta };

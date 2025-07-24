@@ -13,7 +13,7 @@ import { setupTestTeardown } from '../setup.js';
 setupTestTeardown();
 
 describe('@field decorator', () => {
-    it('should create a getter that calls this.get()', () => {
+    it('should create a getter that calls this._internalGet()', () => {
         @model
         class TestModel extends BaseModel {
             @field()
@@ -21,7 +21,7 @@ describe('@field decorator', () => {
         }
 
         const instance = new TestModel();
-        const getSpy = test.mock.method(instance, 'get');
+        const getSpy = test.mock.method(instance as any, '_internalGet');
         getSpy.mock.mockImplementation(() => 'mockValue' as any); // Mock to return a value
         
         // Access the field
@@ -32,7 +32,7 @@ describe('@field decorator', () => {
         assert.strictEqual(getSpy.mock.calls[0]?.arguments[0], 'testField');
     });
 
-    it('should create a setter that calls this.set()', () => {
+    it('should create a setter that calls this._internalSet()', () => {
         @model
         class TestModel extends BaseModel {
             @field()
@@ -40,7 +40,7 @@ describe('@field decorator', () => {
         }
 
         const instance = new TestModel();
-        const setSpy = test.mock.method(instance, 'set');
+        const setSpy = test.mock.method(instance as any, '_internalSet');
         
         // Set the field
         instance.testField = 'test value';
@@ -60,7 +60,7 @@ describe('@field decorator', () => {
         const instance = new TestModel();
         
         // Should be able to get
-        const getSpy = test.mock.method(instance, 'get');
+        const getSpy = test.mock.method(instance as any, '_internalGet');
         getSpy.mock.mockImplementation(() => 'mockValue' as any); // Mock to return a value
         const value = instance.readOnlyField;
         void value; // Avoid unused variable warning
@@ -188,8 +188,8 @@ describe('@field decorator', () => {
         }
 
         const instance = new TestModel();
-        const setSpy = test.mock.method(instance, 'set');
-        const getSpy = test.mock.method(instance, 'get');
+        const setSpy = test.mock.method(instance as any, '_internalSet');
+        const getSpy = test.mock.method(instance as any, '_internalGet');
 
         // Test setting different types
         instance.stringField = 'test';

@@ -108,13 +108,13 @@ describe('@reference decorator', () => {
         }
 
         const post = new TestPost();
-        const setSpy = mock.method(post, 'set');
+        const setSpy = mock.method(post as any, '_internalSet');
         const user = new TestUser();
 
         await post.author(user);
 
-        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
-        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['author', user.id], 'post.set should be called with property name and user ID');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post._internalSet should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['author', user.id], 'post._internalSet should be called with property name and user ID');
     });
 
     it('RefMany getter should call TestUser.byIds() correctly', async () => {
@@ -153,14 +153,14 @@ describe('@reference decorator', () => {
         }
 
         const post = new TestPost();
-        const setSpy = mock.method(post, 'set');
+        const setSpy = mock.method(post as any, '_internalSet');
         const user1 = new TestUser();
         const user2 = new TestUser();
 
         await post.contributors([user1, user2]);
 
-        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
-        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user1.id, user2.id]], 'post.set should be called with property name and user IDs array');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post._internalSet should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user1.id, user2.id]], 'post._internalSet should be called with property name and user IDs array');
     });
 
     it('RefMany setter should handle mixed ID/model array conversion', async () => {
@@ -175,15 +175,15 @@ describe('@reference decorator', () => {
         }
 
         const post = new TestPost();
-        const setSpy = mock.method(post, 'set');
+        const setSpy = mock.method(post as any, '_internalSet');
         const user = new TestUser();
         const userId = new UniqueID();
 
         // Pass mixed array: both model instance and raw ID
         await post.contributors([user, userId]);
 
-        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
-        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user.id, userId]], 'post.set should be called with array of IDs (both model.id and raw ID)');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post._internalSet should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['contributors', [user.id, userId]], 'post._internalSet should be called with array of IDs (both model.id and raw ID)');
     });
 
     it('should handle error when reference model byId() fails', async () => {

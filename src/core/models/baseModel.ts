@@ -14,6 +14,9 @@ import {
     type ModelMetadata,
     type FieldMetadata,
     type NoDerivedModelData,
+    type ModelFieldKeys,
+    type ModelFieldValue,
+    type ModelRelationKeys,
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
@@ -254,7 +257,7 @@ export abstract class BaseModel {
         return false;
     }
 
-    public unset(key: string): boolean {
+    public unset(key: ModelFieldKeys<this>): boolean {
         const { fieldOptions } = this.getMeta(key);
         if (!(key in this.#data)) {
             throw new BaseError(`Field "${key}" is not set.`);
@@ -265,15 +268,25 @@ export abstract class BaseModel {
         return true;
     }
 
-    public get<T>(key: string): T {
+    public get<K extends string>(key: K): K extends ModelFieldKeys<this> ? ModelFieldValue<this, K> : unknown {
+        const { fieldOptions } = this.getMeta(key);
+        if (!(key in this.#data)) {
+            return undefined as K extends ModelFieldKeys<this> ? ModelFieldValue<this, K> : unknown;
+        }
+        return this.beforeGet(key, this.#data[key], fieldOptions) as K extends ModelFieldKeys<this> ? ModelFieldValue<this, K> : unknown;
+    }
+
+    // Internal method for decorator use - bypasses type checking
+    protected _internalGet<T>(key: string): T {
         const { fieldOptions } = this.getMeta(key);
         if (!(key in this.#data)) {
             return undefined as T;
         }
-        return this.beforeGet(key, this.#data[key] as T, fieldOptions) as T;
+        return this.beforeGet(key, this.#data[key], fieldOptions) as T;
     }
 
-    public set<T>(key: string, value: T): void {
+    // Internal method for decorator use - bypasses type checking
+    protected _internalSet<T>(key: string, value: T): void {
         const { fieldOptions } = this.getMeta(key);
         if (fieldOptions.readOnly) {
             throw new BaseError(`Field "${key}" is readonly and cannot be set.`);
@@ -307,8 +320,42 @@ export abstract class BaseModel {
         this.#data[key] = convertedValue;
     }
 
+    public set<K extends ModelFieldKeys<this>>(key: K, value: ModelFieldValue<this, K>): void {
+        const { fieldOptions } = this.getMeta(key);
+        if (fieldOptions.readOnly) {
+            throw new BaseError(`Field "${key}" is readonly and cannot be set.`);
+        }
+        
+        // Apply hydrator if available
+        let convertedValue = value;
+        if (fieldOptions.hydrator) {
+            convertedValue = fieldOptions.hydrator(value) as ModelFieldValue<this, K>;
+        }
+        
+        // Apply validator if available
+        if (fieldOptions.validator) {
+            try {
+                fieldOptions.validator(convertedValue);
+            } catch (_error) {
+                throw new BaseError(`Validation failed for field "${key}"`);
+            }
+        }
+        
+        if (!this.beforeSet(key, convertedValue, fieldOptions)) return;
+        
+        // Smart dirty checking: only mark dirty if value actually changed
+        const currentValue = this.#data[key];
+        
+        // If no current value exists, or values are not equal, mark dirty
+        if (!(key in this.#data) || !this.valuesEqual(currentValue, convertedValue)) {
+            this.#dirty = true;
+        }
+        
+        this.#data[key] = convertedValue;
+    }
+
     protected appendTo<T extends BaseModel>(
-        relationName: keyof this,
+        relationName: ModelRelationKeys<this>,
         itemsToAdd: T | T[]
     ): void {
         const constructor = this.constructor as typeof BaseModel;
@@ -319,7 +366,7 @@ export abstract class BaseModel {
             throw new BaseError(`'appendTo' can only be used on a 'many' relationship field.`);
         }
 
-        const currentRawData = this.get<unknown[]>(relationName as string) || [];
+        const currentRawData = this.get(relationName) as unknown[] || [];
 
         const items = Array.isArray(itemsToAdd) ? itemsToAdd : [itemsToAdd];
         let newRawItems: unknown[];
@@ -338,15 +385,15 @@ export abstract class BaseModel {
         }
 
         const newRawData = [...currentRawData, ...newRawItems];
-        this.set(relationName as string, newRawData);
+        this.set(relationName, newRawData as ModelFieldValue<this, typeof relationName>);
     }
 
-    public has(key: string): boolean {
+    public has(key: ModelFieldKeys<this>): boolean {
         return this.defined(key) && key in this.#data &&
             this.#data[key] !== undefined;
     }
 
-    public defined(key: string): boolean {
+    public defined(key: ModelFieldKeys<this>): boolean {
         try {
             const constructor = this.constructor as typeof BaseModel;
             const schema = constructor.getProcessedSchema();
@@ -406,8 +453,9 @@ export abstract class BaseModel {
         const data: Record<string, unknown> = {};
         
         for (const key in schema.fields) {
-            if (this.has(key)) {
-                const value = this.serializeField(key, this.get(key), schema);
+            const typedKey = key as ModelFieldKeys<T>;
+            if (this.has(typedKey)) {
+                const value = this.serializeField(key, this.get(typedKey), schema);
                 if (value === undefined) continue;
                 data[key] = value;
             }

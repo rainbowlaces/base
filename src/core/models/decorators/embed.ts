@@ -61,11 +61,11 @@ export function embed<T extends BaseModel>(
                     if (arguments.length > 0) {
                         // Setter: store the serialized data
                         const dataToSet = value ? value.serialize() : undefined;
-                        this.set(propertyName, dataToSet);
+                        this._internalSet(propertyName, dataToSet);
                         return;
                     } else {
                         // Getter: deserialize and return the model
-                        const rawData = this.get<NoDerivedModelData<T>>(propertyName);
+                        const rawData = this._internalGet<NoDerivedModelData<T>>(propertyName);
                         if (rawData === undefined || rawData === null) return undefined;
                         return await resolvedModel.fromData(rawData as ModelData<T>);
                     }
@@ -80,11 +80,11 @@ export function embed<T extends BaseModel>(
                         else {
                             dataToSet = (values ?? []).map(v => v.serialize());
                         }
-                        this.set(propertyName, dataToSet);
+                        this._internalSet(propertyName, dataToSet);
                         return;
                     } else {
                         // Getter: deserialize and return the collection
-                        const rawDataArray = this.get<ModelData<T>[]>(propertyName);
+                        const rawDataArray = this._internalGet<ModelData<T>[]>(propertyName);
                         return new BaseModelCollection(rawDataArray ?? [], resolvedModel);
                     }
                 }.bind(this) as EmbedMany<T>;

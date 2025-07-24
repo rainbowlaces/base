@@ -132,7 +132,7 @@ describe('@embed decorator', () => {
         }
 
         const post = new TestPost();
-        const setSpy = mock.method(post, 'set');
+        const setSpy = mock.method(post as any, '_internalSet');
         const comment = new TestComment();
         const serializedData = { content: 'Serialized comment' };
         
@@ -142,8 +142,8 @@ describe('@embed decorator', () => {
         await post.comment(comment);
 
         assert.strictEqual(serializeSpy.mock.callCount(), 1, 'comment.serialize should be called once');
-        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
-        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comment', serializedData], 'post.set should be called with property name and serialized data');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post._internalSet should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comment', serializedData], 'post._internalSet should be called with property name and serialized data');
     });
 
     it('EmbedMany getter should return BaseModelCollection with embedded models', async () => {
@@ -194,7 +194,7 @@ describe('@embed decorator', () => {
         }
 
         const post = new TestPost();
-        const setSpy = mock.method(post, 'set');
+        const setSpy = mock.method(post as any, '_internalSet');
         
         const comment1 = new TestComment();
         const comment2 = new TestComment();
@@ -209,8 +209,8 @@ describe('@embed decorator', () => {
 
         assert.strictEqual(serializeSpy1.mock.callCount(), 1, 'comment1.serialize should be called once');
         assert.strictEqual(serializeSpy2.mock.callCount(), 1, 'comment2.serialize should be called once');
-        assert.strictEqual(setSpy.mock.callCount(), 1, 'post.set should be called once');
-        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comments', [serializedData1, serializedData2]], 'post.set should be called with property name and serialized data array');
+        assert.strictEqual(setSpy.mock.callCount(), 1, 'post._internalSet should be called once');
+        assert.deepStrictEqual(setSpy.mock.calls[0].arguments, ['comments', [serializedData1, serializedData2]], 'post._internalSet should be called with property name and serialized data array');
     });
 
     it('should support Thunk for model constructor to break circular dependencies', () => {

@@ -59,14 +59,14 @@ export function reference<T extends BaseIdentifiableModel>(
                         const value = args[0];
                         if (value !== undefined) {
                             const resolvedId = await toUniqueIdAsync(value as any);
-                            this.set(propertyName, resolvedId);
+                            this._internalSet(propertyName, resolvedId);
                         } else {
-                            this.set(propertyName, undefined);
+                            this._internalSet(propertyName, undefined);
                         }
                         return undefined;
                     } else {
                         // Getter mode: resolve the reference
-                        const id = this.get<UniqueID>(propertyName);
+                        const id = this._internalGet<UniqueID>(propertyName);
                         if (!id) return undefined;
                         return (resolvedModel as any).byId(id);
                     }
@@ -79,7 +79,7 @@ export function reference<T extends BaseIdentifiableModel>(
                         const value = args[0];
                         if (value) {
                             const resolvedIds = await toUniqueIdsAsync(value as any);
-                            this.set(propertyName, resolvedIds);
+                            this._internalSet(propertyName, resolvedIds);
                         } else {
                             return (resolvedModel as any).byIds([]);
                         }
@@ -87,7 +87,7 @@ export function reference<T extends BaseIdentifiableModel>(
                         return (resolvedModel as any).byIds([]);
                     } else {
                         // Getter mode: resolve the references
-                        const ids = this.get<UniqueID[]>(propertyName) || [];
+                        const ids = this._internalGet<UniqueID[]>(propertyName) || [];
                         return (resolvedModel as any).byIds(ids);
                     }
                 };
