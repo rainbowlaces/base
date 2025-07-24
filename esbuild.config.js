@@ -49,6 +49,7 @@ export function createEsbuildConfig(options) {
       // BUNDLED client-side code
       entryPoints: [builds.clientEntryPoint],
       bundle: true,
+      sourcemap: true,
       outfile: builds.clientOutfile,
       format: 'esm',
       platform: 'browser',
