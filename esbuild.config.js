@@ -9,7 +9,7 @@ export function createEsbuildConfig(options) {
     format: 'esm',
     platform: 'node',
     target: 'node24',
-    sourcemap: true,
+    sourcemap: 'inline',
   };
 
   const configs = {};
@@ -21,7 +21,7 @@ export function createEsbuildConfig(options) {
       ...baseNodeConfig,
       entryPoints: glob.sync(builds.frameworkSources),
       outdir: builds.frameworkOutdir,
-      outbase: builds.frameworkOutbase || projectRoot, // Use provided outbase or default to projectRoot
+      outbase: builds.frameworkOutbase || projectRoot,
     };
   }
 
@@ -49,7 +49,7 @@ export function createEsbuildConfig(options) {
       // BUNDLED client-side code
       entryPoints: [builds.clientEntryPoint],
       bundle: true,
-      sourcemap: true,
+      sourcemap: 'inline',
       outfile: builds.clientOutfile,
       format: 'esm',
       platform: 'browser',
