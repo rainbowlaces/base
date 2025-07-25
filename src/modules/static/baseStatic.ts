@@ -60,7 +60,7 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     this.logger.debug(`BaseStatic setup complete`, []);
   }
 
-  @request({ topic: "/get/static/:path*" , phase: 50 })
+  @request({ topic: "/get/static/:path*" , phase: 10 })
   async handleStatic({ context: ctx, path: reqPath }: BaseHttpActionArgs & { path?: string }) {
 
     this.logger.debug(`******* handleStatic called with path: ${reqPath} ******`, [ctx.id]);
