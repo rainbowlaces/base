@@ -2,7 +2,7 @@ import { copy } from 'esbuild-plugin-copy';
 import { glob } from 'glob';
 
 export function createEsbuildConfig(options) {
-  const { projectRoot, isRelease = false, ...builds } = options;
+  const { projectRoot, minify = false, ...builds } = options;
 
   const baseNodeConfig = {
     bundle: false,
@@ -53,8 +53,8 @@ export function createEsbuildConfig(options) {
       outfile: builds.clientOutfile,
       format: 'esm',
       platform: 'browser',
-      target: 'es2022',
-      minify: isRelease,
+      target: ['chrome138', 'firefox139', 'safari18', 'edge137'],
+      minify: minify,
       plugins: builds.clientCopyAssets ? [copy(builds.clientCopyAssets)] : [],
     };
     
