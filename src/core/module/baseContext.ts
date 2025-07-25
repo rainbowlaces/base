@@ -144,13 +144,14 @@ export abstract class BaseContext<
         }
       }
 
-      // Fast-fail validation
-      if (this.#phaseMap.size === 0) {
-        this.logger.info(`No handlers found for topic: ${topic} - returning 404`);
-        const error = new Error(
+      // Check for a legitimate handler, ignoring middleware
+      const hasRouteHandlers = actions.some(action => !action.middleware);
+
+      if (!hasRouteHandlers) {
+        this.logger.debug(`No explicit route handlers found for topic: ${topic}, only middleware.`);
+        throw new Error(
           `No handlers were found for topic: ${topic}`
         );
-        throw error;
       }
 
       this.logger.debug(`Found ${this.#phaseMap.size} phases with handlers`);

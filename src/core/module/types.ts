@@ -8,6 +8,7 @@ export interface BaseActionArgs extends BasePubSubArgs {
 export interface ActionOptions {
   phase?: number;
   topic?: string;
+  middleware?: boolean;
 }
 
 export interface BaseAction extends Subscriber {
@@ -18,6 +19,7 @@ export interface BaseAction extends Subscriber {
   module: string;
   name: string;
   topic: string;
+  middleware: boolean;
 }
 
 export type TopicFunction = (

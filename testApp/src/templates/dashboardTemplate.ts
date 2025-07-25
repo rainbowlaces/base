@@ -3,6 +3,7 @@ import { template, BaseTemplate, type TemplateResult, html } from "../../../src/
 
 export interface DashboardTemplateData {
   title: string;
+  time: string;
   modules: {
     name: string;
     description: string;
@@ -31,6 +32,7 @@ export class DashboardTemplate extends BaseTemplate<DashboardTemplateData> {
         <div class="header">
             <h1>${this.data.title}</h1>
             <p>Framework demonstration application showcasing core features</p>
+            <p>The current time is: ${this.data.time}</p>
         </div>
         
         <div class="stats">

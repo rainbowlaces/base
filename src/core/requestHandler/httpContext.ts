@@ -31,7 +31,6 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
     });
 
     void this.coordinateAndRun(this.#topic).catch((error: unknown) => {
-      // Check if this is a "no handlers found" error (404 case)
       if (error instanceof Error && error.message.includes("No handlers were found for topic")) {
         this.logger.debug("Returning 404 for unhandled route:", [], { error });
       } else {

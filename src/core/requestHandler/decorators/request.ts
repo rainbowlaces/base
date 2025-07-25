@@ -15,15 +15,20 @@ function request(optionsOrTopic?: ActionOptions | string) {
     const target = t as BaseAction;
     target.action = true;
 
-    // Handle both string topic and ActionOptions
     let options: ActionOptions;
     if (typeof optionsOrTopic === "string") {
-      options = { topic: optionsOrTopic, phase: 100 };
+      options = { topic: optionsOrTopic };
     } else {
       options = optionsOrTopic ?? {};
     }
+
+    // Default middleware to true if no topic is specified (i.e., it's a global handler)
+    if (options.topic === undefined) {
+      options.middleware = options.middleware ?? true;
+    }
     
-    target.phase = options.phase ?? 1;
+    target.phase = options.phase ?? 100;
+    target.middleware = options.middleware ?? false; // Default to false if not specified
 
     context.addInitializer(function () {
       const module = this as BaseModule;
@@ -36,13 +41,10 @@ function request(optionsOrTopic?: ActionOptions | string) {
 
       const pubsub = BaseDi.resolve<BasePubSub>("BasePubSub");
 
-      // Execution subscription - handle the actual HTTP action execution
       pubsub.sub(
         `/context/execute/${moduleName}/${actionName}`,
         async function (args: BasePubSubArgs) {
           if (!args.context) return;
-          // HTTP actions should receive BaseHttpActionArgs, but executeAction expects BaseActionArgs
-          // Since BaseHttpActionArgs extends BaseActionArgs, this should be safe
           await module.executeAction(target.name, args as BaseHttpActionArgs);
         }
       );

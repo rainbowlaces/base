@@ -7,12 +7,23 @@ import { UserListTemplate, type UserListTemplateData } from '../templates/userLi
 import { ArticleListTemplate, type ArticleListTemplateData } from '../templates/articleListTemplate.js';
 import { GroupListTemplate } from '../templates/groupListTemplate.js';
 
+declare module '../../../src/index.js' {
+    interface HttpContextData {
+        time?: string; // Add time to context for demonstration
+    }
+}
+
 @baseModule()
 export class DashboardModule extends BaseModule {
 
     @di<BaseTemplates>("BaseTemplates")
     private accessor templates!: BaseTemplates;
 
+
+    @request()
+    async setTimeToContext({ context }: BaseHttpActionArgs) {
+        context.data.time = new Date().toISOString();
+    }
     /**
      * Dashboard homepage - shows overview of all data
      */
@@ -41,6 +52,7 @@ export class DashboardModule extends BaseModule {
 
             const dashboardData: DashboardTemplateData = {
                 title: 'RL-Base Memory Model Demo',
+                time: context.data.time ?? "No time set",
                 stats: {
                     totalModules: 3, // Users, Articles, Groups
                     totalEndpoints: users.length + articles.length + groups.length,
