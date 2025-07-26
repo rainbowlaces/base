@@ -1,11 +1,9 @@
+// src/core/models/baseModelCollection.ts
 import { type BaseModel } from "./baseModel.js";
 import { type ModelData, type ModelConstructor, type NoDerivedModelData } from "./types.js";
 
 /**
  * A concrete, minimal collection that implements lazy iteration.
- * Specific implementations should extend this and add capabilities as needed.
- * 
- * CRITICAL: This collection is LAZY - it only loads data when iterated.
  */
 export class BaseModelCollection<T extends BaseModel> implements AsyncIterable<T> {
     protected readonly source: Iterable<ModelData<T>> | AsyncIterable<ModelData<T>>;
@@ -28,55 +26,26 @@ export class BaseModelCollection<T extends BaseModel> implements AsyncIterable<T
         if (Symbol.asyncIterator in this.source) {
             // Handle AsyncIterable - lazy loading
             for await (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                yield model;
+                yield await this.modelConstructor.fromData(item);
             }
         } else {
             // Handle Iterable - lazy loading  
             for (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                yield model;
+                yield await this.modelConstructor.fromData(item);
             }
         }
     }
 
-    /**
-     * Convert collection to array of model instances.
-     * WARNING: This will load ALL data into memory. Use with extreme caution on large collections.
-     */
     async toArray(): Promise<T[]> {
         const items: T[] = [];
-        if (Symbol.asyncIterator in this.source) {
-            for await (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                items.push(model);
-            }
-        } else {
-            for (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                items.push(model);
-            }
+        for await (const model of this) {
+            items.push(model);
         }
         return items;
     }
 
-    /**
-     * Serialize all items to raw data array.
-     * WARNING: This will load ALL data into memory. Use with extreme caution on large collections.
-     */
     async serialize(): Promise<NoDerivedModelData<T>[]> {
-        const items: NoDerivedModelData<T>[] = [];
-        if (Symbol.asyncIterator in this.source) {
-            for await (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                items.push(model.serialize());
-            }
-        } else {
-            for (const item of this.source) {
-                const model = await this.modelConstructor.fromData(item);
-                items.push(model.serialize());
-            }
-        }
-        return items;
+        const models = await this.toArray();
+        return models.map(model => model.serialize());
     }
 }

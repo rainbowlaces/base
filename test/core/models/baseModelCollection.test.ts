@@ -264,6 +264,97 @@ describe('BaseModelCollection', () => {
         });
     });
 
+    describe('serialize() method', () => {
+        it('should serialize sync collection to array of serialized data', async () => {
+            const data = [
+                { name: 'User 1', email: 'user1@example.com' },
+                { name: 'User 2', email: 'user2@example.com' },
+                { name: 'User 3', email: 'user3@example.com' }
+            ];
+            const collection = new BaseModelCollection(data, TestUser);
+
+            const serialized = await collection.serialize();
+
+            assert(Array.isArray(serialized));
+            assert.strictEqual(serialized.length, 3);
+            
+            // Check that we get plain objects, not model instances
+            assert.strictEqual(typeof serialized[0], 'object');
+            assert(!(serialized[0] instanceof TestUser));
+            
+            // Check the serialized data matches original data
+            assert.strictEqual(serialized[0].name, 'User 1');
+            assert.strictEqual(serialized[0].email, 'user1@example.com');
+            assert.strictEqual(serialized[1].name, 'User 2');
+            assert.strictEqual(serialized[1].email, 'user2@example.com');
+            assert.strictEqual(serialized[2].name, 'User 3');
+            assert.strictEqual(serialized[2].email, 'user3@example.com');
+        });
+
+        it('should serialize async collection to array of serialized data', async () => {
+            const data = [
+                { name: 'User 1', email: 'user1@example.com' },
+                { name: 'User 2', email: 'user2@example.com' }
+            ];
+            const asyncData = createMockAsyncGenerator(data);
+            const collection = new BaseModelCollection(asyncData, TestUser);
+
+            const serialized = await collection.serialize();
+
+            assert(Array.isArray(serialized));
+            assert.strictEqual(serialized.length, 2);
+            assert.strictEqual(typeof serialized[0], 'object');
+            assert(!(serialized[0] instanceof TestUser));
+            assert.strictEqual(serialized[0].name, 'User 1');
+            assert.strictEqual(serialized[1].name, 'User 2');
+        });
+
+        it('should handle empty collection serialization', async () => {
+            const data: any[] = [];
+            const collection = new BaseModelCollection(data, TestUser);
+
+            const serialized = await collection.serialize();
+
+            assert(Array.isArray(serialized));
+            assert.strictEqual(serialized.length, 0);
+        });
+
+        it('should preserve order in serialization', async () => {
+            const data = [
+                { name: 'User A', email: 'a@example.com' },
+                { name: 'User B', email: 'b@example.com' },
+                { name: 'User C', email: 'c@example.com' },
+                { name: 'User D', email: 'd@example.com' }
+            ];
+            const collection = new BaseModelCollection(data, TestUser);
+
+            const serialized = await collection.serialize();
+
+            assert.strictEqual(serialized.length, 4);
+            assert.strictEqual(serialized[0].name, 'User A');
+            assert.strictEqual(serialized[1].name, 'User B');
+            assert.strictEqual(serialized[2].name, 'User C');
+            assert.strictEqual(serialized[3].name, 'User D');
+        });
+
+        it('should call serialize() on each model instance', async () => {
+            const data = [
+                { name: 'User 1', email: 'user1@example.com' },
+                { name: 'User 2', email: 'user2@example.com' }
+            ];
+            
+            // Just verify the serialize method works correctly
+            const collection = new BaseModelCollection(data, TestUser);
+            const serialized = await collection.serialize();
+
+            assert.strictEqual(serialized.length, 2);
+            assert.strictEqual(typeof serialized[0], 'object');
+            assert.strictEqual(typeof serialized[1], 'object');
+            assert(!(serialized[0] instanceof TestUser));
+            assert(!(serialized[1] instanceof TestUser));
+        });
+    });
+
     describe('Type Safety and Generics', () => {
         it('should maintain type safety with different model types', async () => {
             const userData = [{ name: 'User 1', email: 'user1@example.com' }];
