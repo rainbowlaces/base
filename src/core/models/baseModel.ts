@@ -20,6 +20,7 @@ import {
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
+import { serialize } from "../../utils/serialization.js";
 
 // Interface to avoid circular import with BaseIdentifiableModel
 interface HasId {
@@ -448,7 +449,12 @@ export abstract class BaseModel {
         schema: BaseModelSchema,
     ): unknown {
         const serializer = schema.fields[key].options.serializer;
-        return serializer ? serializer.apply(this,[value]) : value;
+        if (serializer && typeof serializer === 'function') {
+            return serializer.apply(this, [value]);
+        }
+        else {
+            return serialize(value);
+        }
     }
 
     public serialize<T extends BaseModel>(this: T): NoDerivedModelData<T> {

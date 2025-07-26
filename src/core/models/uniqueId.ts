@@ -1,7 +1,8 @@
 import { customAlphabet } from 'nanoid';
 import { BaseError } from "../baseErrors.js";
+import { type Serializable } from '../types.js';
 
-export class UniqueID {
+export class UniqueID implements Serializable {
     readonly #id: string;
     private static readonly timestampLength = 9;
     private static readonly nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 11);
@@ -60,6 +61,10 @@ export class UniqueID {
     }
 
     public toJSON(): string {
+        return this.#id;
+    }
+
+    public serialize(): string {
         return this.#id;
     }
 

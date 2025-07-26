@@ -10,3 +10,15 @@ export type Scalar =
   | symbol
   | null
   | undefined;
+
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | { [x: string]: JsonValue }
+  | Array<JsonValue>;
+
+export interface Serializable {
+  serialize(): JsonValue;
+}
