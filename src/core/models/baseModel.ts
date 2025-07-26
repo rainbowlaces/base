@@ -140,6 +140,10 @@ export abstract class BaseModel {
         return this.#dirty;
     }
 
+    public markAsDirty(): void {
+        this.#dirty = true;
+    }
+
     protected async hydrate(data: NoDerivedModelData<this>, isNew: boolean = false): Promise<void> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
@@ -450,8 +454,7 @@ export abstract class BaseModel {
     public serialize<T extends BaseModel>(this: T): NoDerivedModelData<T> {
         const constructor = this.constructor as typeof BaseModel;
         const schema = constructor.getProcessedSchema();
-        const data: Record<string, unknown> = {};
-        
+        const data: Record<string, unknown> = {};        
         for (const key in schema.fields) {
             const typedKey = key as ModelFieldKeys<T>;
             if (this.has(typedKey)) {
@@ -487,10 +490,10 @@ export abstract class BaseModel {
     }
 
 
-    public async save(): Promise<void> {
+    public async save(): Promise<void> {        
         if (!this.dirty) return;
 
-        if (this.isPersistable()) {
+        if (this.isPersistable()) {            
             await this.persist();
             const newItem = this.#new;
             this.#new = false;
@@ -520,7 +523,7 @@ export abstract class BaseModel {
     }
 
     public revert(): void {
-        if (!this.#dirty) return;
+        if (!this.dirty) return;
         this.#data = { ...this.#originalData };
         this.#dirty = false;
     }
