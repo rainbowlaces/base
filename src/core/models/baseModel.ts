@@ -163,13 +163,13 @@ export abstract class BaseModel {
                 // Apply hydrator if available
                 let value = rawValue;
                 if (fieldMeta.options.hydrator) {
-                    value = fieldMeta.options.hydrator(rawValue);
+                    value = fieldMeta.options.hydrator.apply(this,[rawValue]);
                 }
                 
                 // Apply validator if available
                 if (fieldMeta.options.validator) {
                     try {
-                        fieldMeta.options.validator(value);
+                        fieldMeta.options.validator.apply(this,[value]); 
                     }                    
                     catch (error: Error | unknown) {
                         throw new BaseError(`Validation failed for field "${key}" during hydration`, error as Error);
@@ -299,13 +299,13 @@ export abstract class BaseModel {
         // Apply hydrator if available
         let convertedValue = value;
         if (fieldOptions.hydrator) {
-            convertedValue = fieldOptions.hydrator(value) as T;
+            convertedValue = fieldOptions.hydrator.apply(this, [value]) as T;
         }
         
         // Apply validator if available
         if (fieldOptions.validator) {
             try {
-                fieldOptions.validator(convertedValue);
+                fieldOptions.validator.apply(this,[convertedValue]);
             } catch (_error) {
                 throw new BaseError(`Validation failed for field "${key}"`);
             }
@@ -333,13 +333,13 @@ export abstract class BaseModel {
         // Apply hydrator if available
         let convertedValue = value;
         if (fieldOptions.hydrator) {
-            convertedValue = fieldOptions.hydrator(value) as ModelFieldValue<this, K>;
+            convertedValue = fieldOptions.hydrator.apply(this,[value]) as ModelFieldValue<this, K>;
         }
         
         // Apply validator if available
         if (fieldOptions.validator) {
             try {
-                fieldOptions.validator(convertedValue);
+                fieldOptions.validator.apply(this,[convertedValue]);
             } catch (_error) {
                 throw new BaseError(`Validation failed for field "${key}"`);
             }
@@ -448,7 +448,7 @@ export abstract class BaseModel {
         schema: BaseModelSchema,
     ): unknown {
         const serializer = schema.fields[key].options.serializer;
-        return serializer ? serializer(value) : value;
+        return serializer ? serializer.apply(this,[value]) : value;
     }
 
     public serialize<T extends BaseModel>(this: T): NoDerivedModelData<T> {
