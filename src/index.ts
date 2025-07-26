@@ -89,7 +89,10 @@ export { redactor } from "./core/logger/decorators/logRedactor.js";
 export { template } from "./modules/templates/decorators/template.js";
 export { tag } from "./modules/templates/decorators/tag.js";
 
+export type { Serializable } from "./core/types.js";
+
 // Utils exports
+export * as serialization from "./utils/serialization.js";
 export * as async from "./utils/async.js";
 export * as file from "./utils/file.js";
 export * as recursion from "./utils/recursion.js";
