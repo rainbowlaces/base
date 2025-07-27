@@ -127,26 +127,22 @@ describe('BaseModel: Instance State & Data Management', () => {
         );
     });
 
-    it('should throw for non-schema fields during hydration', async () => {
-        // Test that hydration correctly throws for fields not in the schema
+    it('should ignore non-schema fields during hydration', async () => {
+        // Test that hydration ignores fields not in the schema (changed behavior)
         const dataWithExtraFields = { 
             bio: 'Valid field', 
-            extraField: 'should-be-rejected'
+            extraField: 'should-be-ignored'
         };
         
-        // Should throw when trying to hydrate with non-schema fields
-        await assert.rejects(
-            () => TestProfile.fromData(dataWithExtraFields),
-            {
-                message: 'Field "extraField" is not defined in the schema.'
-            },
-            'Should throw for non-schema fields during hydration'
-        );
+        // Should successfully hydrate, ignoring the extra field
+        const profile = await TestProfile.fromData(dataWithExtraFields);
         
-        // Should succeed with only schema fields
-        const validData = { bio: 'Valid field' };
-        const profile = await TestProfile.fromData(validData);
-        assert.strictEqual(profile.get('bio'), 'Valid field', 'Should hydrate valid schema fields');
+        // Valid field should be set
+        assert.strictEqual(profile.bio, 'Valid field');
+        
+        // Extra field should not be accessible or stored
+        assert.strictEqual((profile as any).extraField, undefined);
+        assert.strictEqual(profile.has('extraField' as any), false);
     });
     
     it('should serialize model data correctly', async () => {

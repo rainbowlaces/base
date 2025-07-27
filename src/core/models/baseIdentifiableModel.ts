@@ -3,13 +3,14 @@ import { BaseModel } from "./baseModel.js";
 import { UniqueID } from "./uniqueId.js";
 import { BaseError } from "../baseErrors.js";
 import { type BaseModelCollection } from "./baseModelCollection.js";
-import { type AsyncDefinedId, type AsyncDefinedIds, type ModelConstructor } from "./types.js";
+import { type Identifiable, type AsyncDefinedId, type AsyncDefinedIds } from "./utils.js";
+import { type ModelConstructor } from "./types.js";
 import { toUniqueID } from "./hydrators.js";
 
 /**
  * BaseIdentifiableModel extends BaseModel with an `id` field.
  */
-export abstract class BaseIdentifiableModel extends BaseModel {
+export abstract class BaseIdentifiableModel extends BaseModel implements Identifiable {
     @field({ 
         readOnly: true,
         default: () => new UniqueID(),

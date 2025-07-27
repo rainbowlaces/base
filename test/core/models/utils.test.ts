@@ -34,15 +34,15 @@ describe('Model Utils', () => {
         it('should throw an error for invalid input types', () => {
             assert.throws(() => {
                 toUniqueId(123 as any);
-            }, /Invalid id type.*Expected BaseIdentifiableModel, UniqueID, or string/);
+            }, /Invalid id type.*Expected Identifiable object, UniqueID, or string/);
 
             assert.throws(() => {
                 toUniqueId(null as any);
-            }, /Invalid id type.*Expected BaseIdentifiableModel, UniqueID, or string/);
+            }, /Invalid id type.*Expected Identifiable object, UniqueID, or string/);
 
             assert.throws(() => {
                 toUniqueId({} as any);
-            }, /Invalid id type.*Expected BaseIdentifiableModel, UniqueID, or string/);
+            }, /Invalid id type.*Expected Identifiable object, UniqueID, or string/);
         });
     });
 

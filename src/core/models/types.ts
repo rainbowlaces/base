@@ -4,6 +4,7 @@ import { type BaseModelCollection } from './baseModelCollection.js';
 import { type UniqueID } from './uniqueId.js';
 import { type Thunk } from '../../utils/thunk.js';
 import { type MaybeAsync, type Scalar } from '../types.js';
+import { type Identifiable, type DefinedId, type AsyncDefinedId, type AsyncDefinedIds } from './utils.js';
 
 export type Cardinality = 'one' | 'many';
 export type RelationType = 'reference' | 'embed';
@@ -113,10 +114,16 @@ export interface FieldOptions<T = unknown> {
     serializer?: (value: T) => Scalar | object | undefined;
 }
 
-export type AsyncDefinedId<T extends BaseIdentifiableModel> = MaybeAsync<DefinedId<T>>;
-export type AsyncDefinedIds<T extends BaseIdentifiableModel> = MaybeAsync<DefinedId<T>[]>;
-export type DefinedId<T extends BaseIdentifiableModel> = T | UniqueID | string;
-export type DefinedIds<T extends BaseIdentifiableModel> = DefinedId<T>[];
+// Import the utility types from utils.ts to avoid circular dependency
+export type { 
+    Identifiable, 
+    DefinedId, 
+    AsyncDefinedId, 
+    AsyncDefinedIds 
+} from './utils.js';
+
+// Keep this one for backward compatibility since it wasn't moved
+export type DefinedIds<T extends Identifiable> = DefinedId<T>[];
 
 // --- Capability Interfaces (as per refactoring spec) ---
 
