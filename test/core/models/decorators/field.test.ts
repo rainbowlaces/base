@@ -50,7 +50,7 @@ describe('@field decorator', () => {
         assert.strictEqual(setSpy.mock.calls[0]?.arguments[1], 'test value');
     });
 
-    it('should respect the readOnly option', () => {
+    it('should respect the readOnly option', async () => {
         @model
         class TestModel extends BaseModel {
             @field({ readOnly: true })
@@ -66,10 +66,16 @@ describe('@field decorator', () => {
         void value; // Avoid unused variable warning
         assert.strictEqual(getSpy.mock.callCount(), 1);
         
-        // Should throw error when trying to set readOnly field
+        // Should allow setting readOnly field on new models (for creation)
+        instance.readOnlyField = 'test';
+        
+        // Create an existing model (not new) using fromData
+        const existingInstance = await TestModel.fromData({ readOnlyField: 'existing' });
+        
+        // Should throw error when trying to set readOnly field on existing model
         assert.throws(() => {
-            instance.readOnlyField = 'test';
-        }, /readonly and cannot be set/);
+            existingInstance.readOnlyField = 'test2';
+        }, /cannot be changed on an existing model/);
     });
 
     it('should apply default values (function)', () => {

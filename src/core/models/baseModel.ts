@@ -293,10 +293,10 @@ export abstract class BaseModel {
     // Internal method for decorator use - bypasses type checking
     protected _internalSet<T>(key: string, value: T): void {
         const { fieldOptions } = this.getMeta(key);
-        if (fieldOptions.readOnly) {
-            throw new BaseError(`Field "${key}" is readonly and cannot be set.`);
+        if (fieldOptions.readOnly && !this.#new) {
+            throw new BaseError(`Readonly field "${key}" cannot be changed on an existing model.`);
         }
-        
+
         // Apply hydrator if available
         let convertedValue = value;
         if (fieldOptions.hydrator) {
