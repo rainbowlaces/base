@@ -44,7 +44,7 @@ export class Base {
     
     BaseDi.register(this.fsRoot, "fsRoot");
     BaseDi.register(this.libRoot, "libRoot");
-    BaseDi.register(process.env.NODE_ENV ?? "development", "env");
+    BaseDi.register(process.env.NODE_ENV ?? "production", "env");
   }
 
   get config(): BaseMainConfig {

@@ -10,8 +10,10 @@ export function baseModule<T extends new () => BaseModule<any>>(
   options: BaseModuleOptions = {}
 ) {
   return function (target: T, context: ClassDecoratorContext): T {
-    const { phase = 200 } = options;
-    
+    const { phase = 100 } = options;
+
+    if (phase <= 50) throw new Error("Module phase must be greater than 50. Phases below 50 are reserved for core modules.");
+
     registerDi({
       key: target.name, // Use class name directly without Module. prefix
       singleton: true,

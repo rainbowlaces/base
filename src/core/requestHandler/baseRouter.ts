@@ -17,7 +17,7 @@ declare module "../config/types.js" {
   }
 }
 
-@registerDi({  setup: true, phase: 90, singleton: true })
+@registerDi({  setup: true, phase: 40, singleton: true })
 export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;

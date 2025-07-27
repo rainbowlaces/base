@@ -5,7 +5,7 @@ import { Group } from '../models/group.js';
 import { Article } from '../models/article.js';
 import { Comment } from '../models/comment.js';
 import { MemoryModel } from '../data/memoryModel.js';
-import { type BaseHttpActionArgs, baseModule, BaseModule, init, request } from '../../../src/index.js';
+import { type BaseHttpActionArgs, baseModule, BaseModule, request } from '../../../src/index.js';
 
 @baseModule()
 export class ModelsModule extends BaseModule {
@@ -13,8 +13,7 @@ export class ModelsModule extends BaseModule {
     /**
      * Seeds the in-memory database with initial data when the application starts.
      */
-    @init()
-    async seedDatabase() {
+    async setup() {
         this.logger.info('--- Seeding In-Memory Database ---');
 
         // Clear all stores for a clean run

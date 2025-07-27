@@ -5,7 +5,7 @@ import { registerDi } from "../di/decorators/registerDi.js";
 import { type BaseLogger } from "../logger/baseLogger.js";
 import { type BasePubSubArgs, type Subscriber, type Subscription, type SubscriptionMatch } from "./types.js";
 
-@registerDi({ singleton: true, teardown: true, phase: 30 })
+@registerDi({ singleton: true, teardown: true, phase: 20 })
 export class BasePubSub {
   private static instance?: BasePubSub;
 
@@ -96,15 +96,8 @@ export class BasePubSub {
       .filter((m: SubscriptionMatch) => !!m.match);
   }
 
-  async setup(): Promise<void> {
-    await delay();
-    this.logger.info("BasePubSub setup.");
-  }
-
   async teardown(): Promise<void> {
-    this.logger.info("BasePubSub teardown started.");
     this.subscriptions.clear();
-    this.logger.info('BasePubSub teardown complete.');
   }
 
   private handleError(error: Error): void {

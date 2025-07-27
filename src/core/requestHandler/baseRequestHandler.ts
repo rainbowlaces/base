@@ -10,7 +10,7 @@ import { BaseHttpContext } from "./httpContext.js";
 import { type BaseRequestHandlerConfig } from "./types.js";
 import { config } from "../config/decorators/config.js";
 
-@registerDi({setup: true, singleton: true, teardown: true, phase: 100})
+@registerDi({setup: true, singleton: true, teardown: true, phase: 150})
 export class BaseRequestHandler {
   #server!: http.Server;
 

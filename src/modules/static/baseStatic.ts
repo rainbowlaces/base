@@ -2,7 +2,6 @@ import path from "path";
 import crypto from "crypto";
 import type * as fs from "fs";
 import mime from "mime-types";
-import { baseModule } from "../../core/module/decorators/baseModule.js";
 import { BaseClassConfig, type ConfigData } from "../../core/config/types.js";
 import { configClass } from "../../core/config/decorators/provider.js";
 import { BaseModule } from "../../core/module/baseModule.js";
@@ -12,6 +11,7 @@ import { loadFile } from "../../utils/file.js";
 import { request } from "../../core/requestHandler/decorators/request.js";
 import { type BaseHttpActionArgs } from "../../core/requestHandler/types.js";
 import { NodeFileSystem, type FileSystem } from "../../utils/fileSystem.js";
+import { registerDi } from "../../core/di/decorators/registerDi.js";
 
 interface NodeError extends Error {
   code?: string;
@@ -30,7 +30,7 @@ declare module "../../core/config/types.js" {
   }
 }
 
-@baseModule()
+@registerDi({setup: true, singleton: true, teardown: true, phase: 30, tags: ["Module"]})
 export class BaseStatic extends BaseModule<BaseStaticConfig> {
   @di("fsRoot")
   accessor baseFsRoot!: string;

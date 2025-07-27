@@ -10,7 +10,6 @@ import { camelToLowerUnderscore } from "../../utils/string.js";
 import { NodeConsole, type Console } from "../../utils/console.js";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { diByTag } from "../di/baseDi.js";
-import { delay } from "../../utils/async.js";
 import { config } from "../config/decorators/config.js";
 
 /**
@@ -32,10 +31,6 @@ export class BaseLogger {
 
   @diByTag("Logger:Redactor")
   private accessor redactors!: LogObjectTransformer[];
-
-  async setup(): Promise<void> {
-    void delay();
-  }
 
   /**
    * Get the console method for a specific log level.

@@ -19,7 +19,6 @@ export class BaseConfig {
     try {
       env = BaseDi.resolve<string>("env");
     } catch {
-      // Default to 'default' environment if not registered
       env = 'default';
     }
     BaseConfig.config = BaseDi.resolve(BaseConfigRegistry, env);
