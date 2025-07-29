@@ -1,7 +1,7 @@
 import { type BaseAction, type BaseActionArgs } from "./types.js";
 import { type BaseContext } from "./baseContext.js";
 import { type BaseClassConfig } from "../config/types.js";
-import { type BaseLogger } from "../logger/baseLogger.js";
+import { BaseLogger } from "../logger/baseLogger.js";
 import { BaseDi } from "../di/baseDi.js";
 import { delay } from "../../utils/async.js";
 
@@ -12,7 +12,7 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
   protected readonly config: T;
 
   constructor() {
-    this.logger = BaseDi.resolve<BaseLogger>("BaseLogger", this.namespace);
+    this.logger = BaseDi.resolve(BaseLogger, this.namespace);
     this.logger.debug("Loaded");
     try {
       this.config = BaseDi.resolve<T>(`Config.${this.namespace}`);

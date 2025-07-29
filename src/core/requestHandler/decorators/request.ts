@@ -1,5 +1,5 @@
 import { BaseDi } from "../../di/baseDi.js";
-import { type BasePubSub } from "../../pubsub/basePubSub.js";
+import { BasePubSub } from "../../pubsub/basePubSub.js";
 import { type BasePubSubArgs } from "../../pubsub/types.js";
 import { BaseContext } from "../../module/baseContext.js";
 import { type BaseModule } from "../../module/baseModule.js";
@@ -39,7 +39,7 @@ function request(optionsOrTopic?: ActionOptions | string) {
 
       BaseContext.registerAction(target.topic, target);
 
-      const pubsub = BaseDi.resolve<BasePubSub>("BasePubSub");
+      const pubsub = BaseDi.resolve(BasePubSub);
 
       pubsub.sub(
         `/context/execute/${moduleName}/${actionName}`,

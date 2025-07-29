@@ -1,5 +1,5 @@
 import { BaseDi } from "../../di/baseDi.js";
-import { type BasePubSub } from "../../pubsub/basePubSub.js";
+import { BasePubSub } from "../../pubsub/basePubSub.js";
 import { type BasePubSubArgs } from "../../pubsub/types.js";
 import { BaseContext } from "../baseContext.js";
 import { type BaseModule } from "../baseModule.js";
@@ -21,7 +21,7 @@ export function init(options: Omit<ActionOptions, "topic"> = {}) {
 
       BaseContext.registerAction('/init', target);
 
-      const pubsub = BaseDi.resolve<BasePubSub>("BasePubSub");
+      const pubsub = BaseDi.resolve(BasePubSub);
 
       // Execution subscription - handle the actual action execution
       pubsub.sub(

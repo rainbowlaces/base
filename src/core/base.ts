@@ -85,7 +85,7 @@ export class Base {
 
     await BaseInitializer.run();    
 
-    void this.pubsub.pub('/init', { context: BaseDi.resolve<BaseInitContext>(BaseInitContext) });
+    void this.pubsub.pub('/init', { context: BaseDi.resolve(BaseInitContext) });
 
     this.logger.debug("Base initialized", []);
   }

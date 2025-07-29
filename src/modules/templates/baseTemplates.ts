@@ -11,7 +11,7 @@ import { type TemplateResult } from "./engine/templateResult.js";
 import { BaseError } from "../../core/baseErrors.js";
 import { registerDi } from "../../core/di/decorators/registerDi.js";
 
-@registerDi({setup: true, singleton: true, teardown: true, phase: 30, tags: ["Module"]})
+@registerDi({setup: true, singleton: true, phase: 30, tags: ["Module"]})
 export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
   public tagFactories: TagFactories = {} as TagFactories;
   public templateFactories: TemplateFactories = {} as TemplateFactories;
