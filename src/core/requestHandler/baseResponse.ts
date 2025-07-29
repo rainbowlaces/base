@@ -1,5 +1,4 @@
 import type * as http from "http";
-import { BaseError } from "../../core/baseErrors.js";
 import { type Readable } from "stream";
 import { registerDi } from "../../core/di/decorators/registerDi.js";
 import { di } from "../../core/di/decorators/di.js";
@@ -50,10 +49,7 @@ export class BaseResponse extends EventEmitter {
     this.#res.on("close", () => {
       if (this.#finished) return;
       this.#finished = true;
-      this.emit(
-        "error",
-        new BaseError("Client closed before response was finished."),
-      );
+      this.emit("done");
     });
   }
 
