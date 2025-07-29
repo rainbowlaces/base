@@ -39,8 +39,9 @@ export class Base {
     this.fsRoot = getDirname(metaUrl);
     this.libRoot = getDirname(import.meta.url);
     
-    console.log(`[Base] Registering fsRoot: ${this.fsRoot}`);
-    console.log(`[Base] Registering libRoot: ${this.libRoot}`);
+    // Note: Using console.debug here since logger isn't available yet during DI setup
+    console.debug(`[Base] Registering fsRoot: ${this.fsRoot}`);
+    console.debug(`[Base] Registering libRoot: ${this.libRoot}`);
     
     BaseDi.register(this.fsRoot, "fsRoot");
     BaseDi.register(this.libRoot, "libRoot");
@@ -86,7 +87,7 @@ export class Base {
 
     void this.pubsub.pub('/init', { context: BaseDi.resolve<BaseInitContext>(BaseInitContext) });
 
-    this.logger.info("Base initialized", []);
+    this.logger.debug("Base initialized", []);
   }
 
   private async shutdown(): Promise<void> {

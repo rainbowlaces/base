@@ -59,7 +59,7 @@ export class BaseResponse extends EventEmitter {
 
   redirect(url: string) {
     if (this.#finished) return;
-    this.logger.info(`Redirecting to ${url}`, [this.#ctxId]);
+    this.logger.debug(`Redirecting to ${url}`, [this.#ctxId]);
     this.statusCode(302);
     this.header("location", url);
     this.ensureHeadersSent();

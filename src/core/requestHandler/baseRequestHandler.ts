@@ -43,7 +43,7 @@ export class BaseRequestHandler {
 
   private async handleContext(ctx: BaseHttpContext) {
     ctx.res.once("done", () => {
-      this.logger.info("Request done.", [ctx.id]);
+      this.logger.debug("Request done.", [ctx.id]);
       ctx.res.removeAllListeners();
     });
 
@@ -52,7 +52,7 @@ export class BaseRequestHandler {
       ctx.res.removeAllListeners();
     });
 
-    this.logger.info(`New request: ${ctx.topic}`, [ctx.id]);
+    this.logger.debug(`New request: ${ctx.topic}`, [ctx.id]);
 
     void this.bus.pub(ctx.topic, { context: ctx });
 

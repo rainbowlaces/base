@@ -43,9 +43,9 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
   }
 
   async setup(): Promise<void> {
-    this.logger.debug(`BaseStatic setup starting`, []);
-    this.logger.debug(`Base filesystem root: ${this.baseFsRoot}`, []);
-    this.logger.debug(`Config staticFsRoot: ${this.config.staticFsRoot}`, []);
+    this.logger.info(`BaseStatic setup starting`, []);
+    this.logger.info(`Base filesystem root: ${this.baseFsRoot}`, []);
+    this.logger.info(`Config staticFsRoot: ${this.config.staticFsRoot}`, []);
     
     if (!this.baseFsRoot) {
       throw new BaseError("baseFsRoot dependency not injected - check DI configuration");
@@ -56,15 +56,12 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     );
     
     this.logger.info(`Static file root: ${this.staticFsRoot}`);
-    this.logger.debug(`Max age setting: ${this.config.maxAge}`, []);
-    this.logger.debug(`BaseStatic setup complete`, []);
+    this.logger.info(`Max age setting: ${this.config.maxAge}`, []);
+    this.logger.info(`BaseStatic setup complete`, []);
   }
 
   @request({ topic: "/get/static/:path*" , phase: 10 })
   async handleStatic({ context: ctx, path: reqPath }: BaseHttpActionArgs & { path?: string }) {
-
-    this.logger.debug(`******* handleStatic called with path: ${reqPath} ******`, [ctx.id]);
-
     if (!reqPath) {
       this.logger.debug(`No path provided, returning 400`, [ctx.id]);
       ctx.res.statusCode(400);
@@ -88,9 +85,8 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     this.logger.debug(`Resolved file path: ${filePath} from req path: ${reqPath}`, [ctx.id]);
 
     // Security check - ensure file is within static root
-    if (!filePath.startsWith(this.staticFsRoot)) {
+    if (!filePath.startsWith(this.staticFsRoot)) {      
       this.logger.warn(`Filepath(${filePath}) is outside of root(${this.staticFsRoot})`, [ctx.id]);
-      this.logger.debug(`Security check failed, returning 403`, [ctx.id]);
       ctx.res.statusCode(403);
       void ctx.res.send("Forbidden");
       return;

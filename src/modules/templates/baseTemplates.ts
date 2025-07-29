@@ -108,8 +108,4 @@ export class BaseTemplates extends BaseModule<BaseTemplatesConfig> {
       `Successfully built ${Object.keys(this.templateFactories).length} template factories.`
     );
   }
-
-  async teardown(): Promise<void> {
-    this.logger.info("BaseTemplates module shutdown");
-  }
 }

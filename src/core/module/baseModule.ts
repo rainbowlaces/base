@@ -13,7 +13,7 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
 
   constructor() {
     this.logger = BaseDi.resolve<BaseLogger>("BaseLogger", this.namespace);
-    this.logger.info("Loaded");
+    this.logger.debug("Loaded");
     try {
       this.config = BaseDi.resolve<T>(`Config.${this.namespace}`);
     }
@@ -32,11 +32,11 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
 
   async setup(): Promise<void> {
     await delay();
-    this.logger.info(`${this.constructor.name} setup.`);
+    this.logger.debug(`${this.constructor.name} setup.`);
   }
 
   async teardown(): Promise<void> {
-    this.logger.info(`${this.constructor.name} torn down.`);
+    this.logger.debug(`${this.constructor.name} torn down.`);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,7 +68,7 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
     const ctx = args.context;
 
     if (this.contextIsDoneOrError(ctx)) {
-      this.logger.warn(
+      this.logger.debug(
         `Context state: ${ctx.state}. Skipping ${target.name}.`,
         [fullName]
       );
@@ -89,7 +89,7 @@ export abstract class BaseModule<T extends BaseClassConfig = BaseClassConfig> {
     this.logger.debug(`All deps. complete.`, [ctx.id, fullName]);
 
     if (this.contextIsDoneOrError(ctx)) {
-      this.logger.warn(
+      this.logger.debug(
         `Context state: ${ctx.state}. Skipping ${target.name}.`,
         [fullName]
       );
