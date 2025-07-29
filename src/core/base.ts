@@ -102,11 +102,10 @@ export class Base {
     try {
       // Teardown all services in reverse dependency order
       await BaseDi.teardown();
-
-      this.logger.info("Graceful shutdown completed successfully", []);
+      console.log("All services have been torn down successfully");
       process.exit(0);
     } catch (error) {
-      this.logger.fatal("Error during graceful shutdown", [], { error });
+      console.error("Error during graceful shutdown:", error);
       process.exit(1);
     }
   }
