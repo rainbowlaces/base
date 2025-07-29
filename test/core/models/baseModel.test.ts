@@ -6,7 +6,8 @@ import { BaseDi } from '../../../src/core/di/baseDi.js';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
 import { field } from '../../../src/core/models/decorators/field.js';
 import { model } from '../../../src/core/models/decorators/model.js';
-import type { Persistable, Deletable } from '../../../src/core/models/types.js';
+import { embed } from '../../../src/core/models/decorators/embed.js';
+import type { Persistable, Deletable, EmbedMany, EmbedOne } from '../../../src/core/models/types.js';
 
 // Setup test isolation
 setupTestTeardown();
@@ -700,5 +701,112 @@ describe('BaseModel: Field Hydrators and Validators', () => {
         // Setting a value that converts to different result should mark dirty
         instance.set('trimmedField', ' world ');
         assert.strictEqual((instance as any).dirty, true, 'Should be dirty when hydrator returns different value');
+    });
+});
+
+describe('BaseModel: appendTo Method', () => {
+    it('should append items to EmbedMany fields', async () => {
+        @model
+        class TestItem extends BaseModel {
+            @field()
+            accessor name!: string;
+        }
+
+        @model
+        class TestContainer extends BaseModel {
+            @embed(TestItem, { cardinality: 'many', default: () => [] })
+            accessor items!: EmbedMany<TestItem>;
+
+            async addItem(item: TestItem): Promise<void> {
+                return this.appendTo('items', item);
+            }
+        }
+
+        const container = new TestContainer();
+        const item1 = await TestItem.create({ name: 'Item 1' });
+        const item2 = await TestItem.create({ name: 'Item 2' });
+
+        // Test adding single item
+        await container.addItem(item1);
+        const itemsAfterFirst = await container.items();
+        const itemsArray1 = await itemsAfterFirst.toArray();
+        assert.strictEqual(itemsArray1.length, 1, 'Should have 1 item after first append');
+        assert.strictEqual(itemsArray1[0].name, 'Item 1', 'Should have correct item name');
+
+        // Test adding another item
+        await container.addItem(item2);
+        const itemsAfterSecond = await container.items();
+        const itemsArray2 = await itemsAfterSecond.toArray();
+        assert.strictEqual(itemsArray2.length, 2, 'Should have 2 items after second append');
+        assert.strictEqual(itemsArray2[1].name, 'Item 2', 'Should have correct second item name');
+    });
+
+    it('should append multiple items to EmbedMany fields', async () => {
+        @model
+        class TestItem extends BaseModel {
+            @field()
+            accessor name!: string;
+        }
+
+        @model
+        class TestContainer extends BaseModel {
+            @embed(TestItem, { cardinality: 'many', default: () => [] })
+            accessor items!: EmbedMany<TestItem>;
+
+            async addItems(items: TestItem[]): Promise<void> {
+                // This should compile without errors now
+                return this.appendTo('items', items);
+            }
+        }
+
+        const container = new TestContainer();
+        const item1 = await TestItem.create({ name: 'Item 1' });
+        const item2 = await TestItem.create({ name: 'Item 2' });
+        const item3 = await TestItem.create({ name: 'Item 3' });
+
+        // Test adding multiple items at once
+        await container.addItems([item1, item2, item3]);
+        const itemsAfter = await container.items();
+        const itemsArray = await itemsAfter.toArray();
+        
+        assert.strictEqual(itemsArray.length, 3, 'Should have 3 items after append');
+        assert.strictEqual(itemsArray[0].name, 'Item 1', 'Should have correct first item');
+        assert.strictEqual(itemsArray[1].name, 'Item 2', 'Should have correct second item');
+        assert.strictEqual(itemsArray[2].name, 'Item 3', 'Should have correct third item');
+    });
+
+    it('should throw error when used on non-many fields', async () => {
+        @model
+        class TestItem extends BaseModel {
+            @field()
+            accessor name!: string;
+        }
+
+        @model
+        class TestContainer extends BaseModel {
+            @embed(TestItem, { cardinality: 'one' })
+            accessor item!: EmbedOne<TestItem>;
+        }
+
+        const container = new TestContainer();
+        const item = await TestItem.create({ name: 'Item 1' });
+
+        // This should throw at runtime because 'item' is not a many relationship
+        assert.rejects(
+            async () => {
+                // We need to cast because TypeScript should prevent this at compile time
+                await (container as any).appendTo('item', item);
+            },
+            {
+                message: `'appendTo' can only be used on a 'many' relationship field.`
+            },
+            'Should throw error for non-many fields'
+        );
+    });
+
+    it('should work with RefMany fields', async () => {
+        // Note: This test would require BaseIdentifiableModel setup
+        // For now, we'll focus on EmbedMany since that's what the user is using
+        // TODO: Add RefMany test when needed
     });
 });

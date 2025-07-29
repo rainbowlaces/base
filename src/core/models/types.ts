@@ -199,9 +199,17 @@ export type ModelFieldValue<T extends BaseModel, K extends ModelFieldKeys<T>> =
 
 /** Extract only relation field keys that support 'many' cardinality for appendTo */
 export type ModelRelationKeys<T extends BaseModel> = {
-    [P in ModelFieldKeys<T>]: ModelData<T>[P] extends (infer _U)[] ? P : never;
-}[ModelFieldKeys<T>];
+    [P in keyof T]: T[P] extends RefMany<infer _U> 
+        ? P extends string ? P : never
+        : T[P] extends EmbedMany<infer _U>
+        ? P extends string ? P : never
+        : never;
+}[keyof T];
 
 /** Extract the item type for a many-relation field */
 export type ModelRelationItemType<T extends BaseModel, K extends ModelRelationKeys<T>> = 
-    ModelData<T>[K] extends (infer U)[] ? U : never;
+    K extends keyof T 
+        ? T[K] extends RefMany<infer U> ? U
+        : T[K] extends EmbedMany<infer U> ? U
+        : never
+        : never;

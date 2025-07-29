@@ -15,7 +15,6 @@ import {
   type NoDerivedModelData,
   type ModelFieldKeys,
   type ModelFieldValue,
-  type ModelRelationKeys,
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
@@ -23,10 +22,17 @@ import { serialize } from "../../utils/serialization.js";
 import { toUniqueIdAsync, toUniqueIdsAsync } from "./utils.js";
 import { BaseModelCollection } from "./baseModelCollection.js";
 
-// Interface to avoid circular import with BaseIdentifiableModel
-interface HasId {
-  id: UniqueID;
-}
+// Flexible type for appendTo that supports both reference and embed relations
+type AppendToItem<T extends BaseModel> = 
+  // For references: string ID, UniqueID, or identifiable model
+  | string
+  | UniqueID
+  | (T & { id: UniqueID })
+  // For embeds: model instance or serialized data
+  | T
+  | ModelData<T>;
+
+type AppendToItems<T extends BaseModel> = AppendToItem<T> | AppendToItem<T>[];
 
 export type BaseModelClass = typeof BaseModel;
 
@@ -432,15 +438,20 @@ export abstract class BaseModel {
     this.#data[key] = convertedValue;
   }
 
-  protected appendTo<T extends BaseModel>(
-    relationName: ModelRelationKeys<this>,
-    itemsToAdd: T | T[]
-  ): void {
+  protected async appendTo<K extends keyof this & string, T extends BaseModel>(
+    relationName: K,
+    itemsToAdd: AppendToItems<T>
+  ): Promise<void> {
     const constructor = this.constructor as typeof BaseModel;
     const schema = constructor.getProcessedSchema();
-    const fieldMeta = schema.fields[relationName as string];
+    const fieldMeta = schema.fields[relationName];
 
-    if (!fieldMeta?.relation || fieldMeta.relation.cardinality !== "many") {
+    // Check if it's a many relationship - could be in relation metadata or options
+    const options = fieldMeta?.options as FieldOptions & { cardinality?: string };
+    const isMany = fieldMeta?.relation?.cardinality === "many" || 
+                   options?.cardinality === "many";
+
+    if (!fieldMeta || !isMany) {
       throw new BaseError(
         `'appendTo' can only be used on a 'many' relationship field.`
       );
@@ -448,28 +459,51 @@ export abstract class BaseModel {
 
     const currentRawData = (this.get(relationName) as unknown[]) || [];
 
-    const items = Array.isArray(itemsToAdd) ? itemsToAdd : [itemsToAdd];
+    // Resolve async values and ensure we have an array
+    const resolvedItems = await Promise.resolve(itemsToAdd);
+    const items = Array.isArray(resolvedItems) ? resolvedItems : [resolvedItems];
     let newRawItems: unknown[];
 
-    if (fieldMeta.relation.type === "reference") {
-      newRawItems = items.map((item) => {
-        // Check if item has an id field (duck typing to avoid circular import)
-        if (!("id" in item)) {
+    // Check relation type - could be in relation metadata or infer from field type
+    const relationType = fieldMeta.relation?.type || "embed"; // Default to embed if not specified
+
+    if (relationType === "reference") {
+      newRawItems = await Promise.all(items.map(async (item) => {
+        const resolvedItem = await Promise.resolve(item);
+        
+        // Handle different input types for references
+        if (typeof resolvedItem === 'string') {
+          return new UniqueID(resolvedItem);
+        } else if (resolvedItem instanceof UniqueID) {
+          return resolvedItem;
+        } else if (resolvedItem && typeof resolvedItem === 'object' && 'id' in resolvedItem) {
+          const hasId = resolvedItem as { id: UniqueID };
+          return hasId.id;
+        } else {
           throw new BaseError(
-            "Cannot append a non-identifiable model to a reference relation."
+            "Cannot append a non-identifiable item to a reference relation."
           );
         }
-        const hasId = item as unknown as HasId;
-        return hasId.id;
-      });
+      }));
     } else {
-      newRawItems = items.map((item) => item.serialize());
+      // For embed relations, serialize the items
+      newRawItems = await Promise.all(items.map(async (item) => {
+        const resolvedItem = await Promise.resolve(item);
+        
+        if (resolvedItem && typeof resolvedItem === 'object' && 'serialize' in resolvedItem) {
+          const model = resolvedItem as BaseModel;
+          return model.serialize();
+        } else {
+          // If it's already serialized data, use as-is
+          return resolvedItem;
+        }
+      }));
     }
 
     const newRawData = [...currentRawData, ...newRawItems];
     this.set(
       relationName,
-      newRawData as ModelFieldValue<this, typeof relationName>
+      newRawData as ModelFieldValue<this, K>
     );
   }
 
