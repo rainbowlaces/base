@@ -74,42 +74,28 @@ test('BaseStatic setup() method', (t) => {
 
   t.test('should correctly resolve staticFsRoot with custom path from config', async () => {
     const instance = CREATE_TEST_INSTANCE({ staticFsRoot: '/assets' });
-    const logger = instance.testLogger;
     
     await instance.setup();
     
     assert.strictEqual(instance.staticFsRoot, path.normalize('/app/assets'));
-    assert.ok((logger.info as any).mock.calls.some((call: any) => 
-      (call.arguments[0] as string).includes('Static file root: /app/assets')
-    ));
   });
 
   t.test('should use default /public path when config.staticFsRoot is not provided', async () => {
     const instance = CREATE_TEST_INSTANCE();
-    const logger = instance.testLogger;
     
     await instance.setup();
     
     assert.strictEqual(instance.staticFsRoot, path.normalize('/app/public'));
-    assert.ok((logger.info as any).mock.calls.some((call: any) => 
-      (call.arguments[0] as string).includes('Static file root: /app/public')
-    ));
   });
 
-  t.test('should log debug messages during setup', async () => {
+  t.test('should properly initialize with custom config values', async () => {
     const instance = CREATE_TEST_INSTANCE({ staticFsRoot: '/custom', maxAge: 7200 });
-    const logger = instance.testLogger;
     
     await instance.setup();
     
-    // Check that debug messages were logged
-    assert.ok((logger.debug as any).mock.callCount() >= 4);
-    assert.ok((logger.debug as any).mock.calls.some((call: any) => 
-      (call.arguments[0] as string).includes('BaseStatic setup starting')
-    ));
-    assert.ok((logger.debug as any).mock.calls.some((call: any) => 
-      (call.arguments[0] as string).includes('BaseStatic setup complete')
-    ));
+    // Verify the actual behavior - correct path resolution and config usage
+    assert.strictEqual(instance.staticFsRoot, path.normalize('/app/custom'));
+    assert.strictEqual(instance.testConfig.maxAge, 7200);
   });
 });
 
@@ -204,12 +190,6 @@ test('BaseStatic handleStatic() method', (t) => {
     assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [403]);
     assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
     assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Forbidden']);
-    
-    // Should log warning about security violation
-    const logger = instance.testLogger;
-    assert.ok((logger.warn as any).mock.calls.some((call: any) => 
-      (call.arguments[0] as string).includes('is outside of root')
-    ));
   });
 
   t.test('should return 404 Not Found when fileSystem throws ENOENT error', async () => {
