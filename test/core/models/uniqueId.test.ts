@@ -7,10 +7,10 @@ setupTestTeardown();
 
 describe('UniqueID', () => {
     describe('Construction and Validation', () => {
-        it('should generate a valid, 20-character ID when called with no arguments', () => {
+        it('should generate a valid, 24-character ID when called with no arguments', () => {
             const id = new UniqueID();
             
-            assert.strictEqual(id.toString().length, 20);
+            assert.strictEqual(id.toString().length, 24);
             assert.match(id.toString(), /^[0-9a-z]+$/);
         });
 
@@ -42,23 +42,51 @@ describe('UniqueID', () => {
 
         it('should throw an error for an invalid ID (invalid characters)', () => {
             assert.throws(() => {
-                new UniqueID('abc123XYZ789!@#$%^&*');
+                new UniqueID('ABC123XYZ789!@#$%^&*1234'); // 24 chars with invalid characters
             }, /Invalid UniqueID format.*invalid characters/);
         });
 
-        it('should throw an error for invalid timestamp part', () => {
-            // Create an ID with invalid timestamp characters
-            assert.throws(() => {
-                new UniqueID('zzzzzzzzz12345678901');
-            }, /Invalid UniqueID.*timestamp/);
+    });
+
+    describe('Date Constructor', () => {
+        it('should create UniqueID from Date object with correct timestamp', () => {
+            const testDate = new Date('2024-01-01T00:00:00Z');
+            const id = new UniqueID(testDate);
+            
+            assert.strictEqual(id.toString().length, 24);
+            assert.match(id.toString(), /^[0-9a-z]+$/);
+            assert.strictEqual(id.getTimestamp().getTime(), testDate.getTime());
         });
 
-        it('should throw an error for unreasonable timestamp', () => {
-            // Test with a timestamp that's too old (before year 2000)
-            const oldTimestamp = '0'.repeat(9);
-            assert.throws(() => {
-                new UniqueID(oldTimestamp + '12345678901');
-            }, /Invalid UniqueID.*timestamp.*outside reasonable range/);
+        it('should create different IDs for same date (different random parts)', () => {
+            const testDate = new Date('2024-06-15T10:30:00Z');
+            const id1 = new UniqueID(testDate);
+            const id2 = new UniqueID(testDate);
+            
+            // Same timestamp part, different random parts
+            assert.strictEqual(id1.getTimestamp().getTime(), id2.getTimestamp().getTime());
+            assert.notStrictEqual(id1.toString(), id2.toString());
+        });
+
+        it('should accept any valid date (including ancient dates)', () => {
+            const ancientDate = new Date('1999-12-31T23:59:59Z');
+            const id = new UniqueID(ancientDate);
+            
+            assert.strictEqual(id.getTimestamp().getTime(), ancientDate.getTime());
+        });
+
+        it('should accept any valid date (including future dates)', () => {
+            const futureDate = new Date(Date.now() + (2 * 365 * 24 * 60 * 60 * 1000)); // 2 years from now
+            const id = new UniqueID(futureDate);
+            
+            assert.strictEqual(id.getTimestamp().getTime(), futureDate.getTime());
+        });
+
+        it('should accept current date', () => {
+            const now = new Date();
+            const id = new UniqueID(now);
+            
+            assert.strictEqual(id.getTimestamp().getTime(), now.getTime());
         });
     });
 
@@ -77,7 +105,7 @@ describe('UniqueID', () => {
         it('should parse timestamp from a provided ID string', () => {
             const testDate = new Date('2023-06-15T10:30:00Z');
             const timestampStr = testDate.getTime().toString(36).padStart(9, '0');
-            const testId = timestampStr + '12345678901';
+            const testId = timestampStr + '123456789012345'; // 15 random chars
             
             const id = new UniqueID(testId);
             const parsedDate = id.getTimestamp();
@@ -113,7 +141,7 @@ describe('UniqueID', () => {
             const str = id.toString();
             
             assert.strictEqual(typeof str, 'string');
-            assert.strictEqual(str.length, 20);
+            assert.strictEqual(str.length, 24);
             assert.match(str, /^[0-9a-z]+$/);
         });
 

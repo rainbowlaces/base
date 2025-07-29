@@ -3,72 +3,116 @@ import { BaseError } from "../baseErrors.js";
 import { type Serializable } from '../types.js';
 
 export class UniqueID implements Serializable {
-    readonly #id: string;
-    private static readonly timestampLength = 9;
-    private static readonly nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 11);
+    readonly #timestamp: number;
+    readonly #random: string;
 
-    constructor(id?: string | UniqueID) {
+    private static readonly timestampLength = 9;
+    private static readonly nanoid = customAlphabet('0123456789abcdefghijklmnopqrstuvwxyz', 15);
+
+    constructor(id?: string | UniqueID | Date) {
         if (id instanceof UniqueID) {
-            this.#id = id.#id;
+            this.#timestamp = id.#timestamp;
+            this.#random = id.#random;
+            return;
         } else if (typeof id === 'string') {
-            this.#id = this.validateAndNormalize(id);
+            const { timestamp, random } = this.validateAndNormalize(id);
+            this.#timestamp = timestamp;
+            this.#random = random;
+            return;
+        } else if (id instanceof Date) {
+            this.#timestamp = this.createFromDate(id);
+            this.#random = UniqueID.nanoid();
+            return;
         } else {
-            const timestamp = Date.now().toString(36).padStart(UniqueID.timestampLength, '0');
-            const random = UniqueID.nanoid();
-            this.#id = `${timestamp}${random}`;
+            this.#timestamp = this.createFromDate(new Date());
+            this.#random = UniqueID.nanoid();
+            return;
         }
     }
 
-    private validateAndNormalize(id: string): string {
-        // Check length
-        if (id.length !== 20) {
-            throw new BaseError(`Invalid UniqueID length: expected 20, got ${id.length}`);
-        }
+    private validateAndNormalize(id: string): { timestamp: number; random: string } {
+        // This will throw with specific error messages if invalid
+        UniqueID.isValid(id, true);
 
-        // Check that all characters are valid (0-9, a-z)
-        if (!/^[0-9a-z]+$/.test(id)) {
-            throw new BaseError('Invalid UniqueID format: contains invalid characters');
-        }
-
-        // Extract and validate timestamp part
+        // Extract timestamp part (first 9 chars) and random part (remaining chars)
         const timestampPart = id.substring(0, UniqueID.timestampLength);
+        const random = id.substring(UniqueID.timestampLength);
         const timestamp = parseInt(timestampPart, 36);
-        
-        // Check if timestamp is a valid number
-        if (isNaN(timestamp)) {
-            throw new BaseError('Invalid UniqueID: timestamp part is not a valid base36 number');
+
+        return { timestamp, random };
+    }
+
+    private createFromDate(date: Date): number {
+        const timestamp = date.getTime();
+        if (Number.isNaN(timestamp)) {
+            throw new BaseError('Invalid date: not a real timestamp');
         }
 
-        // Check if timestamp represents a reasonable date (not before 2000 and not too far in future)
-        const date = new Date(timestamp);
-        const year2000 = new Date('2000-01-01').getTime();
-        const futureLimit = Date.now() + (365 * 24 * 60 * 60 * 1000); // 1 year from now
-        
-        if (timestamp < year2000 || timestamp > futureLimit) {
-            throw new BaseError(`Invalid UniqueID: timestamp ${date.toISOString()} is outside reasonable range`);
-        }
-
-        return id;
+        return timestamp;
     }
 
     public getTimestamp(): Date {
-        const timestampPart = this.#id.substring(0, UniqueID.timestampLength);
-        return new Date(parseInt(timestampPart, 36));
+        return new Date(this.#timestamp);
+    }
+
+    private get timestamp(): string {
+        return this.#timestamp.toString(36).padStart(UniqueID.timestampLength, '0');
     }
 
     public toString(): string {
-        return this.#id;
+        return `${this.timestamp}${this.#random}`;
     }
 
     public toJSON(): string {
-        return this.#id;
+        return this.toString();
     }
 
     public serialize(): string {
-        return this.#id;
+        return this.toString();
     }
 
     public equals(other: string | UniqueID): boolean {
         return this.toString() === other.toString();
+    }
+
+    /**
+     * Check if a string is a valid UniqueID format
+     */
+    public static isValid(id: string, throws: boolean = false): boolean {
+        try {
+            // Check length
+            if (id.length !== 24) {
+                if (throws) {
+                    throw new BaseError(`Invalid UniqueID length: expected 24, got ${id.length}`);
+                }
+                return false;
+            }
+
+            // Check that all characters are valid (0-9, a-z)
+            if (!/^[0-9a-z]+$/.test(id)) {
+                if (throws) {
+                    throw new BaseError('Invalid UniqueID format: contains invalid characters');
+                }
+                return false;
+            }
+
+            // Check that timestamp part can be parsed as base36
+            const timestampPart = id.substring(0, UniqueID.timestampLength);
+            const timestamp = parseInt(timestampPart, 36);
+            
+            if (isNaN(timestamp)) {
+                if (throws) {
+                    throw new BaseError('Invalid UniqueID: timestamp part is not a valid base36 number');
+                }
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            if (throws && error instanceof BaseError) {
+                throw error;
+            }
+            return false;
+        }
     }
 }

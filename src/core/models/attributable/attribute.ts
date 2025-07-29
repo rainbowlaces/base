@@ -26,14 +26,9 @@ export class Attribute extends BaseModel {
                 if (dateMatch) {
                     return new Date(value);
                 }
-                // Check if it looks like a UniqueID (simple heuristic - 20 character string)
-                if (value.length === 20) {
-                    try {
-                        return new UniqueID(value);
-                    } catch {
-                        // If it fails to create UniqueID, just return the string
-                        return value;
-                    }
+                // Check if it's a valid UniqueID format
+                if (UniqueID.isValid(value)) {
+                    return new UniqueID(value);
                 }
             }
             return value as string | number | boolean | Date | UniqueID;

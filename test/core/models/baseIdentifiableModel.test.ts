@@ -22,7 +22,7 @@ describe('BaseIdentifiableModel', () => {
             const user = new TestUser();
             
             assert.ok(user.id instanceof UniqueID);
-            assert.strictEqual(user.id.toString().length, 20);
+            assert.strictEqual(user.id.toString().length, 24);
         });
 
         it('should have read-only ID field that cannot be set directly', () => {
