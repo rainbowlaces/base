@@ -141,7 +141,11 @@ export type {
   AttributeSpec,
   AttributeValue,
   GetAttributeReturn,
-  AttributeTypeConstructor
+  AttributeTypeConstructor,
+  AttributeScalarConstructor,
+  ComplexAttributeType,
+  AttributeTypeDefinition,
+  ExtractAttributeSpec
 } from "./core/models/types.js";
 
 // Logger types
