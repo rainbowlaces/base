@@ -23,6 +23,13 @@ export type AttributeTypeConstructor = AttributeScalarConstructor;
  */
 export interface ComplexAttributeType<T> {
     validate: (value: unknown) => value is T;
+    
+    /**
+     * An optional function to define custom equality logic. It compares an
+     * arbitrary value 'a' (e.g., an ID provided by the developer) against a
+     * fully-formed instance 'b' from the attribute store.
+     */
+    equals?: (a: unknown, b: T) => boolean;
 }
 
 /**

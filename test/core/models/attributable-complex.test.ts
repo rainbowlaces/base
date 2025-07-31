@@ -62,6 +62,19 @@ const CONTACT_INFO_VALIDATOR: ComplexAttributeType<ContactInfo> = {
     if ('phone' in obj && typeof obj.phone !== 'string') return false;
     
     return true;
+  },
+  
+  // Custom equality: allow matching by email or phone string
+  equals: (identifier: unknown, fullObject: ContactInfo) => {
+    if (typeof identifier === 'string') {
+      // Match by email or phone
+      return identifier === fullObject.email || identifier === fullObject.phone;
+    }
+    // Fallback to object comparison
+    if (typeof identifier === 'object' && identifier !== null) {
+      return JSON.stringify(identifier) === JSON.stringify(fullObject);
+    }
+    return false;
   }
 };
 
@@ -77,6 +90,19 @@ const PRODUCT_VARIANT_VALIDATOR: ComplexAttributeType<ProductVariant> = {
       'inStock' in obj && typeof obj.inStock === 'boolean' &&
       (!('metadata' in obj) || (typeof obj.metadata === 'object' && obj.metadata !== null))
     );
+  },
+  
+  // Custom equality: allow matching by SKU string
+  equals: (identifier: unknown, fullObject: ProductVariant) => {
+    if (typeof identifier === 'string') {
+      // Match by SKU
+      return identifier === fullObject.sku;
+    }
+    // Fallback to object comparison  
+    if (typeof identifier === 'object' && identifier !== null) {
+      return JSON.stringify(identifier) === JSON.stringify(fullObject);
+    }
+    return false;
   }
 };
 
@@ -560,6 +586,109 @@ describe('Attributable Complex Objects', () => {
       // Note: Date objects in nested metadata might be serialized as strings
       // depending on the serialization strategy
       assert.ok(retrieved.lastUpdated);
+    });
+  });
+
+  describe('Custom Equals Functionality', () => {
+    it('should use custom equals method for hasAttribute with identifier', async () => {
+      const user = await TestUser.create({ email: 'test@example.com' });
+      
+      const contact: ContactInfo = { 
+        email: 'custom@example.com', 
+        phone: '+44 123 456 789',
+        preferred: 'email' 
+      };
+      
+      await user.setAttribute('contactMethods', contact);
+      
+      // Should match by email using custom equals
+      assert.equal(await user.hasAttribute('contactMethods', 'custom@example.com' as any), true);
+      
+      // Should match by phone using custom equals
+      assert.equal(await user.hasAttribute('contactMethods', '+44 123 456 789' as any), true);
+      
+      // Should not match with random string
+      assert.equal(await user.hasAttribute('contactMethods', 'nonexistent@example.com' as any), false);
+      
+      // Should still work with full object comparison
+      assert.equal(await user.hasAttribute('contactMethods', contact), true);
+    });
+
+    it('should use custom equals method for deleteAttribute with identifier', async () => {
+      const user = await TestUser.create({ email: 'test@example.com' });
+      
+      const contact1: ContactInfo = { email: 'keep@example.com', preferred: 'email' };
+      const contact2: ContactInfo = { 
+        email: 'delete@example.com', 
+        phone: '+44 999 888 777',
+        preferred: 'email' 
+      };
+      
+      await user.setAttribute('contactMethods', contact1);
+      await user.setAttribute('contactMethods', contact2);
+      
+      // Delete by email using custom equals
+      await user.deleteAttribute('contactMethods', 'delete@example.com' as any);
+      
+      const remaining = await user.getAttribute('contactMethods');
+      assert.equal(remaining.length, 1);
+      assert.equal(remaining[0].email, 'keep@example.com');
+    });
+
+    it('should use custom equals method for product variants with SKU', async () => {
+      const product = await TestProduct.create({ name: 'Test Product', price: 100 });
+      
+      const variant1: ProductVariant = { sku: 'KEEP-001', price: 10, inStock: true };
+      const variant2: ProductVariant = { sku: 'DELETE-002', price: 20, inStock: false };
+      
+      await product.setAttribute('variants', variant1);
+      await product.setAttribute('variants', variant2);
+      
+      // Should find by SKU using custom equals
+      assert.equal(await product.hasAttribute('variants', 'KEEP-001' as any), true);
+      assert.equal(await product.hasAttribute('variants', 'DELETE-002' as any), true);
+      assert.equal(await product.hasAttribute('variants', 'NONEXISTENT-003' as any), false);
+      
+      // Delete by SKU using custom equals
+      await product.deleteAttribute('variants', 'DELETE-002' as any);
+      
+      const remaining = await product.getAttribute('variants');
+      assert.equal(remaining.length, 1);
+      assert.equal(remaining[0].sku, 'KEEP-001');
+    });
+
+    it('should fallback to JSON comparison when custom equals not available', async () => {
+      const user = await TestUser.create({ email: 'test@example.com' });
+      
+      // ADDRESS_VALIDATOR doesn't have custom equals, should use JSON comparison
+      const address1: Address = { street: '123 Main St', city: 'London', postalCode: 'SW1A 1AA' };
+      const address2: Address = { street: '456 Oak Ave', city: 'Manchester', postalCode: 'M1 1AA' };
+      
+      await user.setAttribute('homeAddress', address1);
+      
+      // Should work with exact object match (JSON comparison)
+      assert.equal(await user.hasAttribute('homeAddress', address1), true);
+      assert.equal(await user.hasAttribute('homeAddress', address2), false);
+      
+      // Should not match with partial object or string
+      assert.equal(await user.hasAttribute('homeAddress', '123 Main St' as any), false);
+    });
+
+    it('should handle edge cases in custom equals', async () => {
+      const user = await TestUser.create({ email: 'test@example.com' });
+      
+      const contact: ContactInfo = { 
+        email: 'test@example.com',
+        preferred: 'email' 
+      };
+      
+      await user.setAttribute('contactMethods', contact);
+      
+      // Test with null, undefined, numbers, etc.
+      assert.equal(await user.hasAttribute('contactMethods', null as any), false);
+      assert.equal(await user.hasAttribute('contactMethods', undefined as any), false);
+      assert.equal(await user.hasAttribute('contactMethods', 123 as any), false);
+      assert.equal(await user.hasAttribute('contactMethods', {} as any), false);
     });
   });
 });

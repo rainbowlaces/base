@@ -121,22 +121,48 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
      * Private helper to compare attribute values, handling special cases
      * like UniqueID, Date, and complex objects.
      */
-    private _compareValues(v: unknown, target: unknown): boolean {
-      if (v instanceof UniqueID && target instanceof UniqueID) {
-        return v.equals(target);
+    private _compareValues(a: unknown, b: unknown, attributeName?: string): boolean {
+      // Handle UniqueID comparison
+      if (a instanceof UniqueID && b instanceof UniqueID) {
+        return a.equals(b);
       }
-      if (v instanceof Date && target instanceof Date) {
-        return v.getTime() === target.getTime();
+      
+      // Handle Date comparison
+      if (a instanceof Date && b instanceof Date) {
+        return a.getTime() === b.getTime();
       }
-      // For complex objects, use JSON comparison as baseline
-      if (typeof v === 'object' && v !== null && typeof target === 'object' && target !== null) {
+      
+      // For complex objects, check if there's a custom equals function
+      if (attributeName && typeof b === 'object' && b !== null) {
+        const attributes = this.Attributes || {};
+        const spec = attributes[attributeName];
+        
+        if (spec) {
+          const [typeDefinition] = spec;
+          
+          // Check if this is a complex type with custom equals
+          if (typeof typeDefinition === 'object' && 'equals' in typeDefinition) {
+            const complexType = typeDefinition as ComplexAttributeType<unknown>;
+            
+            // Verify this value belongs to this attribute spec and use custom equals
+            if (complexType.validate && complexType.validate(b) && complexType.equals) {
+              return complexType.equals(a, b);
+            }
+          }
+        }
+      }
+      
+      // For complex objects without custom equals, use JSON comparison as fallback
+      if (typeof a === 'object' && a !== null && typeof b === 'object' && b !== null) {
         try {
-          return JSON.stringify(v) === JSON.stringify(target);
+          return JSON.stringify(a) === JSON.stringify(b);
         } catch {
           return false;
         }
       }
-      return v === target;
+      
+      // Default equality check
+      return a === b;
     }
 
     // Use the generic TSpec type for proper type inference
@@ -162,7 +188,7 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       const filtered = allCurrent.filter((attr) => {
         if (attr.name !== name) return true; 
         if (isSingle) return false; 
-        return !this._compareValues(attr.value, value);
+        return !this._compareValues(value, attr.value, String(name));
       });
 
       await this.attributes([...filtered, newAttribute]);
@@ -210,14 +236,17 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       value?: AttributeValue<TSpec, K>
     ): Promise<boolean> {
       const values = await this.getAttribute(name);
-      if (value === undefined) {
+      
+      // If no value argument was provided (not even undefined), check if attribute exists
+      if (arguments.length === 1) {
         return Array.isArray(values) ? values.length > 0 : values !== undefined;
       }
 
+      // If a value was explicitly provided (even if undefined), check for that specific value
       if (Array.isArray(values)) {
-        return values.some((v) => this._compareValues(v, value));
+        return values.some((v) => this._compareValues(value, v, String(name)));
       } else {
-        return this._compareValues(values, value);
+        return this._compareValues(value, values, String(name));
       }
     }
 
@@ -232,7 +261,7 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       const remaining = allCurrent.filter((attr) => {
         if (attr.name !== name) return true;
         if (value !== undefined) {
-          return !this._compareValues(attr.value, value);
+          return !this._compareValues(value, attr.value, String(name));
         }
         return false;
       });
