@@ -10,16 +10,20 @@ export class Attribute extends BaseModel {
     accessor name!: string;
 
     @field({
-        serializer: (value: string | number | boolean | Date | UniqueID): Scalar | object => {
+        serializer: (value: string | number | boolean | Date | UniqueID | object): Scalar | object => {
             if (value instanceof UniqueID) {
                 return value.toString();
             }
             if (value instanceof Date) {
                 return value.toISOString();
             }
+            // For objects, return as-is (JSON serialization handled by persistence layer)
+            if (typeof value === 'object' && value !== null) {
+                return value;
+            }
             return value as Scalar;
         },
-        hydrator: (value: unknown): string | number | boolean | Date | UniqueID => {
+        hydrator: (value: unknown): string | number | boolean | Date | UniqueID | object => {
             if (typeof value === 'string') {
                 // Try to parse as Date first, then UniqueID
                 const dateMatch = value.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
@@ -31,10 +35,14 @@ export class Attribute extends BaseModel {
                     return new UniqueID(value);
                 }
             }
+            // For objects, pass through as-is
+            if (typeof value === 'object' && value !== null) {
+                return value;
+            }
             return value as string | number | boolean | Date | UniqueID;
         }
     })
-    accessor value!: string | number | boolean | Date | UniqueID;
+    accessor value!: string | number | boolean | Date | UniqueID | object;
 
     @field({ 
         hydrator: (val: unknown) => new Date(val as string),

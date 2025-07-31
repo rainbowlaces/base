@@ -1,31 +1,33 @@
-# `BaseModel`: The Data Modeling and Persistence Abstraction Layer
+# BaseModels: The Data Modeling and Persistence Abstraction Layer
 
 This document provides a deep dive into the framework's data modeling system. This layer provides a powerful, decorator-driven, ORM-like interface for defining, manipulating, and persisting data. Its core purpose is to completely abstract the underlying database technology, allowing developers to work with rich, interconnected data models while the framework handles the complexities of storage and retrieval.
 
 ## Core Philosophy
 
-The `BaseModel` system is built on these key principles:
+The `BaseModels` system is built on these key principles:
 
 1.  **Persistence Agnosticism**: The core model definitions are completely independent of the database. Business logic interacts with a uniform API (`save()`, `remove()`, `User.byId()`), while the actual storage mechanism (e.g., In-Memory, MongoDB, SQL) is implemented in a swappable base class.
 2.  **Decorator-Driven Definition**: Model schemas, fields, and relationships are defined using intuitive TypeScript decorators (`@model`, `@field`, `@reference`, `@embed`), making model classes clean and declarative.
 3.  **Type Safety**: The system is designed to be type-safe from end to end. Decorators, model data types (`ModelData<T>`), and relationship accessors are all strongly typed to improve developer experience and reduce runtime errors.
 4.  **Rich Relationship Management**: The framework provides first-class support for both "by-reference" (lazy-loaded) and "embedded" (document-style) relationships, for both one-to-one and one-to-many cardinalities.
-5.  **Solving Circular Dependencies**: Through the use of a `thunk()` utility, the system elegantly solves the classic problem of circular dependencies between model definitions (e.g., `User` has `Article`s, `Article` has an `author` `User`).
+5.  **Elegant Extensibility with Mixins**: Advanced functionality, like the `Attributable` mixin, can be seamlessly added to any model, providing powerful features like type-safe, dynamic attributes without cluttering the base model.
+6.  **Solving Circular Dependencies**: Through the use of a `thunk()` utility, the system elegantly solves the classic problem of circular dependencies between model definitions (e.g., `User` has `Article`s, `Article` has an `author` `User`).
 
 ## Core Components
 
-The system is composed of several key classes and a suite of decorators.
+The system is composed of several key classes, a suite of decorators, and a powerful mixin for advanced functionality.
 
 | Component | File(s) | Role |
 | :--- | :--- | :--- |
 | **`BaseModel`** | `baseModel.ts` | The abstract foundation for all models. Manages internal state (dirty tracking), schema registration, and persistence/event-publishing logic. |
 | **`BaseIdentifiableModel`** | `baseIdentifiableModel.ts` | A practical base class that extends `BaseModel` with a `UniqueID` field and defines the contract for query methods (`byId`, `byIds`). |
 | **`BaseModelCollection`** | `baseModelCollection.ts` | A generic, lazy-loading collection class for handling one-to-many relationships. It only materializes models from data as it's iterated over. |
+| **`Attributable` Mixin** | `attributable/attributable.ts` | A higher-order function (mixin) that adds a fully-typed, dynamic key-value attribute system to any `BaseModel`. |
 | **`UniqueID`** | `uniqueId.ts` | A custom class for creating and validating time-sortable, globally unique identifiers, used as the default primary key for models. |
-| **Decorators** | `decorators/*.ts` | The declarative API (`@model`, `@field`, `@reference`, `@embed`, `@meta`) for defining a model's structure and metadata. |
+| **Decorators** | `decorators/*.ts` | The declarative API (`@model`, `@field`, `@reference`, `@embed`, `@derived`, `@meta`) for defining a model's structure and metadata. |
 | **Types** | `types.ts` | Contains all the core interfaces and type definitions, such as `Persistable`, `Deletable`, `RefOne<T>`, `EmbedMany<T>`, and `ModelData<T>`. |
 
-## The `BaseModel` Lifecycle and Mechanics
+## The `BaseModels` Lifecycle and Mechanics
 
 ### 1\. Schema Definition: The "Attach and Collect" Pattern
 
@@ -38,7 +40,7 @@ This pattern ensures that each model class has its own isolated schema, correctl
 
 ### 2\. Persistence: The `Persistable` and `Deletable` Contract
 
-`BaseModel` itself does not know how to save to a database. Instead, it defines a contract.
+`BaseModels` itself does not know how to save to a database. Instead, it defines a contract.
 
   * The `save()` method checks if the model instance is `Persistable` (i.e., has a `persist(): Promise<void>` method). If so, it calls `this.persist()`.
   * The `remove()` method checks if the model instance is `Deletable` (i.e., has a `delete(): Promise<void>` method). If so, it calls `this.delete()`.
@@ -77,9 +79,8 @@ Here is a practical example of creating `User` and `Article` models that referen
 
 First, decide how the model will be stored. For this example, we'll assume a `MemoryModel` class exists (as in the test application) which extends `BaseIdentifiableModel` and implements the `Persistable` and `Deletable` interfaces.
 
-#### Step 2: Define the `User` Model
+#### Step 2: Define the `User` Modeltypescript
 
-```typescript
 // src/models/user.ts
 import { model, field, reference, thunk, type RefMany } from '../core/models';
 import { MemoryModel } from '../data/memoryModel'; // Our persistence strategy
@@ -87,18 +88,22 @@ import { Article } from './article.js'; // We will create this next
 
 @model // 4. Finalize the model and register with DI
 export class User extends MemoryModel { // 1. Extend the persistence strategy
-    // 2. Define simple fields
-    @field()
-    accessor name!: string;
+// 2. Define simple fields
+@field()
+accessor name\!: string;
 
-    @field()
-    accessor email!: string;
-
-    // 3. Define a relationship. Use thunk() to avoid a circular import error with Article.
-    @reference(thunk(() => Article), { cardinality: "many" })
-    accessor articles!: RefMany<Article>;
-}
 ```
+@field()
+accessor email!: string;
+
+// 3. Define a relationship. Use thunk() to avoid a circular import error with Article.
+@reference(thunk(() => Article), { cardinality: "many" })
+accessor articles!: RefMany<Article>;
+```
+
+}
+
+````
 
 #### Step 3: Define the `Article` Model
 
@@ -120,7 +125,7 @@ export class Article extends MemoryModel {
     @reference(thunk(() => User), { cardinality: 'one' })
     accessor author!: RefOne<User>;
 }
-```
+````
 
 #### Step 4: Use the Models
 
@@ -128,12 +133,16 @@ Now, other services can use these models without any knowledge of the `MemoryMod
 
 ```typescript
 // In some service...
-const user = new User();
-await user.setData({ name: 'Alice', email: 'alice@example.com' });
+const user = await User.create({
+    name: 'Alice',
+    email: 'alice@example.com'
+});
 await user.save(); // Calls MemoryModel.persist()
 
-const article = new Article();
-await article.setData({ title: 'My First Post', content: '...' });
+const article = await Article.create({
+    title: 'My First Post',
+    content: '...'
+});
 await article.author(user); // Sets the reference to Alice's ID
 await article.save(); // Calls MemoryModel.persist()
 
@@ -143,6 +152,201 @@ if (fetchedArticle) {
     const author = await fetchedArticle.author(); // Lazy-loads the User model
     console.log(author.name); // "Alice"
 }
+```
+
+## Advanced Features
+
+### Embedded Documents with `@embed`
+
+The `@embed` decorator is ideal for one-to-many relationships where the child entities are tightly coupled to the parent and do not have an independent existence. A classic example is comments on a blog post. The `Comment` model itself doesn't need to be persisted independently, so it can extend the base `BaseModel`.
+
+#### 1\. Define the Embeddable Child Model
+
+The `Comment` model is simple. It doesn't need a persistence strategy of its own because it will only ever exist inside an `Article`.
+
+```typescript
+// src/models/comment.ts
+import { model, field, BaseModel } from '../core/models';
+
+@model
+export class Comment extends BaseModel {
+    @field()
+    accessor authorName!: string;
+
+    @field()
+    accessor text!: string;
+}
+```
+
+#### 2\. Define the Parent Model with `@embed`
+
+The `Article` model uses `@embed` to declare its relationship with `Comment`.
+
+```typescript
+// src/models/article.ts (with comments)
+import { model, field, embed, type EmbedMany } from '../core/models';
+import { MemoryModel } from '../data/memoryModel';
+import { Comment } from './comment.js';
+
+@model
+export class Article extends MemoryModel {
+    @field()
+    accessor title!: string;
+
+    @field()
+    accessor content!: string;
+
+    @embed(Comment, { cardinality: 'many' })
+    accessor comments!: EmbedMany<Comment>;
+}
+```
+
+#### 3\. Using Embedded Models
+
+You create instances of `Comment` and attach them to an `Article` instance using the function-like accessor. The ORM handles serializing the comment data into the article's data structure.
+
+```typescript
+// Create an article
+const article = await Article.create({
+    title: 'Using Embedded Documents',
+    content: 'They are great for nested data...'
+});
+
+// Create comments
+const comment1 = await Comment.create({ authorName: 'Bob', text: 'Great post!' });
+const comment2 = await Comment.create({ authorName: 'Charlie', text: 'Very informative.' });
+
+// Embed the comments into the article
+await article.comments([comment1, comment2]);
+await article.save();
+
+// --- Later, when retrieving the article ---
+const fetchedArticle = await Article.byId(article.id);
+if (fetchedArticle) {
+    // Retrieve the hydrated comment models
+    const commentsCollection = await fetchedArticle.comments();
+    const commentsArray = await commentsCollection.toArray();
+
+    console.log(commentsArray.authorName); // "Bob"
+    console.log(commentsArray.[1]text); // "Very informative."
+}
+```
+
+### The `Attributable` Mixin: Dynamic, Type-Safe Fields
+
+The `Attributable` mixin provides a powerful way to add a flexible, type-safe key-value store to any model. This is perfect for scenarios where you need to store custom metadata, user-defined fields, or other dynamic properties without altering the core database schema.
+
+It works by embedding a collection of `Attribute` models, where each `Attribute` has a `name`, `value`, and `created` timestamp.
+
+#### 1\. Define an `AttributeSpec`
+
+First, define the "shape" of your attributes using the `AttributeSpec` interface. This provides compile-time type safety.
+
+```typescript
+// src/models/productSpec.ts
+import { type AttributeSpec, UniqueID } from '../core/models';
+
+// Define a custom complex type for validation
+const ColorType = {
+  validate: (v: unknown): v is { hex: string; name: string } =>
+    typeof v === 'object' && v!== null && 'hex' in v && 'name' in v,
+};
+
+export const ProductAttributeSpec = {
+  // A single string attribute
+  'SKU':,
+  // A single numeric attribute
+  'WeightGrams': [Number, 'single'],
+  // A reference to another model
+  'SupplierID':,
+  // A multi-value string attribute for tags
+  'Tags':,
+  // A complex object attribute
+  'Color':,
+} as const satisfies AttributeSpec;
+```
+
+#### 2\. Apply the Mixin to a Model
+
+Use the `Attributable` function to wrap your base persistence class.
+
+```typescript
+// src/models/product.ts
+import { model, field, Attributable } from '../core/models';
+import { MemoryModel } from '../data/memoryModel';
+import { ProductAttributeSpec } from './productSpec';
+
+// Apply the mixin to our persistence strategy
+const AttributableMemoryModel = Attributable(MemoryModel);
+
+@model
+export class Product extends AttributableMemoryModel<typeof ProductAttributeSpec> {
+    // This property MUST be declared for the types to be inferred correctly.
+    public readonly Attributes = ProductAttributeSpec;
+
+    @field()
+    accessor name!: string;
+
+    @field()
+    accessor price!: number;
+}
+```
+
+#### 3\. Using Attributes
+
+You can now use the type-safe `setAttribute`, `getAttribute`, and `hasAttribute` methods.
+
+```typescript
+const product = await Product.create({
+    name: 'T-Shirt',
+    price: 19.99
+});
+
+// Set attributes
+await product.setAttribute('SKU', 'TS-001-BL');
+await product.setAttribute('WeightGrams', 150);
+await product.setAttribute('Tags', 'clothing');
+await product.setAttribute('Tags', 'summer'); // Adds a second tag
+await product.setAttribute('Color', { hex: '#0000FF', name: 'Blue' });
+
+await product.save();
+
+// Get attributes
+const sku = await product.getAttribute('SKU'); // -> "TS-001-BL" (typed as string | undefined)
+const tags = await product.getAttribute('Tags'); // -> ["clothing", "summer"] (typed as string)
+const hasTag = await product.hasAttribute('Tags', 'clothing'); // -> true
+```
+
+### Derived Fields with `@derived`
+
+The `@derived` decorator allows you to define asynchronous, computed properties on a model. These fields are not persisted to the database but are included when you call the `derive()` method, making them perfect for calculated values in API responses.
+
+```typescript
+import { model, field, derived } from '../core/models';
+import { MemoryModel } from '../data/memoryModel';
+
+@model
+export class User extends MemoryModel {
+    @field()
+    accessor firstName!: string;
+
+    @field()
+    accessor lastName!: string;
+
+    @derived()
+    async fullName(): Promise<string> {
+        return `${this.firstName} ${this.lastName}`;
+    }
+}
+
+const user = await User.create({
+    firstName: 'Jane',
+    lastName: 'Doe'
+});
+
+const derivedData = await user.derive();
+// derivedData will be:
+// { firstName: 'Jane', lastName: 'Doe', fullName: 'Jane Doe' }
 ```
 
 ## Supporting Multiple Persistence Layers
@@ -165,7 +369,7 @@ The framework's architecture makes it straightforward to support different datab
 
         async persist(): Promise<void> {
             const collection = getMongoCollection(this.getCollectionName());
-            const data = this.serialise();
+            const data = this.serialize();
             await collection.updateOne({ _id: this.id.toString() }, { $set: data }, { upsert: true });
         }
 
@@ -190,7 +394,7 @@ The framework's architecture makes it straightforward to support different datab
     export abstract class RedisModel extends BaseIdentifiableModel implements Persistable, Deletable {
         async persist(): Promise<void> {
             const key = `${this.constructor.name}:${this.id.toString()}`;
-            await redisClient.set(key, JSON.stringify(this.serialise()));
+            await redisClient.set(key, JSON.stringify(this.serialize()));
         }
 
         async delete(): Promise<void> {

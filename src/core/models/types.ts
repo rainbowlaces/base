@@ -11,25 +11,47 @@ export type RelationType = 'reference' | 'embed';
 
 // --- ATTRIBUTABLE TYPES ---
 
-/** A union of supported attribute type constructors. */
-export type AttributeTypeConstructor = StringConstructor | NumberConstructor | BooleanConstructor | DateConstructor | typeof UniqueID;
+/** A union of supported attribute type constructors for scalar values. */
+export type AttributeScalarConstructor = StringConstructor | NumberConstructor | BooleanConstructor | DateConstructor | typeof UniqueID;
+
+/** Legacy alias for backward compatibility */
+export type AttributeTypeConstructor = AttributeScalarConstructor;
+
+/**
+ * Runtime validator interface for complex objects.
+ * Provides type-safe validation through TypeScript type guards.
+ */
+export interface ComplexAttributeType<T> {
+    validate: (value: unknown) => value is T;
+}
+
+/**
+ * Union type representing all valid attribute type definitions:
+ * - Scalar constructors for primitive types
+ * - Complex type validators for object types
+ */
+export type AttributeTypeDefinition = 
+    | AttributeScalarConstructor 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    | ComplexAttributeType<any>;
 
 /**
  * Defines the specification for a model's attributes. Maps an attribute
- * name to a tuple containing its [TypeConstructor, Cardinality].
+ * name to a tuple containing its [TypeDefinition, Cardinality].
  */
 export interface AttributeSpec {
-    readonly [key: string]: readonly [type: AttributeTypeConstructor, cardinality: 'single' | 'many'];
+    readonly [key: string]: readonly [type: AttributeTypeDefinition, cardinality: 'single' | 'many'];
 }
 
-/** Helper to get the instance type (e.g., string) from a constructor type (e.g., StringConstructor) */
+/** Helper to get the instance type from a type definition */
 export type AttributeValue<T extends AttributeSpec, K extends keyof T> = 
     T[K][0] extends StringConstructor ? string :
     T[K][0] extends NumberConstructor ? number :
     T[K][0] extends BooleanConstructor ? boolean :
     T[K][0] extends DateConstructor ? Date :
     T[K][0] extends typeof UniqueID ? UniqueID :
-    InstanceType<T[K][0]>;
+    T[K][0] extends ComplexAttributeType<infer U> ? U :
+    never;
 
 /** Helper to determine the return type of getAttribute based on cardinality */
 export type GetAttributeReturn<T extends AttributeSpec, K extends keyof T> =

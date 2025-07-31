@@ -7,6 +7,7 @@ import {
   type AttributeSpec,
   type AttributeValue,
   type GetAttributeReturn,
+  type ComplexAttributeType,
 } from "../types.js";
 import { BaseError } from "../../baseErrors.js";
 
@@ -60,11 +61,92 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       super(...args);
     }
 
+    /**
+     * Private helper to check if a value is valid for an attribute without throwing.
+     * Returns true if valid, false if invalid.
+     */
+    private _isValidValue<K extends keyof TSpec>(
+      name: K,
+      value: unknown
+    ): value is AttributeValue<TSpec, K> {
+      const spec = this.Attributes?.[name as string];
+      if (!spec) {
+        return false;
+      }
+
+      const [typeDefinition] = spec;
+
+      // Handle scalar types
+      if (typeDefinition === String && typeof value === 'string') return true;
+      if (typeDefinition === Number && typeof value === 'number') return true;
+      if (typeDefinition === Boolean && typeof value === 'boolean') return true;
+      if (typeDefinition === Date && value instanceof Date) return true;
+      if (typeDefinition === UniqueID && value instanceof UniqueID) return true;
+
+      // Handle complex types with validate method
+      if (typeof typeDefinition === 'object' && 'validate' in typeDefinition) {
+        const complexType = typeDefinition as ComplexAttributeType<unknown>;
+        return complexType.validate(value);
+      }
+
+      return false;
+    }
+
+    /**
+     * Private helper to validate attribute values against their spec.
+     * Throws an error if validation fails.
+     */
+    private _validateValue<K extends keyof TSpec>(
+      name: K,
+      value: unknown
+    ): asserts value is AttributeValue<TSpec, K> {
+      const spec = this.Attributes?.[name as string];
+      if (!spec) {
+        throw new BaseError(
+          `Attribute "${String(name)}" is not defined in the AttributeSpec for model "${this.constructor.name}".`
+        );
+      }
+
+      if (!this._isValidValue(name, value)) {
+        const [typeDefinition] = spec;
+        throw new BaseError(
+          `Value for attribute "${String(name)}" failed validation for ${
+            typeof typeDefinition === 'function' ? typeDefinition.name.toLowerCase() : 'complex'
+          } type.`
+        );
+      }
+    }
+
+    /**
+     * Private helper to compare attribute values, handling special cases
+     * like UniqueID, Date, and complex objects.
+     */
+    private _compareValues(v: unknown, target: unknown): boolean {
+      if (v instanceof UniqueID && target instanceof UniqueID) {
+        return v.equals(target);
+      }
+      if (v instanceof Date && target instanceof Date) {
+        return v.getTime() === target.getTime();
+      }
+      // For complex objects, use JSON comparison as baseline
+      if (typeof v === 'object' && v !== null && typeof target === 'object' && target !== null) {
+        try {
+          return JSON.stringify(v) === JSON.stringify(target);
+        } catch {
+          return false;
+        }
+      }
+      return v === target;
+    }
+
     // Use the generic TSpec type for proper type inference
     async setAttribute<K extends keyof TSpec>(
       name: K,
       value: AttributeValue<TSpec, K>
     ): Promise<void> {
+      // Validate the value first
+      this._validateValue(name, value);
+
       const collection = await this.attributes();
       const allCurrent = await collection.toArray();
       const attributes = this.Attributes || {};
@@ -73,23 +155,14 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
 
       const newAttribute = await Attribute.create({
         name: name as string,
-        value: value as string | number | boolean | Date | UniqueID,
+        value: value as string | number | boolean | Date | UniqueID | object,
         created: new Date(),
       });
-      const compareValues = (v: unknown, target: unknown): boolean => {
-        if (v instanceof UniqueID && target instanceof UniqueID) {
-          return v.equals(target);
-        }
-        if (v instanceof Date && target instanceof Date) {
-          return v.getTime() === target.getTime();
-        }
-        return v === target;
-      };
 
       const filtered = allCurrent.filter((attr) => {
         if (attr.name !== name) return true; 
         if (isSingle) return false; 
-        return !compareValues(attr.value, value);
+        return !this._compareValues(attr.value, value);
       });
 
       await this.attributes([...filtered, newAttribute]);
@@ -113,25 +186,22 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
         );
       }
 
-      const [typeConstructor, cardinality] = spec;
+      const [, cardinality] = spec;
 
-      const values = allCurrent
+      const rawValues = allCurrent
         .filter((attr) => attr.name === name)
-        .map((attr) => attr.value)
-        .filter((value) => {
-          if (typeConstructor === String) return typeof value === "string";
-          if (typeConstructor === Number) return typeof value === "number";
-          if (typeConstructor === Boolean) return typeof value === "boolean";
-          if (typeConstructor === Date) return value instanceof Date;
-          if (typeConstructor === UniqueID) return value instanceof UniqueID;
-          return false;
-        });
+        .map((attr) => attr.value);
+
+      // Validate each value against the spec using our helper
+      const validatedValues = rawValues.filter((value) => 
+        this._isValidValue(name, value)
+      );
 
       if (cardinality === "single") {
-        return values[0] as GetAttributeReturn<TSpec, K>;
+        return validatedValues[0] as GetAttributeReturn<TSpec, K>;
       }
 
-      return values as GetAttributeReturn<TSpec, K>;
+      return validatedValues as GetAttributeReturn<TSpec, K>;
     }
 
     // Use the generic TSpec type for proper type inference
@@ -144,20 +214,10 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
         return Array.isArray(values) ? values.length > 0 : values !== undefined;
       }
 
-      const compareValues = (v: unknown, target: unknown): boolean => {
-        if (v instanceof UniqueID && target instanceof UniqueID) {
-          return v.equals(target);
-        }
-        if (v instanceof Date && target instanceof Date) {
-          return v.getTime() === target.getTime();
-        }
-        return v === target;
-      };
-
       if (Array.isArray(values)) {
-        return values.some((v) => compareValues(v, value));
+        return values.some((v) => this._compareValues(v, value));
       } else {
-        return compareValues(values, value);
+        return this._compareValues(values, value);
       }
     }
 
@@ -169,20 +229,10 @@ export function Attributable<TSpec extends AttributeSpec, TBase extends AnyConst
       const collection = await this.attributes();
       const allCurrent = await collection.toArray();
 
-      const compareValues = (v: unknown, target: unknown): boolean => {
-        if (v instanceof UniqueID && target instanceof UniqueID) {
-          return v.equals(target);
-        }
-        if (v instanceof Date && target instanceof Date) {
-          return v.getTime() === target.getTime();
-        }
-        return v === target;
-      };
-
       const remaining = allCurrent.filter((attr) => {
         if (attr.name !== name) return true;
         if (value !== undefined) {
-          return !compareValues(attr.value, value);
+          return !this._compareValues(attr.value, value);
         }
         return false;
       });
