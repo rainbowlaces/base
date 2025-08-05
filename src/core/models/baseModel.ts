@@ -3,10 +3,9 @@ import { di } from "../di/baseDi.js";
 import { type BasePubSub } from "../pubsub/basePubSub.js";
 import { BaseError } from "../baseErrors.js";
 import {
-  type ModelsEventData,
   type FieldOptions,
   type ModelData,
-  type ModelsEventType,
+  type ModelEventType,
   type Persistable,
   type Deletable,
   type BaseModelSchema,
@@ -15,6 +14,7 @@ import {
   type NoDerivedModelData,
   type ModelFieldKeys,
   type ModelFieldValue,
+  type ModelEvent,
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
@@ -657,19 +657,20 @@ export abstract class BaseModel {
     return camelToKebab(this.constructor.name);
   }
 
-  protected getEventTopic(event: ModelsEventType): string {
+  protected getEventTopic(event: ModelEventType): string {
     return `/models/${event}/${this.getTopicName()}`;
   }
 
-  private async publishDataEvent<E extends ModelsEventData>(
-    type: ModelsEventType,
-    data: E
+  private async publishDataEvent(
+    type: ModelEventType,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: NoDerivedModelData<any>
   ): Promise<void> {
-    const event = {
+    const event: ModelEvent<this> = {
       id: new UniqueID(),
       type,
       model: this,
-      data,
+      data: data ?? this.serialize(),
     };
     await this.#pubSub.pub(this.getEventTopic(type), { event });
   }

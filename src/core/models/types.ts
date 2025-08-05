@@ -121,14 +121,12 @@ export interface BaseModelSchema {
     meta: ModelMetadata;
 }
 
-export type ModelsEventType = "create" | "update" | "delete";
-
-export type ModelsEventData = object;
-export interface ModelsEvent<E = ModelsEventData> {
+export type ModelEventType = "create" | "update" | "delete";
+export interface ModelEvent<E extends BaseModel = BaseModel> {
     id: UniqueID;
-    type: ModelsEventType;
+    type: ModelEventType;
     model: BaseModel;
-    data: E;
+    data: NoDerivedModelData<E>;
 }
 
 export type ModelConstructor<T extends BaseModel = BaseModel> = (new () => T) & typeof BaseModel;
