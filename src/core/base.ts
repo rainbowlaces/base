@@ -4,7 +4,6 @@ import { BaseClassConfig, type ConfigData } from "./config/types.js";
 import { BaseAutoload, BaseDi, BaseInitializer, di } from "./di/baseDi.js";
 import { BaseLogger } from "./logger/baseLogger.js";
 import { BasePubSub } from "./pubsub/basePubSub.js";
-import { BaseInitContext } from "./module/initContext.js";
 
 class BaseMainConfig extends BaseClassConfig {
   port: number = 3000;
@@ -84,8 +83,6 @@ export class Base {
     BaseDi.register(this);
 
     await BaseInitializer.run();    
-
-    void this.pubsub.pub('/init', { context: BaseDi.resolve(BaseInitContext) });
 
     this.logger.debug("Base initialized", []);
   }

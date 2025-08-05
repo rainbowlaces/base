@@ -5,53 +5,25 @@ import { BaseDi } from "../../../src/core/di/baseDi.js";
 import { BasePubSub } from "../../../src/core/pubsub/basePubSub.js";
 import { type BaseLogger } from "../../../src/core/logger/baseLogger.js";
 import { BaseModule } from "../../../src/core/module/baseModule.js";
-import { init } from "../../../src/core/module/decorators/init.js";
 import { request } from "../../../src/core/requestHandler/decorators/request.js";
 import { registerDi } from "../../../src/core/di/decorators/registerDi.js";
-import { dependsOn } from "../../../src/core/module/decorators/dependsOn.js";
 import { type BaseActionArgs } from "../../../src/core/module/types.js";
 
 // Extend BaseContextData for test purposes using declaration merging
 declare module "../../../src/core/module/baseContext.js" {
   interface BaseContextData {
-    earlyInit?: string;
-    lateInit?: string;
     dependent?: string;
     regular?: string;
-  }
-}
-
-// Extend BaseContextData for test-specific properties
-declare module "../../../src/core/module/baseContext.js" {
-  interface BaseContextData {
-    earlyInit?: string;
-    lateInit?: string;
     requestAction?: string;
     coordinatedAction?: string;
     testValue?: string;
-    dependent?: string;
-    regular?: string;
   }
 }
 
-// Test module with both init and request actions for integration testing
+// Test module with request actions for integration testing
 @registerDi()
 class TestModule extends BaseModule {
   actionOrder: string[] = [];
-
-  // Init actions
-  @init({ phase: 1 })
-  async earlyInitAction(args: BaseActionArgs): Promise<void> {
-    this.actionOrder.push('earlyInit');
-    args.context.data.earlyInit = 'completed';
-  }
-
-  @init({ phase: 2 })
-  @dependsOn('TestModule/earlyInitAction')
-  async lateInitAction(args: BaseActionArgs): Promise<void> {
-    this.actionOrder.push('lateInit');
-    args.context.data.lateInit = 'completed';
-  }
 
   // Action that throws an error for testing error handling
   @request({ topic: '/test', phase: 0 })
@@ -61,15 +33,14 @@ class TestModule extends BaseModule {
   }
 
   // Action with dependencies for testing dependency resolution  
-  @request({ topic: '/test', phase: 0 })
-  @dependsOn('TestModule/earlyInitAction')
+  @request({ topic: '/test', phase: 1 })
   async dependentAction(args: BaseActionArgs): Promise<void> {
     this.actionOrder.push('dependent');
     args.context.data.dependent = 'completed';
   }
 
   // Regular action for testing basic execution
-  @request({ topic: '/test', phase: 0 })
+  @request({ topic: '/test', phase: 2 })
   async regularAction(args: BaseActionArgs): Promise<void> {
     this.actionOrder.push('regular');
     args.context.data.regular = 'completed';
@@ -288,31 +259,31 @@ describe("BaseContext Unit Tests", () => {
       BaseDi.register(mockLogger, { key: "BaseLogger" });
     });
 
-    it("should execute init actions directly", async () => {
+    it("should execute request actions directly", async () => {
       const testModule = new TestModule();
       const context = new TestContext();
 
       // Call the module actions directly
-      await testModule.earlyInitAction({ 
+      await testModule.dependentAction({ 
         context, 
         module: "TestModule", 
-        action: "earlyInitAction",
-        topic: "/init"
+        action: "dependentAction",
+        topic: "/test"
       });
-      await testModule.lateInitAction({ 
+      await testModule.regularAction({ 
         context, 
         module: "TestModule", 
-        action: "lateInitAction",
-        topic: "/init"
+        action: "regularAction",
+        topic: "/test"
       });
 
       // Verify actions executed and data was set
-      assert.strictEqual(context.data.earlyInit, 'completed', "Early init should complete");
-      assert.strictEqual(context.data.lateInit, 'completed', "Late init should complete");
+      assert.strictEqual(context.data.dependent, 'completed', "Dependent action should complete");
+      assert.strictEqual(context.data.regular, 'completed', "Regular action should complete");
       // Verify execution order
-      const earlyIndex = testModule.actionOrder.indexOf('earlyInit');
-      const lateIndex = testModule.actionOrder.indexOf('lateInit');
-      assert.ok(earlyIndex < lateIndex, "Early init should execute before late init");
+      const dependentIndex = testModule.actionOrder.indexOf('dependent');
+      const regularIndex = testModule.actionOrder.indexOf('regular');
+      assert.ok(dependentIndex < regularIndex, "Dependent action should execute before regular action");
     });
 
     describe("BaseModule Core Functionality", () => {
@@ -325,12 +296,12 @@ describe("BaseContext Unit Tests", () => {
         const testModule = new TestModule();
 
         // Should find action methods
-        const earlyInitAction = testModule.getAction('earlyInitAction');
+        const dependentAction = testModule.getAction('dependentAction');
         const regularAction = testModule.getAction('regularAction');
         
-        assert.ok(earlyInitAction, "Should find earlyInitAction");
+        assert.ok(dependentAction, "Should find dependentAction");
         assert.ok(regularAction, "Should find regularAction");
-        assert.strictEqual(typeof earlyInitAction, 'function', "Action should be a function");
+        assert.strictEqual(typeof dependentAction, 'function', "Action should be a function");
 
         // Should not find non-action methods
         const regularMethod = testModule.getAction('regularMethod');

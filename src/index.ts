@@ -49,7 +49,6 @@ export { BaseAutoload } from "./core/di/baseAutoload.js";
 export { BaseInitializer } from "./core/di/baseInitializer.js";
 
 // Module exports
-export { BaseInitContext } from "./core/module/initContext.js";
 
 // Template exports
 export { BaseTemplate } from "./modules/templates/baseTemplate.js";
@@ -65,7 +64,6 @@ export { UnsafeTag } from "./modules/templates/engine/tags/unsafeTag.js";
 // Decorator exports
 export { provider as config } from "./core/config/decorators/provider.js";
 export { request } from "./core/requestHandler/decorators/request.js";
-export { init } from "./core/module/decorators/init.js";
 export { di } from "./core/di/decorators/di.js";
 export { provider, configClass, getConfigClass, clearConfigClassRegistry } from "./core/config/decorators/provider.js";
 export { registerDi } from "./core/di/decorators/registerDi.js";
