@@ -116,6 +116,7 @@ export type { BaseModelClass } from "./core/models/baseModel.js";
 export type { 
   ModelConstructor,
   ModelData,
+  NoDerivedModelData,
   DefinedId,
   DefinedIds,
   AsyncDefinedId,
