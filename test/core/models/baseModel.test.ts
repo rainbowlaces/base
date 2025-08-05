@@ -1,12 +1,13 @@
  
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { setupTestTeardown, TestProfile, type MockPubSub } from './setup.js';
+import { setupTestTeardown, TestProfile, TestUser, TestAdmin, type MockPubSub } from './setup.js';
 import { BaseDi } from '../../../src/core/di/baseDi.js';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
 import { field } from '../../../src/core/models/decorators/field.js';
 import { model } from '../../../src/core/models/decorators/model.js';
 import { embed } from '../../../src/core/models/decorators/embed.js';
+import { UniqueID } from '../../../src/core/models/uniqueId.js';
 import type { Persistable, Deletable, EmbedMany, EmbedOne } from '../../../src/core/models/types.js';
 
 // Setup test isolation
@@ -450,6 +451,252 @@ describe('BaseModel: Instance State & Data Management', () => {
             },
             'Should still be dirty after revert on new model (back to new state)'
         );
+    });
+});
+
+describe('BaseModel: Event System', () => {
+    it('should generate correct topic names from model class names', () => {
+        // Test various model name patterns
+        const profile = new TestProfile();
+        const user = new TestUser();
+        const admin = new TestAdmin();
+
+        // Access the private getTopicName method through the protected getEventTopic method
+        const profileTopic = (profile as any).getEventTopic('create');
+        const userTopic = (user as any).getEventTopic('create');
+        const adminTopic = (admin as any).getEventTopic('create');
+
+        // Verify camelCase to kebab-case conversion
+        assert.strictEqual(profileTopic, '/models/create/test-profile', 'Should convert TestProfile to test-profile');
+        assert.strictEqual(userTopic, '/models/create/test-user', 'Should convert TestUser to test-user');
+        assert.strictEqual(adminTopic, '/models/create/test-admin', 'Should convert TestAdmin to test-admin');
+    });
+
+    it('should generate correct event topics for all event types', () => {
+        const profile = new TestProfile();
+        
+        const createTopic = (profile as any).getEventTopic('create');
+        const updateTopic = (profile as any).getEventTopic('update');
+        const deleteTopic = (profile as any).getEventTopic('delete');
+
+        assert.strictEqual(createTopic, '/models/create/test-profile', 'Should generate correct create topic');
+        assert.strictEqual(updateTopic, '/models/update/test-profile', 'Should generate correct update topic');
+        assert.strictEqual(deleteTopic, '/models/delete/test-profile', 'Should generate correct delete topic');
+    });
+
+    it('should generate unique event IDs for each event', async () => {
+        class MockEventProfile extends TestProfile implements Persistable {
+            async persist(): Promise<void> {
+                // Mock persistence
+            }
+        }
+
+        const profile = new MockEventProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        profile.set('bio', 'Test bio 1');
+        await profile.save();
+
+        profile.set('bio', 'Test bio 2');
+        await profile.save();
+
+        assert.strictEqual(mockPubSub.publishedEvents.length, 2, 'Should publish two events');
+        
+        const event1 = mockPubSub.publishedEvents[0].data.event;
+        const event2 = mockPubSub.publishedEvents[1].data.event;
+
+        // Event IDs should be different
+        assert.notStrictEqual(event1.id.toString(), event2.id.toString(), 'Event IDs should be unique');
+        
+        // Both should be valid UniqueIDs
+        assert.ok(event1.id.toString().length > 0, 'First event should have valid ID');
+        assert.ok(event2.id.toString().length > 0, 'Second event should have valid ID');
+    });
+
+    it('should include correct model reference in events', async () => {
+        class MockEventProfile extends TestProfile implements Persistable {
+            async persist(): Promise<void> {
+                // Mock persistence
+            }
+        }
+
+        const profile = new MockEventProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        profile.set('bio', 'Test bio');
+        await profile.save();
+
+        assert.strictEqual(mockPubSub.publishedEvents.length, 1, 'Should publish one event');
+        
+        const event = mockPubSub.publishedEvents[0].data.event;
+        
+        // Event should reference the exact same model instance
+        assert.strictEqual(event.model, profile, 'Event should reference the same model instance');
+        assert.strictEqual(event.type, 'create', 'Event type should be correct');
+    });
+
+    it('should maintain event data consistency with model serialization', async () => {
+        class MockEventProfile extends TestProfile implements Persistable {
+            async persist(): Promise<void> {
+                // Mock persistence
+            }
+        }
+
+        const profile = new MockEventProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        profile.set('bio', 'Test bio content');
+        
+        // Get serialized data before save
+        const expectedData = profile.serialize();
+        
+        await profile.save();
+
+        assert.strictEqual(mockPubSub.publishedEvents.length, 1, 'Should publish one event');
+        
+        const event = mockPubSub.publishedEvents[0].data.event;
+        
+        // Event data should match model serialization
+        assert.deepStrictEqual(event.data, expectedData, 'Event data should match model serialization');
+        assert.deepStrictEqual(event.data, { bio: 'Test bio content' }, 'Event data should contain expected fields');
+    });
+
+    it('should publish events with empty data when model has no set fields', async () => {
+        class MockEventProfile extends TestProfile implements Persistable {
+            async persist(): Promise<void> {
+                // Mock persistence
+            }
+        }
+
+        const profile = new MockEventProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        // Don't set any fields - save empty model
+        await profile.save();
+
+        assert.strictEqual(mockPubSub.publishedEvents.length, 1, 'Should publish one event');
+        
+        const event = mockPubSub.publishedEvents[0].data.event;
+        
+        // Event data should be empty object
+        assert.deepStrictEqual(event.data, {}, 'Event data should be empty when no fields are set');
+    });
+
+    it('should publish events with complex nested/embedded data', async () => {
+        class MockEventProfile extends TestProfile implements Persistable {
+            async persist(): Promise<void> {
+                // Mock persistence
+            }
+        }
+
+        const profile = new MockEventProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        // Set up profile with complex data including dates and numbers
+        profile.set('bio', 'Software developer with 5+ years experience');
+        
+        // Use internal set for readonly field to simulate complex data
+        (profile as any)._internalSet('viewCount', 1250);
+
+        await profile.save();
+
+        assert.strictEqual(mockPubSub.publishedEvents.length, 1, 'Should publish one event');
+        
+        const event = mockPubSub.publishedEvents[0].data.event;
+        
+        // Verify complex event data structure
+        assert.strictEqual(event.data.bio, 'Software developer with 5+ years experience', 'Should include bio field');
+        assert.strictEqual(event.data.viewCount, 1250, 'Should include viewCount field');
+        
+        // Verify event structure compliance with ModelEvent interface
+        assert.ok(event.id instanceof UniqueID, 'Event ID should be a UniqueID instance');
+        assert.strictEqual(event.type, 'create', 'Event type should be create');
+        assert.strictEqual(event.model, profile, 'Event model should reference the profile instance');
+        assert.ok(typeof event.data === 'object' && event.data !== null, 'Event data should be an object');
+    });
+
+    it('should handle rapid multiple save operations with unique events', async () => {
+        class MockRapidProfile extends TestProfile implements Persistable {
+            saveCount = 0;
+            async persist(): Promise<void> {
+                this.saveCount++;
+            }
+        }
+
+        const profile = new MockRapidProfile();
+        const mockPubSub = BaseDi.resolve<MockPubSub>('BasePubSub');
+        mockPubSub.clearEvents();
+
+        // Perform saves sequentially to ensure proper state tracking
+        profile.set('bio', 'Version 1');
+        await profile.save();
+
+        profile.set('bio', 'Version 2');  
+        await profile.save();
+
+        profile.set('bio', 'Version 3');
+        await profile.save();
+
+        // Should have published events for each save
+        assert.strictEqual(mockPubSub.publishedEvents.length, 3, 'Should publish three events');
+        
+        // First event should be create, others should be update
+        assert.strictEqual(mockPubSub.publishedEvents[0].data.event.type, 'create', 'First event should be create');
+        assert.strictEqual(mockPubSub.publishedEvents[1].data.event.type, 'update', 'Second event should be update');
+        assert.strictEqual(mockPubSub.publishedEvents[2].data.event.type, 'update', 'Third event should be update');
+
+        // All event IDs should be unique
+        const eventIds = mockPubSub.publishedEvents.map(e => e.data.event.id.toString());
+        const uniqueIds = new Set(eventIds);
+        assert.strictEqual(uniqueIds.size, 3, 'All event IDs should be unique');
+
+        // Data should reflect the progression
+        assert.strictEqual(mockPubSub.publishedEvents[0].data.event.data.bio, 'Version 1', 'First event should have Version 1');
+        assert.strictEqual(mockPubSub.publishedEvents[1].data.event.data.bio, 'Version 2', 'Second event should have Version 2');
+        assert.strictEqual(mockPubSub.publishedEvents[2].data.event.data.bio, 'Version 3', 'Third event should have Version 3');
+    });
+
+    it('should handle PubSub failure gracefully and still complete save operation', async () => {
+        // Create a failing PubSub
+        class FailingPubSub {
+            async pub(_topic: string, _data: any): Promise<void> {
+                throw new Error('PubSub is down');
+            }
+        }
+
+        const failingPubSub = new FailingPubSub();
+        BaseDi.register(failingPubSub, { key: 'BasePubSub' });
+
+        class MockFailureProfile extends TestProfile implements Persistable {
+            persistCalled = false;
+            async persist(): Promise<void> {
+                this.persistCalled = true;
+            }
+        }
+
+        const profile = new MockFailureProfile();
+        profile.set('bio', 'Test content');
+
+        // Save should fail due to PubSub error
+        await assert.rejects(
+            () => profile.save(),
+            {
+                message: 'PubSub is down'
+            },
+            'Save should throw PubSub error'
+        );
+
+        // But persist should have been called (showing save transaction partially completed)
+        assert.strictEqual(profile.persistCalled, true, 'Persist should have been called before PubSub failure');
+
+        // Reset to working PubSub for other tests
+        const workingPubSub = new (await import('./setup.js')).MockPubSub();
+        BaseDi.register(workingPubSub, { key: 'BasePubSub' });
     });
 });
 
