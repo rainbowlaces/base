@@ -25,7 +25,7 @@ export class BasePubSub {
     await Promise.all(
       this.filterSubs(topic).map(async (m: SubscriptionMatch) => {
         const fullArgs = { ...args, ...(m.params ?? {}), topic };
-        m.subscription
+        await m.subscription
           .handler(fullArgs)
           .catch(this.handleError.bind(this));
         if (m.subscription.once)
