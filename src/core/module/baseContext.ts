@@ -323,6 +323,23 @@ export abstract class BaseContext<
     return this.#data;
   }
 
+  /**
+   * Protected helper for context handoff - allows transferring internal data
+   * between context types (e.g., HTTP → WebSocket promotion)
+   * Returns the actual data object since the source context won't be used after handoff
+   */
+  protected _getDataForHandoff(): T {
+    return this.#data;
+  }
+
+  /**
+   * Protected helper for context handoff - allows setting internal data
+   * from another context (e.g., HTTP → WebSocket promotion)
+   */
+  protected _setDataFromHandoff(data: T): void {
+    this.#data = data;
+  }
+
   done() {
     if (this.#state === "error") return;
     this.logger.debug(`Context ${this.#id} transitioning to done state`);

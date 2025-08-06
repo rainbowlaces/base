@@ -13,6 +13,13 @@ declare module '../../../src/index.js' {
     }
 }
 
+// Also declare for the direct import path
+declare module '../../../src/core/requestHandler/types.js' {
+    interface HttpContextData {
+        time?: string;
+    }
+}
+
 @baseModule()
 export class DashboardModule extends BaseModule {
 
