@@ -149,7 +149,10 @@ export abstract class BaseModel {
       if (fieldMeta.options.default) {
         const val =
           typeof fieldMeta.options.default === "function"
-            ? (fieldMeta.options.default as () => unknown)()
+            // Ensure the default factory runs with the model instance bound as `this`
+            ? (fieldMeta.options.default as (this: BaseModel) => unknown).call(
+                this as unknown as BaseModel
+              )
             : fieldMeta.options.default;
         this.#data[key] = val;
         this.#originalData[key] = val;
