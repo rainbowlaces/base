@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
