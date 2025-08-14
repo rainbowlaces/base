@@ -1,4 +1,4 @@
-import { type BaseAppConfig, BaseConfigProvider, provider } from "../../../src/index.js";
+import { type BaseAppConfig, BaseConfigProvider, provider, LogLevel } from "../../../src/index.js";
 
 @provider()
 export class AppConfig extends BaseConfigProvider {
@@ -6,6 +6,9 @@ export class AppConfig extends BaseConfigProvider {
     return {
       BaseRouter: {
         defaultRoute: "/dashboard"
+      },
+      BaseLogger: {
+        logLevel: LogLevel.DEBUG
       }
     };
   }

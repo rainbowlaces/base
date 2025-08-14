@@ -5,7 +5,7 @@ import { Group } from '../models/group.js';
 import { Article } from '../models/article.js';
 import { Comment } from '../models/comment.js';
 import { MemoryModel } from '../data/memoryModel.js';
-import { type BaseHttpActionArgs, baseModule, BaseModule, request } from '../../../src/index.js';
+import { async, type BaseHttpActionArgs, baseModule, BaseModule, request } from '../../../src/index.js';
 
 @baseModule()
 export class ModelsModule extends BaseModule {
@@ -284,5 +284,11 @@ export class ModelsModule extends BaseModule {
             framework: 'Memory Model Demo',
             timestamp: new Date().toISOString()
         });
+    }
+
+    async teardown() {
+        this.logger.debug("Module teardown initiated.");
+        await async.delay(2000);
+        this.logger.debug("Module teardown complete.");
     }
 }

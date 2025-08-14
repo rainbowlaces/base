@@ -65,18 +65,24 @@ export class Base {
     });
 
     // Handle graceful shutdown signals
-    process.on("SIGTERM", () => {
+  process.once("SIGTERM", () => {
       this.logger.info("Received SIGTERM signal, initiating graceful shutdown", []);
       void this.shutdown();
     });
 
-    process.on("SIGINT", () => {
+  process.once("SIGINT", () => {
       this.logger.info("Received SIGINT signal (Ctrl+C), initiating graceful shutdown", []);
       void this.shutdown();
     });
 
-    process.on("SIGQUIT", () => {
+  process.once("SIGQUIT", () => {
       this.logger.info("Received SIGQUIT signal, initiating graceful shutdown", []);
+      void this.shutdown();
+    });
+
+    // Nodemon/debugger restart signal
+  process.once("SIGUSR2", () => {
+      this.logger.info("Received SIGUSR2 signal, initiating graceful shutdown (nodemon)", []);
       void this.shutdown();
     });
 
@@ -100,10 +106,23 @@ export class Base {
       // Teardown all services in reverse dependency order
       await BaseDi.teardown();
       console.log("All services have been torn down successfully");
-      process.exit(0);
+      // Prefer letting the event loop drain so logs flush cleanly
+      process.exitCode = 0;
     } catch (error) {
       console.error("Error during graceful shutdown:", error);
-      process.exit(1);
+      process.exitCode = 1;
+    } finally {
+      // Fallback: force exit after a short grace period in case handles remain open
+      // This preserves previous behavior while giving I/O a chance to flush
+      const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 1000);
+      setTimeout(() => {
+        // Only force if still running
+        try {
+          process.exit(process.exitCode ?? 0);
+        } catch {
+          // ignore
+        }
+      }, timeout).unref();
     }
   }
 }

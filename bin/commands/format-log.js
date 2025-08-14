@@ -27,6 +27,17 @@ export function createFormatLogCommand(program) {
       rl.on("line", (line) => {
         processLine(line);
       });
+
+      // Exit cleanly when the input ends
+      rl.on("close", () => {
+        process.exit(0);
+      });
+
+      // Ignore SIGINT so we can flush remaining input from the app during shutdown
+      process.on('SIGINT', () => {
+        quietLog('[base:format-log] Received SIGINT; waiting for input to finish');
+        // Do not exit here; will exit on rl 'close'
+      });
     });
 }
 
