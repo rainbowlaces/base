@@ -63,8 +63,9 @@ export class Base {
       this.logger.fatal("Unhandled Rejection", [], { promise, reason });
     });
 
-    // Handle graceful shutdown signals
-    process.once("SIGTERM", () => {
+  // Handle graceful shutdown signals
+  // Use prependOnceListener so our handler runs before any other user-land listeners
+  process.prependOnceListener("SIGTERM", () => {
       this.logger.info(
         "Received SIGTERM signal, initiating graceful shutdown",
         []
@@ -72,7 +73,7 @@ export class Base {
       void this.shutdown();
     });
 
-    process.once("SIGINT", () => {
+  process.prependOnceListener("SIGINT", () => {
       this.logger.info(
         "Received SIGINT signal (Ctrl+C), initiating graceful shutdown",
         []
@@ -80,7 +81,7 @@ export class Base {
       void this.shutdown();
     });
 
-    process.once("SIGQUIT", () => {
+  process.prependOnceListener("SIGQUIT", () => {
       this.logger.info(
         "Received SIGQUIT signal, initiating graceful shutdown",
         []
@@ -89,7 +90,7 @@ export class Base {
     });
 
     // Nodemon/debugger restart signal
-    process.once("SIGUSR2", () => {
+  process.prependOnceListener("SIGUSR2", () => {
       this.logger.info(
         "Received SIGUSR2 signal, initiating graceful shutdown (nodemon)",
         []
@@ -130,7 +131,7 @@ export class Base {
       // This preserves previous behavior while giving I/O a chance to flush
       // Give the process a bit more time by default to allow teardown logs to flush
       // and async cleanups (e.g., containers) to complete. Can be overridden via env.
-      const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 3000);
+  const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 4000);
       setTimeout(() => {
         // Only force if still running
         try {

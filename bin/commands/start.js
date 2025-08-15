@@ -41,8 +41,8 @@ export function createStartCommand(program) {
           const __dirname = path.dirname(__filename);
           const cliPath = path.resolve(__dirname, "..", "cli.js");
 
-          // Spawn the application process
-          const appProc = spawn(
+      // Spawn the application process
+      const appProc = spawn(
             process.execPath,
             [
               "--inspect",
@@ -56,8 +56,8 @@ export function createStartCommand(program) {
               cwd: projectRoot,
               env: { ...process.env, NODE_ENV: "development" },
               stdio: ["ignore", "pipe", "pipe"],
-              // Keep the app in the same process group so it receives terminal signals too.
-              detached: false,
+        // Detach so the app does NOT get TTY signals directly; parent will forward one clean signal.
+        detached: true,
             }
           );
 
@@ -116,28 +116,27 @@ export function createStartCommand(program) {
           );
 
           // Forward termination signals to the app for graceful shutdown.
-          // Important: Do NOT forward SIGINT when child is in the same
-          // process group (detached:false). The child already receives
-          // Ctrl+C directly from the TTY, and forwarding would cause
-          // duplicate signals (SIGINT + mapped SIGTERM).
+          // With detached:true the child won't receive TTY signals; we explicitly forward a single signal.
           const forwarded = new Set();
           const forward = (sig) => {
-            // Skip forwarding SIGINT; terminal already delivers it to child
-            if (sig === "SIGINT") return;
-            if (!forwarded.has(sig)) {
-              forwarded.add(sig);
+            // Translate parent Ctrl+C (SIGINT) to SIGUSR2 for the app.
+            // Rationale: some libs register SIGINT/SIGTERM handlers that exit immediately.
+            // Base listens for SIGUSR2 explicitly and performs full async teardown with logs.
+            const effective = sig === "SIGINT" ? "SIGUSR2" : sig;
+            if (!forwarded.has(effective)) {
+              forwarded.add(effective);
               program.quietLog(
-                `[base:start] Forwarding ${sig} to app (pid ${appProc.pid})`
+                `[base:start] Forwarding ${sig}${sig !== effective ? `->${effective}` : ""} to app (pid ${appProc.pid})`
               );
             }
             try {
               // If app already exited, ignore
               if (appProc.exitCode === null && appProc.signalCode === null) {
-                appProc.kill(sig);
+                appProc.kill(effective);
               }
             } catch (e) {
               program.quietError(
-                `[base:start] Failed to forward ${sig} to app:`,
+                `[base:start] Failed to forward ${effective} to app:`,
                 e?.message || e
               );
             }
