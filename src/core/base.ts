@@ -9,6 +9,10 @@ class BaseMainConfig extends BaseClassConfig {
   port: number = 3000;
   autoloadIgnore: string[] = [];
   autoload: boolean = true;
+  // When true, once shutdown begins we strip additional signal listeners
+  // (SIGINT/SIGTERM/SIGQUIT/SIGUSR2) and install no-op guards to avoid
+  // duplicate shutdown paths from third-party libs.
+  strictSignals: boolean = true;
 }
 
 declare module "./config/types.js" {
@@ -21,6 +25,8 @@ export class Base {
   private fsRoot: string;
   private libRoot: string;
   private isShuttingDown = false;
+  private strictSignalsEnabled: boolean = true;
+  private shutdownByIpc: boolean = false;
 
   @di<BaseLogger>(BaseLogger, "base")
   private accessor logger!: BaseLogger;
@@ -98,9 +104,34 @@ export class Base {
       void this.shutdown();
     });
 
+    // Prefer explicit IPC message from the CLI to avoid clashes with library signal hooks
+  if (typeof process.on === "function") {
+      try {
+        process.on("message", (msg: unknown) => {
+          if (msg === "START_GRACEFUL_SHUTDOWN") {
+      this.shutdownByIpc = true;
+            this.logger.info(
+              "Received shutdown message (IPC), initiating graceful shutdown",
+              []
+            );
+            void this.shutdown();
+          }
+        });
+      } catch {
+        // ignore if IPC is not available
+      }
+    }
+
     BaseDi.register(this);
 
     await BaseInitializer.run();
+
+    // Cache config needed during shutdown to avoid DI lookups later
+    try {
+      this.strictSignalsEnabled = this.config.strictSignals;
+    } catch {
+      this.strictSignalsEnabled = true;
+    }
 
     this.logger.debug("Base initialized", []);
   }
@@ -116,6 +147,28 @@ export class Base {
 
     this.isShuttingDown = true;
     this.logger.info("Starting graceful shutdown process", []);
+
+    // Optional hard mode: prevent duplicate shutdown paths from other listeners
+  if (this.strictSignalsEnabled && !this.shutdownByIpc) {
+      try {
+        const signals: NodeJS.Signals[] = [
+          "SIGINT",
+          "SIGTERM",
+          "SIGQUIT",
+          "SIGUSR2",
+        ];
+        for (const sig of signals) {
+          // Remove all remaining listeners for subsequent signals
+          process.removeAllListeners(sig);
+          // Install a no-op guard so future signals during shutdown don't trigger anything else
+          process.on(sig, () => {
+            // Keep it minimal to avoid noisy logs while tearing down
+          });
+        }
+      } catch {
+        // Best-effort; ignore errors removing listeners
+      }
+    }
 
     try {
       // Teardown all services in reverse dependency order

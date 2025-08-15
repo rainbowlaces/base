@@ -55,7 +55,8 @@ export function createStartCommand(program) {
             {
               cwd: projectRoot,
               env: { ...process.env, NODE_ENV: "development" },
-              stdio: ["ignore", "pipe", "pipe"],
+        // Enable IPC so we can signal shutdown via message instead of OS signals
+        stdio: ["ignore", "pipe", "pipe", "ipc"],
         // Detach so the app does NOT get TTY signals directly; parent will forward one clean signal.
         detached: true,
             }
@@ -81,6 +82,9 @@ export function createStartCommand(program) {
 
           // Merge stdout and stderr from app into a single stream for formatter
           const merged = new PassThrough();
+          let logsFinished = false;
+          let mergedFinished = false;
+          let appExited = false;
           if (appProc.stdout) appProc.stdout.pipe(merged, { end: false });
           if (appProc.stderr) appProc.stderr.pipe(merged, { end: false });
 
@@ -89,25 +93,34 @@ export function createStartCommand(program) {
           let endCount = 0;
           const tryEnd = () => {
             endCount += 1;
-            if (endCount >= 2) merged.end();
+            if (endCount >= 2) {
+              merged.end();
+            }
           };
           if (appProc.stdout) appProc.stdout.on("end", tryEnd);
           if (appProc.stderr) appProc.stderr.on("end", tryEnd);
 
           // Pipe merged logs to formatter stdin
           merged.pipe(fmtProc.stdin);
+          merged.once("finish", () => {
+            mergedFinished = true;
+          });
 
           // Fallback: if formatter fails or exits, pipe logs directly to parent stdout
-          const enableDirectOutput = () => {
+          const enableDirectOutput = (reason) => {
+            if (logsFinished) return; // already finished/redirected
             try {
               merged.unpipe(fmtProc.stdin);
             } catch {}
             try {
               fmtProc.stdin?.destroy();
             } catch {}
-            program.quietError(
-              "[base:start] Log formatter unavailable; falling back to raw output"
-            );
+            // Avoid noisy message after a clean app exit; just switch output silently
+            if (!appExited) {
+              program.quietError(
+                `"[base:start] Log formatter unavailable; falling back to raw output${reason ? ` (${reason})` : ""}`
+              );
+            }
             merged.pipe(process.stdout);
           };
 
@@ -115,39 +128,40 @@ export function createStartCommand(program) {
             `Executing (dev): node --inspect -r dotenv/config -r source-map-support/register ${finalEntryFile} | base format-log`
           );
 
-          // Forward termination signals to the app for graceful shutdown.
-          // With detached:true the child won't receive TTY signals; we explicitly forward a single signal.
-          const forwarded = new Set();
-          const forward = (sig) => {
-            // Translate parent Ctrl+C (SIGINT) to SIGUSR2 for the app.
-            // Rationale: some libs register SIGINT/SIGTERM handlers that exit immediately.
-            // Base listens for SIGUSR2 explicitly and performs full async teardown with logs.
-            const effective = sig === "SIGINT" ? "SIGUSR2" : sig;
-            if (!forwarded.has(effective)) {
-              forwarded.add(effective);
-              program.quietLog(
-                `[base:start] Forwarding ${sig}${sig !== effective ? `->${effective}` : ""} to app (pid ${appProc.pid})`
-              );
-            }
+          // Prefer IPC message to trigger graceful shutdown in the child app
+          let shutdownMsgSent = false;
+          const sendShutdown = (reason) => {
+            if (shutdownMsgSent) return;
+            shutdownMsgSent = true;
             try {
-              // If app already exited, ignore
+              if (appProc.connected && typeof appProc.send === "function") {
+                appProc.send("START_GRACEFUL_SHUTDOWN");
+                program.quietLog(`[base:start] Sent shutdown message (${reason}) to app (pid ${appProc.pid})`);
+                return;
+              }
+            } catch {}
+            // Fallback to SIGTERM if IPC is unavailable
+            try {
               if (appProc.exitCode === null && appProc.signalCode === null) {
-                appProc.kill(effective);
+                appProc.kill("SIGTERM");
+                program.quietLog(`[base:start] IPC unavailable; forwarded SIGTERM (${reason}) to app (pid ${appProc.pid})`);
               }
             } catch (e) {
-              program.quietError(
-                `[base:start] Failed to forward ${effective} to app:`,
-                e?.message || e
-              );
+              program.quietError("[base:start] Failed to signal app shutdown:", e?.message || e);
             }
           };
-          process.on("SIGINT", () => forward("SIGINT"));
-          process.on("SIGTERM", () => forward("SIGTERM"));
-          process.on("SIGQUIT", () => forward("SIGQUIT"));
-          process.on("SIGHUP", () => forward("SIGHUP"));
+          process.on("SIGINT", () => sendShutdown("SIGINT"));
+          process.on("SIGTERM", () => sendShutdown("SIGTERM"));
+          process.on("SIGQUIT", () => sendShutdown("SIGQUIT"));
+          process.on("SIGHUP", () => sendShutdown("SIGHUP"));
+          appProc.on("disconnect", () => {
+            // IPC channel closed unexpectedly; ensure the app gets a shutdown signal
+            sendShutdown("disconnect");
+          });
 
           // Exit parent when app exits; prefer app's exit code, but first drain logs
           appProc.on("exit", (code, signal) => {
+            appExited = true;
             program.quietLog(
               `[base:start] App exited` +
                 (signal ? ` by signal ${signal}` : ` with code ${code}`)
@@ -172,6 +186,7 @@ export function createStartCommand(program) {
                 fmtProc.stdin?.end();
               } catch {}
               const done = () => {
+                logsFinished = true;
                 if (signal) {
                   process.exitCode = 0; // let parent exit cleanly
                 } else {
@@ -186,26 +201,34 @@ export function createStartCommand(program) {
                 done();
               };
               fmtProc.once("exit", markDone);
-              setTimeout(markDone, gracefulFlushTimeout).unref?.();
+              // Keep the process alive up to the flush timeout so logs can drain
+              setTimeout(markDone, gracefulFlushTimeout);
             };
 
             if (merged.writableEnded) {
               finishAndExit();
             } else {
               merged.once("finish", finishAndExit);
-              // Safety timeout in case finish never triggers
-              setTimeout(finishAndExit, gracefulFlushTimeout).unref?.();
+              // Safety timeout in case finish never triggers — keep alive to honor flush window
+              setTimeout(finishAndExit, gracefulFlushTimeout);
             }
           });
 
           // If formatter dies early, still allow parent to continue; log quietly
           fmtProc.on("error", (err) => {
             quietError("Log formatter failed:", err?.message || err);
-            enableDirectOutput();
+            if (!appExited) enableDirectOutput("error");
           });
-          fmtProc.on("exit", (code) => {
-            if (code !== 0) {
-              enableDirectOutput();
+          fmtProc.on("exit", () => {
+            // If logs aren't finished and the app is still running (or pipe not finished), fall back
+            if (!logsFinished && (!appExited || !mergedFinished)) {
+              enableDirectOutput("exit");
+            }
+          });
+          fmtProc.stdin?.on?.("error", (err) => {
+            // Handle EPIPE when piping after formatter closed
+            if (err && (err.code === "EPIPE" || err.code === "ERR_STREAM_PREMATURE_CLOSE")) {
+              if (!appExited) enableDirectOutput("stdin error");
             }
           });
         } else {

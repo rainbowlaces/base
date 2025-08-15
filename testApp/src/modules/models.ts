@@ -288,7 +288,17 @@ export class ModelsModule extends BaseModule {
 
     async teardown() {
         this.logger.debug("Module teardown initiated.");
-        await async.delay(2000);
+        await async.delay(1000);
+        this.logger.debug("Five...");
+        await async.delay(1000);
+        this.logger.debug("Four...");
+        await async.delay(1000);
+        this.logger.debug("Three...");
+        await async.delay(1000);
+        this.logger.debug("Two...");
+        await async.delay(1000);
+        this.logger.debug("One...");
+        await async.delay(1000);
         this.logger.debug("Module teardown complete.");
     }
 }
