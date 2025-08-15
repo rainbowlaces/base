@@ -56,7 +56,8 @@ export function createStartCommand(program) {
               cwd: projectRoot,
               env: { ...process.env, NODE_ENV: "development" },
               stdio: ["ignore", "pipe", "pipe"],
-              detached: true,
+              // Keep the app in the same process group so it receives terminal signals too.
+              detached: false,
             }
           );
 
@@ -73,6 +74,8 @@ export function createStartCommand(program) {
             ],
             {
               stdio: ["pipe", "inherit", "inherit"],
+              // Put formatter in its own group so Ctrl+C doesn't kill it before we can fallback.
+              detached: true,
             }
           );
 
@@ -112,20 +115,26 @@ export function createStartCommand(program) {
             `Executing (dev): node --inspect -r dotenv/config -r source-map-support/register ${finalEntryFile} | base format-log`
           );
 
-          // Forward termination signals to children for graceful shutdown
+          // Forward termination signals to the app for graceful shutdown.
+          // Important: Do NOT forward SIGINT when child is in the same
+          // process group (detached:false). The child already receives
+          // Ctrl+C directly from the TTY, and forwarding would cause
+          // duplicate signals (SIGINT + mapped SIGTERM).
           const forwarded = new Set();
           const forward = (sig) => {
+            // Skip forwarding SIGINT; terminal already delivers it to child
+            if (sig === "SIGINT") return;
             if (!forwarded.has(sig)) {
               forwarded.add(sig);
               program.quietLog(
                 `[base:start] Forwarding ${sig} to app (pid ${appProc.pid})`
               );
             }
-            // Map Ctrl+C (SIGINT) from the terminal to SIGTERM for the child, to avoid
-            // the terminal killing the child outright. Child handles SIGTERM gracefully.
-            const targetSig = sig === "SIGINT" ? "SIGTERM" : sig;
             try {
-              appProc.kill(targetSig);
+              // If app already exited, ignore
+              if (appProc.exitCode === null && appProc.signalCode === null) {
+                appProc.kill(sig);
+              }
             } catch (e) {
               program.quietError(
                 `[base:start] Failed to forward ${sig} to app:`,
@@ -136,34 +145,58 @@ export function createStartCommand(program) {
           process.on("SIGINT", () => forward("SIGINT"));
           process.on("SIGTERM", () => forward("SIGTERM"));
           process.on("SIGQUIT", () => forward("SIGQUIT"));
+          process.on("SIGHUP", () => forward("SIGHUP"));
 
-          // Exit parent when app exits; prefer app's exit code
+          // Exit parent when app exits; prefer app's exit code, but first drain logs
           appProc.on("exit", (code, signal) => {
             program.quietLog(
               `[base:start] App exited` +
                 (signal ? ` by signal ${signal}` : ` with code ${code}`)
             );
-            // Fallback: if streams did not naturally end, end merged shortly after exit
-            setTimeout(() => {
+
+            // Close the merged stream once stdout/stderr close
+            const endMerged = () => {
               try {
                 merged.end();
               } catch {}
-              // Close formatter stdin to allow it to flush and exit
+            };
+            appProc.stdout?.once("close", endMerged);
+            appProc.stderr?.once("close", endMerged);
+
+            // After merged finishes piping, close formatter stdin to allow flush
+            const gracefulFlushTimeout = Number(
+              process.env.BASE_LOG_FLUSH_TIMEOUT_MS ?? 1000
+            );
+
+            const finishAndExit = () => {
               try {
                 fmtProc.stdin?.end();
               } catch {}
-            }, 50);
-            if (signal) {
-              // Map signals to conventional exit codes if needed
-              process.exitCode = 128 + (signal?.charCodeAt ? 0 : 0);
+              const done = () => {
+                if (signal) {
+                  process.exitCode = 0; // let parent exit cleanly
+                } else {
+                  process.exitCode = code ?? 0;
+                }
+              };
+              // Wait for formatter to exit or time out
+              let finished = false;
+              const markDone = () => {
+                if (finished) return;
+                finished = true;
+                done();
+              };
+              fmtProc.once("exit", markDone);
+              setTimeout(markDone, gracefulFlushTimeout).unref?.();
+            };
+
+            if (merged.writableEnded) {
+              finishAndExit();
             } else {
-              process.exitCode = code ?? 0;
+              merged.once("finish", finishAndExit);
+              // Safety timeout in case finish never triggers
+              setTimeout(finishAndExit, gracefulFlushTimeout).unref?.();
             }
-            // Safety net: ensure the detached child (and its group) is terminated
-            try {
-              process.kill(-appProc.pid, "SIGKILL");
-            } catch {}
-            // no-op
           });
 
           // If formatter dies early, still allow parent to continue; log quietly
@@ -182,15 +215,13 @@ export function createStartCommand(program) {
             cwd: projectRoot,
             env: { ...process.env },
             stdio: "inherit",
-            detached: true,
+            detached: false,
           });
 
-          // Forward signals
+          // Forward signals (avoid duplicating SIGINT which the child already receives)
           const forward = (sig) => {
-            // Map Ctrl+C to SIGTERM for graceful shutdown in the child
-            const targetSig = sig === "SIGINT" ? "SIGTERM" : sig;
             try {
-              appProc.kill(targetSig);
+              if (sig !== "SIGINT") appProc.kill(sig);
             } catch {}
           };
           process.on("SIGINT", () => forward("SIGINT"));
@@ -203,10 +234,7 @@ export function createStartCommand(program) {
             } else {
               process.exitCode = code ?? 0;
             }
-            try {
-              process.kill(-appProc.pid, "SIGKILL");
-            } catch {}
-            // no-op
+            // No aggressive group kill; let children shut down gracefully.
           });
         }
       } catch (e) {

@@ -18,7 +18,6 @@ declare module "./config/types.js" {
 }
 
 export class Base {
-
   private fsRoot: string;
   private libRoot: string;
   private isShuttingDown = false;
@@ -37,11 +36,11 @@ export class Base {
   constructor(metaUrl: string) {
     this.fsRoot = getDirname(metaUrl);
     this.libRoot = getDirname(import.meta.url);
-    
+
     // Note: Using console.debug here since logger isn't available yet during DI setup
     console.debug(`[Base] Registering fsRoot: ${this.fsRoot}`);
     console.debug(`[Base] Registering libRoot: ${this.libRoot}`);
-    
+
     BaseDi.register(this.fsRoot, "fsRoot");
     BaseDi.register(this.libRoot, "libRoot");
     BaseDi.register(process.env.NODE_ENV ?? "production", "env");
@@ -54,7 +53,7 @@ export class Base {
   async init() {
     const corePath = path.dirname(this.libRoot);
     await BaseAutoload.autoload(corePath);
-    await BaseAutoload.autoload(this.fsRoot, ["*/public/*"]);    
+    await BaseAutoload.autoload(this.fsRoot, ["*/public/*"]);
 
     process.on("uncaughtException", (err) => {
       this.logger.fatal("Uncaught Exception", [], { err });
@@ -65,37 +64,52 @@ export class Base {
     });
 
     // Handle graceful shutdown signals
-  process.once("SIGTERM", () => {
-      this.logger.info("Received SIGTERM signal, initiating graceful shutdown", []);
+    process.once("SIGTERM", () => {
+      this.logger.info(
+        "Received SIGTERM signal, initiating graceful shutdown",
+        []
+      );
       void this.shutdown();
     });
 
-  process.once("SIGINT", () => {
-      this.logger.info("Received SIGINT signal (Ctrl+C), initiating graceful shutdown", []);
+    process.once("SIGINT", () => {
+      this.logger.info(
+        "Received SIGINT signal (Ctrl+C), initiating graceful shutdown",
+        []
+      );
       void this.shutdown();
     });
 
-  process.once("SIGQUIT", () => {
-      this.logger.info("Received SIGQUIT signal, initiating graceful shutdown", []);
+    process.once("SIGQUIT", () => {
+      this.logger.info(
+        "Received SIGQUIT signal, initiating graceful shutdown",
+        []
+      );
       void this.shutdown();
     });
 
     // Nodemon/debugger restart signal
-  process.once("SIGUSR2", () => {
-      this.logger.info("Received SIGUSR2 signal, initiating graceful shutdown (nodemon)", []);
+    process.once("SIGUSR2", () => {
+      this.logger.info(
+        "Received SIGUSR2 signal, initiating graceful shutdown (nodemon)",
+        []
+      );
       void this.shutdown();
     });
 
     BaseDi.register(this);
 
-    await BaseInitializer.run();    
+    await BaseInitializer.run();
 
     this.logger.debug("Base initialized", []);
   }
 
   private async shutdown(): Promise<void> {
     if (this.isShuttingDown) {
-      this.logger.warn("Shutdown already in progress, ignoring duplicate signal", []);
+      this.logger.warn(
+        "Shutdown already in progress, ignoring duplicate signal",
+        []
+      );
       return;
     }
 
@@ -114,7 +128,9 @@ export class Base {
     } finally {
       // Fallback: force exit after a short grace period in case handles remain open
       // This preserves previous behavior while giving I/O a chance to flush
-      const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 1000);
+      // Give the process a bit more time by default to allow teardown logs to flush
+      // and async cleanups (e.g., containers) to complete. Can be overridden via env.
+      const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 3000);
       setTimeout(() => {
         // Only force if still running
         try {
