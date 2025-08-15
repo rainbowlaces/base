@@ -43,60 +43,84 @@ export function createFormatLogCommand(program) {
 
 function processLine(line) {
   if (!line) return;
-  
-  try {
-    const log = JSON.parse(line);
 
-    const timestamp = DateTime.fromISO(log.timestamp).toFormat(
-      "yyyy-MM-dd HH:mm:ss",
-    );
+  let raw; let parsed = null;
+  try { raw = line.trim(); if (raw.startsWith('{') && raw.endsWith('}')) parsed = JSON.parse(raw); } catch { /* fallthrough */ }
 
-    let level = log.level.padEnd(8, " ");
-    let message = chalk.gray(log.message);
-    let logger = console.log;
-    switch (log.level) {
-      case "TRACE":
-      case "DEBUG":
-        level = chalk.gray(level);
-        message = chalk.gray(log.message);
-        logger = console.debug;
-        break;
-      case "INFO":
-        level = chalk.blue(level);
-        message = chalk.white(log.message);
-        logger = console.info;
-        break;
-      case "WARNING":
-        level = chalk.yellow(level);
-        message = chalk.bold.white(log.message);
-        logger = console.warn;
-        break;
-      case "ERROR":
-      case "FATAL":
-        level = chalk.red(level);
-        message = chalk.bold.white(log.message);
-        logger = console.error;
-        break;
+  // If not JSON, synthesize a minimal log object so everything gets uniform formatting
+  const log = parsed || { message: line.trim() };
+  // Basic tolerant extraction with defaults
+  const ts = typeof log.timestamp === 'string' ? DateTime.fromISO(log.timestamp) : DateTime.invalid('missing');
+  const timestamp = (ts.isValid ? ts : DateTime.now()).toFormat('yyyy-MM-dd HH:mm:ss');
+
+  const rawLevel = (log.level || 'INFO').toString().toUpperCase();
+  const levelPad = rawLevel.padEnd(8, ' ');
+  let level = levelPad;
+
+  // Build a working context object (may inject payload below)
+  let context = (log.context && typeof log.context === 'object') ? { ...log.context } : {};
+  const metaKeys = new Set(['timestamp','level','namespace','ns','tags','context','err','message']);
+
+  const messageText = (() => {
+    if (log.message != null) return String(log.message);
+    if (log.err && log.err.message) return String(log.err.message);
+    // No message field – move remaining non-meta fields into context.payload
+    const payloadEntries = Object.entries(log).filter(([k]) => !metaKeys.has(k));
+    if (payloadEntries.length) {
+      context.payload = Object.fromEntries(payloadEntries);
+      return 'Event';
     }
-
-    const namespace = chalk.magenta.bold(
-      log.namespace.toUpperCase().padEnd(15, " "),
-    );
-
-    logger(`${timestamp} ${namespace} ${level} ${message}`);
-
-    if (log.tags.length) {
-      logger(
-        "Tags: ",
-        log.tags.map((tag) => chalk.bgBlue.whiteBright(` ${tag} `)).join(" "),
-      );
-    }
-    if (Object.values(log.context).length) {
-      formatContext(log.context, logger);
-    }
-  } catch (_e) {
-    console.log(line);
+    return 'Event';
+  })();
+  let message = chalk.gray(messageText);
+  let logger = console.log;
+  switch (rawLevel) {
+    case 'TRACE':
+    case 'DEBUG':
+      level = chalk.gray(levelPad);
+      message = chalk.gray(messageText);
+      logger = console.debug;
+      break;
+    case 'INFO':
+      level = chalk.blue(levelPad);
+      message = chalk.white(messageText);
+      logger = console.info;
+      break;
+    case 'WARNING':
+    case 'WARN':
+      level = chalk.yellow(levelPad);
+      message = chalk.bold.white(messageText);
+      logger = console.warn;
+      break;
+    case 'ERROR':
+      level = chalk.red(levelPad);
+      message = chalk.bold.white(messageText);
+      logger = console.error;
+      break;
+    case 'FATAL':
+      level = chalk.red(levelPad);
+      message = chalk.bold.white(messageText);
+      logger = console.error;
+      break;
   }
+
+  const rawNamespace = (log.namespace || log.ns || 'log').toString().toUpperCase();
+  const namespace = chalk.magenta.bold(rawNamespace.padEnd(15, ' '));
+
+  logger(`${timestamp} ${namespace} ${level} ${message}`);
+
+  const tags = Array.isArray(log.tags) ? log.tags : [];
+  if (tags.length) {
+    logger(
+      'Tags: ',
+      tags.map((tag) => chalk.bgBlue.whiteBright(` ${tag} `)).join(' '),
+    );
+  }
+
+  if (Object.keys(context).length) {
+    formatContext(context, logger);
+  }
+  // If only minimal fields were present, we still emitted a normalized line above.
 }
 
 function formatContext(context, logger) {

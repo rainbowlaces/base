@@ -85,6 +85,29 @@ export function createStartCommand(program) {
           let logsFinished = false;
           let mergedFinished = false;
           let appExited = false;
+
+          // Wrap program quiet* so base:start internal messages also flow through formatter
+          // Wrap quietLog/quietError: suppress raw original output to avoid duplicate lines.
+          // We only emit structured JSON into the formatter pipeline.
+          const emitInternal = (level, msg) => {
+            try {
+              const json = JSON.stringify({
+                timestamp: new Date().toISOString(),
+                level,
+                namespace: "base_start",
+                message: msg,
+                tags: [],
+                context: {}
+              });
+              merged.write(json + "\n");
+            } catch {}
+          };
+          program.quietLog = (msg) => {
+            emitInternal("INFO", String(msg));
+          };
+          program.quietError = (msg) => {
+            emitInternal("ERROR", String(msg));
+          };
           if (appProc.stdout) appProc.stdout.pipe(merged, { end: false });
           if (appProc.stderr) appProc.stderr.pipe(merged, { end: false });
 
@@ -118,7 +141,7 @@ export function createStartCommand(program) {
             // Avoid noisy message after a clean app exit; just switch output silently
             if (!appExited) {
               program.quietError(
-                `"[base:start] Log formatter unavailable; falling back to raw output${reason ? ` (${reason})` : ""}`
+                `"Log formatter unavailable; falling back to raw output${reason ? ` (${reason})` : ""}`
               );
             }
             merged.pipe(process.stdout);
@@ -136,7 +159,7 @@ export function createStartCommand(program) {
             try {
               if (appProc.connected && typeof appProc.send === "function") {
                 appProc.send("START_GRACEFUL_SHUTDOWN");
-                program.quietLog(`[base:start] Sent shutdown message (${reason}) to app (pid ${appProc.pid})`);
+                program.quietLog(`Sent shutdown message (${reason}) to app (pid ${appProc.pid})`);
                 return;
               }
             } catch {}
@@ -144,10 +167,10 @@ export function createStartCommand(program) {
             try {
               if (appProc.exitCode === null && appProc.signalCode === null) {
                 appProc.kill("SIGTERM");
-                program.quietLog(`[base:start] IPC unavailable; forwarded SIGTERM (${reason}) to app (pid ${appProc.pid})`);
+                program.quietLog(`IPC unavailable; forwarded SIGTERM (${reason}) to app (pid ${appProc.pid})`);
               }
             } catch (e) {
-              program.quietError("[base:start] Failed to signal app shutdown:", e?.message || e);
+              program.quietError("Failed to signal app shutdown:", e?.message || e);
             }
           };
           process.on("SIGINT", () => sendShutdown("SIGINT"));
@@ -163,7 +186,7 @@ export function createStartCommand(program) {
           appProc.on("exit", (code, signal) => {
             appExited = true;
             program.quietLog(
-              `[base:start] App exited` +
+              `App exited` +
                 (signal ? ` by signal ${signal}` : ` with code ${code}`)
             );
 

@@ -4,6 +4,8 @@ import { BaseClassConfig, type ConfigData } from "../config/types.js";
 import { config } from "../config/decorators/config.js";
 import { configClass } from "../config/decorators/provider.js";
 import { BaseError } from "../baseErrors.js";
+import { di } from "../di/baseDi.js";
+import type { BaseLogger } from "../logger/baseLogger.js";
 
 @configClass("BaseRouter")
 class BaseRouterConfig extends BaseClassConfig {
@@ -17,7 +19,7 @@ declare module "../config/types.js" {
   }
 }
 
-@registerDi({  setup: true, phase: 40, singleton: true })
+@registerDi({ setup: true, phase: 40, singleton: true })
 export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
@@ -25,10 +27,16 @@ export class BaseRouter {
   @config<BaseRouterConfig>("BaseRouter")
   private accessor config!: BaseRouterConfig;
 
+  @di<BaseLogger>("BaseLogger", "Router")
+  private accessor logger!: BaseLogger;
+
   public async setup(): Promise<void> {
     this.routes = this.config.routes;
     this.defaultRoute = this.config.defaultRoute;
-    console.log(`[BaseRouter] Setup complete with routes: ${JSON.stringify(this.routes)}`);
+    this.logger.info("Setup complete", [], {
+      default: this.defaultRoute,
+      routes: this.routes,
+    });
   }
 
   private cleanPath(path: string): string {
@@ -47,22 +55,24 @@ export class BaseRouter {
   }
 
   private selectRoute(
-    url: string,
+    url: string
   ): { path: string; target: string; params: UrlParams } | null {
     url = `/${url}`;
     const routes = Object.keys(this.routes);
     const route = routes.find((route) => {
-      const pattern =  BaseRouter.createURLPattern(route);
+      const pattern = BaseRouter.createURLPattern(route);
       return !!pattern.exec({ pathname: url });
     });
     if (!route) return null;
 
-    const pattern =  BaseRouter.createURLPattern(route);
+    const pattern = BaseRouter.createURLPattern(route);
     const match = pattern.exec({ pathname: url });
     if (!match) return null;
 
     const params: UrlParams = Object.fromEntries(
-      Object.entries(match.pathname.groups).filter(([_, value]) => value !== undefined)
+      Object.entries(match.pathname.groups).filter(
+        ([_, value]) => value !== undefined
+      )
     ) as UrlParams;
 
     let target: RouteTarget = this.routes[route];
