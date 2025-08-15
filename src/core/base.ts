@@ -27,6 +27,8 @@ export class Base {
   private isShuttingDown = false;
   private strictSignalsEnabled: boolean = true;
   private shutdownByIpc: boolean = false;
+  private uncaughtHandlerRef?: (err: unknown) => void;
+  private unhandledHandlerRef?: (reason: unknown, promise: Promise<unknown>) => void;
 
   @di<BaseLogger>(BaseLogger, "base")
   private accessor logger!: BaseLogger;
@@ -61,13 +63,30 @@ export class Base {
     await BaseAutoload.autoload(corePath);
     await BaseAutoload.autoload(this.fsRoot, ["*/public/*"]);
 
-    process.on("uncaughtException", (err) => {
-      this.logger.fatal("Uncaught Exception", [], { err });
-    });
+    this.uncaughtHandlerRef = (err) => {
+      try {
+        this.logger.error("Uncaught Exception", [], { err });
+      } catch {
+        console.error("[Base] Uncaught Exception (logger unavailable)", err);
+      }
+      process.exitCode = 1;
+      if (!this.isShuttingDown) void this.shutdown();
+    };
+  process.on("uncaughtException", this.uncaughtHandlerRef);
 
-    process.on("unhandledRejection", (reason, promise) => {
-      this.logger.fatal("Unhandled Rejection", [], { promise, reason });
-    });
+    this.unhandledHandlerRef = (reason, promise) => {
+      try {
+        this.logger.error("Unhandled Rejection", [], { promise, reason });
+      } catch {
+        console.error(
+          "[Base] Unhandled Rejection (logger unavailable)",
+          reason
+        );
+      }
+      process.exitCode = 1;
+      if (!this.isShuttingDown) void this.shutdown();
+    };
+  process.on("unhandledRejection", this.unhandledHandlerRef);
 
   // Handle graceful shutdown signals
   // Use prependOnceListener so our handler runs before any other user-land listeners
@@ -147,6 +166,23 @@ export class Base {
 
     this.isShuttingDown = true;
     this.logger.info("Starting graceful shutdown process", []);
+    try {
+      // Expose a shutdown flag for modules to adjust behavior/logging during teardown
+      BaseDi.register(true, "ShuttingDown");
+    } catch {
+      // ignore if DI not available
+    }
+
+    // Detach error handlers early so late driver errors / promise rejections after DI
+    // teardown don't try to resolve a logger that has been unregistered.
+    if (this.uncaughtHandlerRef) {
+      process.removeListener("uncaughtException", this.uncaughtHandlerRef);
+      this.uncaughtHandlerRef = undefined;
+    }
+    if (this.unhandledHandlerRef) {
+      process.removeListener("unhandledRejection", this.unhandledHandlerRef);
+      this.unhandledHandlerRef = undefined;
+    }
 
     // Optional hard mode: prevent duplicate shutdown paths from other listeners
   if (this.strictSignalsEnabled && !this.shutdownByIpc) {
