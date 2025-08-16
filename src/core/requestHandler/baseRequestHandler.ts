@@ -48,6 +48,9 @@ export class BaseRequestHandler {
   }
 
   async teardown() {
+    this.#server.removeAllListeners();
+    this.#wss.removeAllListeners();
+    this.#wss.close();
     this.#server.closeAllConnections();
   }
 
