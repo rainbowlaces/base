@@ -19,7 +19,7 @@
     "lint:fix": "npm run lint -- --fix",
     "tsc": "npx base build --types-only",
     "build": "npm run lint && npx base build -q",
-    "test": "npx base build --test && node --enable-source-maps --test '_test/test/**/*.js'",
+    "test": "npx base build --test && node --enable-source-maps --test --test-reporter=dot '_test/test/**/*.js'",
     "release": "npm run lint && npx base build --release",
     "push": "npm run release && npm publish --access=public",
     "start:dev:watch": "npx nodemon --watch src --ext ts,css --exec 'npm run start:dev'",

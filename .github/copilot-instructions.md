@@ -7,4 +7,6 @@ To run the test server, run `npm run start:dev`.
 
 **IMPORTANT**: Always use `npm test` to run tests - this ensures they are built properly first. 
 You cannot run individual test files directly with node - they must go through the build process.
-To check for specific test output, use `npm test | grep "pattern"` to filter results.
+To check for specific test output, use `npm test | grep "pattern"` to filter results. We use the dot 
+reporter for concise output, so you generally shouldn't need to filter unless looking for specific 
+test names or errors.
