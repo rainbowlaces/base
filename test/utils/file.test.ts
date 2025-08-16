@@ -66,6 +66,20 @@ class MockFileSystem implements FileSystem {
     }
     return file.stats;
   }
+
+  async exists(path: string): Promise<boolean> {
+    return this.files.has(path) || this.directories.has(path);
+  }
+
+  async openStatRead(path: string): Promise<{ stats: fs.Stats; data: Buffer }> {
+    const stats = await this.stat(path);
+    const data = await this.readFile(path);
+    return { stats, data };
+  }
+
+  async realpath(p: string): Promise<string> {
+    return p; // simplistic for tests
+  }
 }
 
 test('getFilename function', (t) => {

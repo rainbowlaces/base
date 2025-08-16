@@ -68,7 +68,36 @@ export function getMockFileSystem(): FileSystem {
             rdev: 0,
             blksize: 0,
             blocks: 0
-        }))
+        })),
+        exists: mock.fn(async () => true),
+        openStatRead: mock.fn(async () => ({ stats: await (async () => ({
+            isFile: () => false,
+            isDirectory: () => false,
+            isBlockDevice: () => false,
+            isCharacterDevice: () => false,
+            isSymbolicLink: () => false,
+            isFIFO: () => false,
+            isSocket: () => false,
+            size: 0,
+            mode: 0,
+            uid: 0,
+            gid: 0,
+            atime: now,
+            mtime: now,
+            ctime: now,
+            birthtime: now,
+            atimeMs: now.getTime(),
+            mtimeMs: now.getTime(),
+            ctimeMs: now.getTime(),
+            birthtimeMs: now.getTime(),
+            dev: 0,
+            ino: 0,
+            nlink: 0,
+            rdev: 0,
+            blksize: 0,
+            blocks: 0
+    }))(), data: Buffer.alloc(0) })),
+    realpath: mock.fn(async (p: string) => p)
     };
 }
 
