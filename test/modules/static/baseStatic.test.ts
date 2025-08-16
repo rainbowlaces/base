@@ -3,7 +3,6 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { mock } from 'node:test';
 import path from 'path';
-import crypto from 'crypto';
 import type * as fs from 'fs';
 
 // Import the class to test
@@ -156,40 +155,40 @@ test('BaseStatic handleStatic() method', (t) => {
     (instance as any).sendFile = mock.fn();
   });
 
-  t.test('should return 400 Bad Request if path is missing', async () => {
+  t.test('should return 404 Not Found if path is missing', async () => {
     const args = { topic: 'test', context: mockCtx, path: undefined };
     
      
     await instance.handleStatic(args as any);
     
     assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [400]);
+    assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [404]);
     assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Bad request']);
+    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Not found']);
   });
 
-  t.test('should return 400 Bad Request if path becomes empty after cleaning', async () => {
+  t.test('should return 404 Not Found if path becomes empty after cleaning', async () => {
     const args = { topic: 'test', context: mockCtx, path: '///' };
     
      
     await instance.handleStatic(args as any);
     
     assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [400]);
+    assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [404]);
     assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Bad request']);
+    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Not found']);
   });
 
-  t.test('should return 403 Forbidden for path traversal attempt', async () => {
+  t.test('should return 404 Not Found for path traversal attempt (collapsed)', async () => {
     const args = { topic: 'test', context: mockCtx, path: '../../etc/passwd' };
     
      
     await instance.handleStatic(args as any);
     
     assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [403]);
-    assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Forbidden']);
+  assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [404]);
+  assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
+  assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Not found']);
   });
 
   t.test('should return 404 Not Found when fileSystem throws ENOENT error', async () => {
@@ -198,7 +197,7 @@ test('BaseStatic handleStatic() method', (t) => {
     error.code = 'ENOENT';
     
      
-    (mockFileSystem.readFile as any).mock.mockImplementation(() => {
+  (mockFileSystem.openStatRead as any).mock.mockImplementation(() => {
       throw error;
     });
     
@@ -216,7 +215,7 @@ test('BaseStatic handleStatic() method', (t) => {
     const error = new Error('NOT FOUND');
     
      
-    (mockFileSystem.readFile as any).mock.mockImplementation(() => {
+  (mockFileSystem.openStatRead as any).mock.mockImplementation(() => {
       throw error;
     });
     
@@ -227,23 +226,18 @@ test('BaseStatic handleStatic() method', (t) => {
     assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [404]);
   });
 
-  t.test('should re-throw BaseError for unexpected errors from fileSystem', async () => {
+  t.test('should collapse unexpected errors to 404', async () => {
     const args = { topic: 'test', context: mockCtx, path: 'SOME_FILE_I_WILL_SEE' };
     const originalError = new Error('Unexpected error');
     
      
-    (mockFileSystem.readFile as any).mock.mockImplementation(() => {
+  (mockFileSystem.openStatRead as any).mock.mockImplementation(() => {
       throw originalError;
     });
     
-    await assert.rejects(
-       
-      () => instance.handleStatic(args as any),
-      (err: Error) => {
-        assert.strictEqual(err.constructor.name, 'BaseError');
-        return true;
-      }
-    );
+  await instance.handleStatic(args as any);
+  assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
+  assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [404]);
   });
 
   t.test('should successfully call sendFile when file is loaded correctly', async () => {
@@ -256,9 +250,7 @@ test('BaseStatic handleStatic() method', (t) => {
     
     // Mock successful file operations
      
-    (mockFileSystem.readFile as any).mock.mockImplementation(() => Promise.resolve(mockData));
-     
-    (mockFileSystem.stat as any).mock.mockImplementation(() => Promise.resolve(mockStats));
+  (mockFileSystem.openStatRead as any).mock.mockImplementation(() => Promise.resolve({ stats: mockStats, data: mockData }));
     
      
     await instance.handleStatic(args as any);
@@ -295,20 +287,18 @@ test('BaseStatic sendFile() method', (t) => {
 
   t.test('should return 304 Not Modified if client ETag matches file ETag', async () => {
     // Calculate expected ETag
-    const hash = crypto.createHash('sha1');
-    hash.update(new Uint8Array(testData));
-    const expectedEtag = hash.digest('hex');
+  const expectedEtag = `W/"${testData.length}-${testStats.mtime.getTime()}"`;
     
      
-    (mockCtx.req.header as any).mock.mockImplementation(() => expectedEtag);
+  (mockCtx.req.header as any).mock.mockImplementation((h: string) => h === 'if-none-match' ? expectedEtag : undefined);
     
      
     await (instance as any).sendFile(mockCtx, testFilePath, testData, testStats);
     
     assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
     assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [304]);
-    assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Not Modified']);
+  assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
+  assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['']);
   });
 
   t.test('should return 304 Not Modified if If-Modified-Since is newer than file mtime', async () => {
@@ -326,8 +316,8 @@ test('BaseStatic sendFile() method', (t) => {
     
     assert.strictEqual(mockCtx.res.statusCode.mock.callCount(), 1);
     assert.deepStrictEqual(mockCtx.res.statusCode.mock.calls[0].arguments, [304]);
-    assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
-    assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['Not Modified']);
+  assert.strictEqual(mockCtx.res.send.mock.callCount(), 1);
+  assert.deepStrictEqual(mockCtx.res.send.mock.calls[0].arguments, ['']);
   });
 
   t.test('should send file with correct headers if no caching headers match', async () => {
