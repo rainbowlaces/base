@@ -13,7 +13,7 @@ test('BaseAutoload', (t) => {
   t.test('autoload()', (t) => {
     t.test('should autoload JavaScript files from directory', async () => {
       // Mock file system
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async (path: string) => {
           if (path === '/test/root') {
             return [
@@ -25,7 +25,10 @@ test('BaseAutoload', (t) => {
           return [];
         },
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async (_path: string) => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', [], mockFileSystem);
@@ -38,7 +41,7 @@ test('BaseAutoload', (t) => {
     });
 
     t.test('should recursively scan subdirectories', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async (path: string) => {
           if (path === '/test/root') {
             return [
@@ -53,7 +56,10 @@ test('BaseAutoload', (t) => {
           return [];
         },
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', [], mockFileSystem);
@@ -65,7 +71,7 @@ test('BaseAutoload', (t) => {
     });
 
     t.test('should skip files matching ignore patterns', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async (path: string) => {
           if (path === '/test/root') {
             return [
@@ -77,7 +83,10 @@ test('BaseAutoload', (t) => {
           return [];
         },
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', ['**/test.js', '**/spec.js'], mockFileSystem);
@@ -90,7 +99,7 @@ test('BaseAutoload', (t) => {
     });
 
     t.test('should skip non-JavaScript files', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async () => [
           { name: 'service.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
           { name: 'config.json', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
@@ -98,7 +107,10 @@ test('BaseAutoload', (t) => {
           { name: 'script.ts', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
         ],
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', [], mockFileSystem);
@@ -109,13 +121,16 @@ test('BaseAutoload', (t) => {
     });
 
     t.test('should handle import errors gracefully', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async () => [
           { name: 'good.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
           { name: 'bad.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
         ],
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       // Capture console.error to verify error handling
@@ -137,12 +152,15 @@ test('BaseAutoload', (t) => {
     });
 
     t.test('should skip already autoloaded files', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async () => [
           { name: 'service.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
         ],
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       const originalConsoleError = console.error;
@@ -211,12 +229,15 @@ test('BaseAutoload', (t) => {
 
   t.test('clearAutoloadedFiles()', (t) => {
     t.test('should clear the autoloaded files set', async () => {
-      const mockFileSystem: FileSystem = {
+  const mockFileSystem: FileSystem = {
         readdir: async () => [
           { name: 'service.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
         ],
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+  stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+  exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', [], mockFileSystem);
@@ -234,7 +255,10 @@ test('BaseAutoload', (t) => {
           { name: 'service.js', isDirectory: () => false, isFile: () => true } as FileSystemEntry,
         ],
         readFile: async () => Buffer.from(''),
-        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats)
+        stat: async () => ({ size: 0, isDirectory: () => false, isFile: () => true } as fs.Stats),
+        exists: async () => true,
+  openStatRead: async () => ({ stats: { size:0, isDirectory: () => false, isFile: () => true } as fs.Stats, data: Buffer.alloc(0) }),
+  realpath: async (p: string) => p
       };
 
       await BaseAutoload.autoload('/test/root', [], mockFileSystem);
