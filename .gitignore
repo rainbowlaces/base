@@ -1,7 +1,2 @@
-_*
 node_modules/
-.npm
-.eslintcache
-.env
-dist
 .DS_Store

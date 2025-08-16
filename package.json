@@ -1,70 +1,18 @@
 {
-  "name": "@rainbowlaces/base",
-  "access": "public",
-  "version": "3.14.8",
-  "description": "An extensible and modular Node.js framework for building scalable web applications with built-in support for routing, middleware, configuration management, and more, designed for simplicity and ease of use.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "type": "module",
-  "bin": {
-    "base": "./bin/cli.js"
-  },
-  "engines": {
-    "node": ">=24.0.0"
-  },
+  "name": "@rainbowlaces/base-monorepo",
+  "private": true,
   "scripts": {
-    "start": "npx base start dist/testApp/src/index.js",
-    "start:dev": "npm run build && npx base start -q --dev dist/testApp/src/index.js",
-    "lint": "npx base lint 'src/**/*.ts' 'test/**/*.ts' 'testApp/**/*.ts' 'bin/**/*.js'",
-    "lint:fix": "npm run lint -- --fix",
-    "tsc": "npx base build --types-only",
-    "build": "npm run lint && npx base build -q",
-    "test": "npx base build --test && node --enable-source-maps --test --test-reporter=dot '_test/test/**/*.js'",
-    "release": "npm run lint && npx base build --release",
-    "push": "npm run release && npm publish --access=public",
-    "start:dev:watch": "npx nodemon --watch src --ext ts,css --exec 'npm run start:dev'",
-    "version:patch": "npm version patch && git push --tags",
-    "version:minor": "npm version minor && git push --tags",
-    "version:major": "npm version major && git push --tags"
+    "deps:check": "syncpack list-mismatches",
+    "deps:fix": "syncpack fix-mismatches"
   },
-  "author": "",
-  "license": "MIT",
   "devDependencies": {
-    "@types/cookie": "^0.6.0",
-    "@types/cookie-signature": "^1.1.2",
-    "@types/formidable": "^3.4.5",
-    "@types/mime-types": "^3.0.1",
-    "@types/node": "^24.0.3",
-    "@types/sanitize-html": "^2.11.0",
-    "@types/ws": "^8.18.1",
-    "esbuild": "^0.25.5",
-    "eslint": "^9.29.0",
-    "lit": "^3.3.1",
-    "nodemon": "^3.1.4",
-    "typescript": "^5.8.3"
-  },
-  "peerDependencies": {
-    "esbuild": "^0.25.5",
-    "eslint": "^9.29.0",
-    "nodemon": "^3.1.4",
-    "typescript": "^5.8.3"
-  },
-  "dependencies": {
+    "@changesets/cli": "^2.29.6",
     "@eslint/js": "^9.29.0",
-    "chalk": "^5.3.0",
-    "commander": "^14.0.0",
-    "cookie": "^1.0.2",
-    "cookie-signature": "^1.2.1",
-    "dotenv": "^17.2.0",
-    "esbuild-plugin-copy": "^2.1.1",
-    "formidable": "^3.5.1",
-    "glob": "^11.0.3",
-    "luxon": "^3.4.4",
-    "mime-types": "^3.0.1",
-    "nanoid": "^5.0.7",
-    "sanitize-html": "^2.13.0",
-    "source-map-support": "^0.5.21",
-    "typescript-eslint": "^8.35.0",
-    "ws": "^8.18.3"
+    "@types/node": "^24.0.3",
+    "esbuild": "^0.25.5",
+    "eslint": "^9.29.0",
+    "nodemon": "^3.1.4",
+    "syncpack": "^13.0.4",
+    "typescript": "^5.8.3"
   }
 }

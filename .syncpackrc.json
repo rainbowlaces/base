@@ -1,0 +1,12 @@
+{
+  "dependencyTypes": ["dev", "peer"],
+  "versionGroups": [
+    {
+      "label": "Ensure peerDeps match the root version",
+      "packages": ["@rainbowlaces/base"],
+      "dependencies": ["typescript", "eslint", "esbuild", "nodemon"],
+      "pinVersion": "${{dev}}",
+      "dependencyTypes": ["peer"]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "name": "@rainbowlaces/create-base",
+  "version": "1.0.0",
+  "description": "Initializer for the Base Framework.",
+  "type": "module",
+  "bin": {
+    "create-base": "./cli.js"
+  },
+  "scripts": {
+    "push": "pnpm release && pnpm publish --access public",
+    "version:patch": "pnpm version patch && git push --tags",
+    "version:minor": "pnpm version minor && git push --tags",
+    "version:major": "pnpm version major && git push --tags"
+  },
+  "dependencies": {
+    "@rainbowlaces/base": "workspace:*"
+  },
+  "license": "MIT"
+}
