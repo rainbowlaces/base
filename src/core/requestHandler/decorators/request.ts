@@ -4,6 +4,7 @@ import { type BasePubSubArgs } from "../../pubsub/types.js";
 import { BaseContext } from "../../module/baseContext.js";
 import { type BaseModule } from "../../module/baseModule.js";
 import { type BaseAction, type ActionOptions } from "../../module/types.js";
+import { setActionMetadata } from "../metadata.js";
 import { type BaseHttpActionArgs } from "../types.js";
 
 function request(optionsOrTopic?: ActionOptions | string) {
@@ -29,6 +30,7 @@ function request(optionsOrTopic?: ActionOptions | string) {
     
     target.phase = options.phase ?? 100;
     target.middleware = options.middleware ?? false; // Default to false if not specified
+  if (options.timeout !== undefined) setActionMetadata(target, { timeout: options.timeout });
 
     context.addInitializer(function () {
       const module = this as BaseModule;

@@ -4,12 +4,15 @@ import type { WebSocketServer, WebSocket } from "ws";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { di } from "../di/decorators/di.js";
 import { BaseContext } from "../module/baseContext.js";
-import { type HttpContextData } from "./types.js";
+import { type HttpContextData, type BaseRequestHandlerConfig } from "./types.js";
 import { BaseRequest } from "./baseRequest.js";
 import { BaseResponse } from "./baseResponse.js";
 import { BaseError } from "../baseErrors.js";
 import { BaseWebSocketContext } from "./websocketContext.js";
 import { type BasePubSub } from "../pubsub/basePubSub.js";
+import { config } from "../config/decorators/config.js";
+import { BaseContext as _BaseContextStatic } from "../module/baseContext.js";
+import { getActionMetadata } from "./metadata.js";
 
 @registerDi()
 export class BaseHttpContext extends BaseContext<HttpContextData> {
@@ -19,6 +22,11 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
   #socket?: Duplex;
   #head?: Buffer;
   #wss?: WebSocketServer;
+  #timeoutTimer: NodeJS.Timeout | null = null;
+  #baseTimeoutMs = 0;
+
+  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  private accessor handlerConfig!: BaseRequestHandlerConfig;
 
   @di<BasePubSub>("BasePubSub")
   private accessor bus!: BasePubSub;
@@ -47,16 +55,27 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
     this.#head = head;
     this.#wss = wss;
 
-    this.#topic = `/request/${this.id}/${this.#req.method}${this.#req.cleanPath}`;
+  this.#topic = `/request/${this.id}/${this.#req.method}${this.#req.cleanPath}`;
+
+  // Compute timeout (max action timeout or global default)
+  this.#baseTimeoutMs = this._computeInitialTimeout();
 
     if (res) {
       this.#res.on("done", () => {
+        this._clearTimeoutTimer();
         this.done();
       });
-
       this.#res.on("error", () => {
+        this._clearTimeoutTimer();
         this.error();
       });
+      // Listen for dynamic timeout extensions
+      this.#res.on("extend-timeout", (ms: number) => {
+        this.logger.debug(`Extending timeout to ${ms}ms`, [this.id]);
+        this._armTimeout(ms);
+      });
+      // Arm initial timeout
+      this._armTimeout(this.#baseTimeoutMs);
     }
 
     void this.coordinateAndRun(this.#topic).catch((error: unknown) => {
@@ -149,6 +168,40 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
 
     // Mark this HTTP context as done since it's now been promoted
     this.done();
+  }
+
+  /** Compute initial timeout using static action registry */
+  private _computeInitialTimeout(): number {
+    let computed = this.handlerConfig.requestTimeout;
+    try {
+      const { actions } = _BaseContextStatic.getActionsForTopic(this.#topic);
+      const max = actions.reduce<number | undefined>((acc, a) => {
+        const meta = getActionMetadata(a);
+        if (meta?.timeout !== undefined) return acc === undefined ? meta.timeout : Math.max(acc, meta.timeout);
+        return acc;
+      }, undefined);
+      if (max !== undefined) computed = max;
+    } catch (err) {
+      this.logger.warn("Timeout computation failed; using default", [this.id], { err });
+    }
+    this.logger.debug(`Initial context timeout ${computed}ms`, [this.id]);
+    return computed;
+  }
+
+  private _armTimeout(ms: number) {
+    if (!Number.isFinite(ms) || ms <= 0) return;
+    if (this.#timeoutTimer) clearTimeout(this.#timeoutTimer);
+    this.#timeoutTimer = setTimeout(() => {
+      if (this.#res.finished) return;
+      this.logger.warn(`Request timed out after ${ms}ms`, [this.id]);
+      this.#res.statusCode(408);
+      void this.#res.send("Request timed out.");
+    }, ms);
+  }
+
+  private _clearTimeoutTimer() {
+    if (this.#timeoutTimer) clearTimeout(this.#timeoutTimer);
+    this.#timeoutTimer = null;
   }
 
   /**

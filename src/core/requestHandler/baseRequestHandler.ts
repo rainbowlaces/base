@@ -5,8 +5,6 @@ import { type BaseLogger } from "../logger/baseLogger.js";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { di } from "../di/decorators/di.js";
 import { type BasePubSub } from "../pubsub/basePubSub.js";
-import { delay } from "../../utils/async.js";
-import { type BaseError } from "../baseErrors.js";
 import { type BaseRouter } from "./baseRouter.js";
 import { BaseHttpContext } from "./httpContext.js";
 import { type BaseRequestHandlerConfig } from "./types.js";
@@ -55,27 +53,8 @@ export class BaseRequestHandler {
   }
 
   private async handleContext(ctx: BaseHttpContext) {
-    ctx.res.once("done", () => {
-      this.logger.debug("Request done.", [ctx.id]);
-      ctx.res.removeAllListeners();
-    });
-
-    ctx.res.once("error", (err: BaseError) => {
-      this.logger.warn(err.message, [ctx.id], { err });
-      ctx.res.removeAllListeners();
-    });
-
     this.logger.debug(`New request: ${ctx.topic}`, [ctx.id]);
-
     void this.bus.pub(ctx.topic, { context: ctx });
-
-    await delay(this.config.requestTimeout);
-
-    if (ctx.res.finished) return;
-
-    this.logger.warn("Request timed out.", [ctx.id]);
-    ctx.res.statusCode(408);
-    void ctx.res.send("Request timed out.");
   }
 
   private async handleRequest(

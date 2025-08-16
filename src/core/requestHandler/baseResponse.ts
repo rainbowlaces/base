@@ -190,4 +190,14 @@ export class BaseResponse extends EventEmitter {
   get finished(): boolean {
     return this.#finished;
   }
+
+  /**
+   * Extend/reset the request timeout countdown.
+   * Emits an internal 'extend-timeout' event listened for by BaseRequestHandler.
+   */
+  extendTimeout(milliseconds: number): void {
+    if (this.#finished) return;
+    if (!Number.isFinite(milliseconds) || milliseconds <= 0) return;
+    this.emit("extend-timeout", milliseconds);
+  }
 }
