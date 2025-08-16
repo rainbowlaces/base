@@ -2,8 +2,6 @@
 
 A modern TypeScript-first application framework with a simple module system, dependency injection, structured logging, pub/sub, and a batteries-included CLI for building HTTP services and more.
 
-This README documents the current HEAD of the repository, which will be released as version 3.15.0. The currently published version on npm may lag behind; check release notes upon upgrade.
-
 - Package: @rainbowlaces/base
 - Node.js: >= 24
 - Repo: rainbowlaces/base (monorepo; this is the core package)
@@ -21,7 +19,7 @@ Contents:
 
 Why Base
 - Simplicity first: drop in Base.start(import.meta.url), create a module, add a route decorator, and go.
-- Convention over configuration: opinionated file structure and defaults via base init.
+- Flexible structure: place files where you like—discovery is driven by decorators (e.g., @baseModule, @request), not folder layout. The init command only provides helpful defaults, not constraints.
 - Robust tooling: type-checking, esbuild-powered builds, CLI for dev/start, lint integration, and log formatter for readable dev output.
 - Extensible core: dependency injection, pub/sub, structured logs, templates, and configurable build.
 
@@ -79,6 +77,7 @@ What’s happening?
 - @request('/get/hello') declares an HTTP handler; Base wires it so requests to /get/hello respond with JSON.
 
 Project Layout (what init creates)
+- The init command sets up helpful defaults and examples. You are not required to keep this structure; Base discovers modules via decorators, not by folder conventions.
 - base.config.js: central build configuration
 - tsconfig.json: server TypeScript config
 - eslint.config.js: ESLint config for linting TypeScript in src
@@ -86,7 +85,7 @@ Project Layout (what init creates)
 - src/
   - index.ts: bootstrap calling Base.start(import.meta.url)
   - modules/
-    - HelloModule.ts: minimal example of @baseModule and @request
+    - HelloModule.ts: minimal example of @baseModule and @request (you can put your modules anywhere)
   - client/ (optional if you pass --client)
     - loader.ts: client entry
 - tsconfig.client.json (optional when --client)
