@@ -6,6 +6,7 @@ import { createFormatLogCommand } from './commands/format-log.js';
 import { createBuildCommand } from './commands/build.js';
 import { createLintCommand } from './commands/lint.js';
 import { createStartCommand } from './commands/start.js';
+import { createInitCommand } from './commands/init.js';
 
 import { resolvePaths } from './utils/paths.js';
 import { createAsciiBox } from './utils/ascii.js';
@@ -56,5 +57,6 @@ createFormatLogCommand(program);
 createBuildCommand(program);
 createLintCommand(program);
 createStartCommand(program);
+createInitCommand(program);
 
 program.parse(process.argv);

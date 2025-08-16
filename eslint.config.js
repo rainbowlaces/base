@@ -10,6 +10,7 @@ export default [
     {
         ignores: [
             "dist/**",
+            "scaffold/**/*",
         ],
     },
     // JavaScript files - use basic rules without TypeScript type checking

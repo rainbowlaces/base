@@ -3,17 +3,9 @@
   "compilerOptions": {
     "moduleResolution": "nodenext",
     "module": "nodenext",
-    "noEmit": true, 
+    "noEmit": true,
     "baseUrl": "./"
   },
-  "include": [
-    "src/**/*",
-    "testApp/src/**/*",
-    "bin/**/*",
-    "test/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["src/**/*", "testApp/src/**/*", "bin/**/*", "test/**/*"],
+  "exclude": ["node_modules", "dist", "scaffold"]
 }

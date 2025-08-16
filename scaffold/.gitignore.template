@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Test build artifacts
+_test/
+_test/**/*
+
+# Environment files
+.env
+
+# Misc
+.DS_Store
+*.log

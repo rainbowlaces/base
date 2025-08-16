@@ -1,0 +1,5 @@
+{
+  "extends": "@rainbowlaces/base/tsconfig.client.base.json",
+  "compilerOptions": {},
+  "include": ["src/client/**/*"]
+}
