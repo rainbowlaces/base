@@ -5,9 +5,8 @@ export { LogLevel } from "./core/logger/types.js";
 export { BaseContext } from "./core/module/baseContext.js";
 export { BaseError } from "./core/baseErrors.js";
 export { BasePubSub } from "./core/pubsub/basePubSub.js";
-export { BaseLogger } from "./core/logger/baseLogger.js";
+export { BaseLogger, LoggerConfig } from "./core/logger/baseLogger.js";
 export { LogMessage } from "./core/logger/logMessage.js";
-export { LoggerConfig } from "./core/logger/types.js";
 
 // Logger transformers and redactors
 export { ErrorSerializer } from "./core/logger/transformers/errorSerializer.js";
@@ -41,7 +40,6 @@ export { BaseRequest } from "./core/requestHandler/baseRequest.js";
 export { BaseResponse } from "./core/requestHandler/baseResponse.js";
 export { BaseRouter } from "./core/requestHandler/baseRouter.js";
 export { BaseHttpContext } from "./core/requestHandler/httpContext.js";
-export { BaseRequestHandlerConfig } from "./core/requestHandler/types.js";
 
 // DI exports
 export { BaseDi } from "./core/di/baseDi.js";
@@ -65,7 +63,8 @@ export { UnsafeTag } from "./modules/templates/engine/tags/unsafeTag.js";
 export { provider as config } from "./core/config/decorators/provider.js";
 export { request } from "./core/requestHandler/decorators/request.js";
 export { di } from "./core/di/decorators/di.js";
-export { provider, configClass, getConfigClass, clearConfigClassRegistry } from "./core/config/decorators/provider.js";
+export { provider } from "./core/config/decorators/provider.js";
+export { configClass } from "./core/config/decorators/configClass.js";
 export { registerDi } from "./core/di/decorators/registerDi.js";
 export { dependsOn } from "./core/module/decorators/dependsOn.js";
 export { sub } from "./core/pubsub/decorators/sub.js";
