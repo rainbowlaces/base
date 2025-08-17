@@ -3,7 +3,7 @@ import { type BaseModule } from "../../src/core/module/baseModule.js";
 import { type BaseClassConfig } from "../../src/core/config/types.js";
 import { type FileSystem } from "../../src/utils/fileSystem.js";
 import { type BasePubSub } from "../../src/core/pubsub/basePubSub.js";
-import { getConfigClass } from "../../src/core/config/decorators/provider.js";
+import { ConfigClassRegistry } from "../../src/core/config/configClassRegistry.js";
 
 import { mock } from 'node:test';
 
@@ -112,7 +112,7 @@ export function getModuleWithMocks<C extends BaseClassConfig, T extends BaseModu
     
     // Create a proper config class instance with defaults
     // We need to get the config class constructor from the registry    
-    const configClass = getConfigClass(name);
+    const configClass = ConfigClassRegistry.get(name);
     
     let config: C;
     if (configClass) {

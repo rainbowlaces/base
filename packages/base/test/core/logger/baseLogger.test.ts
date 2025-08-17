@@ -1,10 +1,9 @@
 import { describe, it, beforeEach, afterEach } from "node:test";
 import * as assert from "node:assert";
-import { BaseLogger } from "../../../src/core/logger/baseLogger.js";
+import { BaseLogger, type LoggerConfig } from "../../../src/core/logger/baseLogger.js";
 import {
   LogLevel,
   type LogContext,
-  type LoggerConfig,
   type LogObjectTransformer,
 } from "../../../src/core/logger/types.js";
 import { type ConfigData } from "../../../src/core/config/types.js";

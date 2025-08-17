@@ -5,10 +5,9 @@ import { BaseDi } from '../../../src/core/di/baseDi.js';
 import { BasePubSub } from '../../../src/core/pubsub/basePubSub.js';
 import { BaseLogger } from '../../../src/core/logger/baseLogger.js';
 import { BaseRouter } from '../../../src/core/requestHandler/baseRouter.js';
-import { BaseRequestHandler } from '../../../src/core/requestHandler/baseRequestHandler.js';
+import { BaseRequestHandler, type BaseRequestHandlerConfig } from '../../../src/core/requestHandler/baseRequestHandler.js';
 import { BaseHttpContext } from '../../../src/core/requestHandler/httpContext.js';
 import { request } from '../../../src/core/requestHandler/decorators/request.js';
-import { type BaseRequestHandlerConfig } from '../../../src/core/requestHandler/types.js';
 import { BaseModule } from '../../../src/core/module/baseModule.js';
 import { registerDi } from '../../../src/core/di/decorators/registerDi.js';
 

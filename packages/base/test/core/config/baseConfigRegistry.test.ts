@@ -2,7 +2,9 @@ import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { BaseConfigRegistry, BaseConfigProvider } from '../../../src/core/config/baseConfigRegistry.js';
 import { BaseDi } from '../../../src/core/di/baseDi.js';
-import { BaseClassConfig, configClass, clearConfigClassRegistry } from '../../../src/index.js';
+import { BaseClassConfig } from '../../../src/core/config/types.js';
+import { configClass } from '../../../src/core/config/decorators/configClass.js';
+import { ConfigClassRegistry } from '../../../src/core/config/configClassRegistry.js';
 
 // Extend BaseAppConfig for testing
 declare module '../../../src/core/config/types.js' {
@@ -263,7 +265,7 @@ test('BaseConfigRegistry', (t) => {
   t.test('DI registration for config namespaces', (t) => {
     t.test('should register each namespace with DI container', () => {
       // Clear any existing config class registrations
-      clearConfigClassRegistry();
+  ConfigClassRegistry.clear();
       
       // Mock BaseDi.register to capture registrations
       const originalRegister = BaseDi.register.bind(BaseDi);
@@ -324,7 +326,7 @@ test('BaseConfigRegistry', (t) => {
   t.test('class instantiation', (t) => {
     t.beforeEach(() => {
       // Clear the config class registry before each test
-      clearConfigClassRegistry();
+  ConfigClassRegistry.clear();
     });
 
     t.test('should create class instance when @configClass exists', () => {

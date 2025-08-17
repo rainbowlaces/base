@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
 import { BaseClassConfig } from '../../../src/core/config/types.js';
-import { configClass, clearConfigClassRegistry } from '../../../src/core/config/decorators/provider.js';
+import { configClass } from '../../../src/core/config/decorators/configClass.js';
+import { ConfigClassRegistry } from '../../../src/core/config/configClassRegistry.js';
 import { BaseConfigRegistry, BaseConfigProvider } from '../../../src/core/config/baseConfigRegistry.js';
 import { BaseDi } from '../../../src/core/di/baseDi.js';
 
@@ -31,7 +32,7 @@ test('Class-based Configuration Integration', (t) => {
   t.beforeEach(async () => {
     await BaseDi.teardown();
     BaseConfigRegistry.clearProviders();
-    clearConfigClassRegistry();
+  ConfigClassRegistry.clear();
   });
 
   t.test('should work with class-based config in module pattern', () => {

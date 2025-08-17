@@ -1,6 +1,12 @@
 import { test } from 'node:test';
 import * as assert from 'node:assert';
-import { BaseConfigProvider, BaseConfigRegistry, BaseDi, provider, BaseClassConfig, configClass, getConfigClass, clearConfigClassRegistry } from '../../../../src/index.js';
+import { BaseConfigProvider, BaseConfigRegistry } from '../../../../src/core/config/baseConfigRegistry.js';
+import { BaseDi } from '../../../../src/core/di/baseDi.js';
+import { provider } from '../../../../src/core/config/decorators/provider.js';
+import { BaseClassConfig } from '../../../../src/core/config/types.js';
+import { configClass } from '../../../../src/core/config/decorators/configClass.js';
+import { Thunk } from '../../../../src/utils/thunk.js';
+import { ConfigClassRegistry } from '../../../../src/core/config/configClassRegistry.js';
 
 // Extend BaseAppConfig for testing
 declare module '../../../../src/core/config/types.js' {
@@ -198,7 +204,7 @@ test('@config decorator', (t) => {
 test('@configClass decorator', (t) => {
   t.beforeEach(() => {
     // Clear the config class registry before each test
-    clearConfigClassRegistry();
+  ConfigClassRegistry.clear();
   });
 
   t.test('basic functionality', (t) => {
@@ -208,12 +214,12 @@ test('@configClass decorator', (t) => {
         message: string = "test message";
       }
 
-      const registeredClass = getConfigClass('test');
+  const registeredClass = ConfigClassRegistry.get('test');
       assert.strictEqual(registeredClass, TestConfig, 'Should register class with correct namespace');
     });
 
     t.test('should return undefined for unregistered namespace', () => {
-      const registeredClass = getConfigClass('nonexistent');
+  const registeredClass = ConfigClassRegistry.get('nonexistent');
       assert.strictEqual(registeredClass, undefined, 'Should return undefined for unregistered namespace');
     });
 
@@ -228,8 +234,8 @@ test('@configClass decorator', (t) => {
         value: string = "second";
       }
 
-      const firstClass = getConfigClass('first');
-      const secondClass = getConfigClass('second');
+  const firstClass = ConfigClassRegistry.get('first');
+  const secondClass = ConfigClassRegistry.get('second');
       
       assert.strictEqual(firstClass, FirstConfig, 'Should register first class');
       assert.strictEqual(secondClass, SecondConfig, 'Should register second class');
@@ -248,8 +254,33 @@ test('@configClass decorator', (t) => {
         value: string = "second";
       }
 
-      const registeredClass = getConfigClass('duplicate');
+  const registeredClass = ConfigClassRegistry.get('duplicate');
       assert.strictEqual(registeredClass, SecondConfig, 'Should register the latest class for duplicate namespace');
+    });
+
+    t.test('should allow passing class constructor instead of string', () => {
+      class DirectNamespace extends BaseClassConfig {
+        value: string = 'ctor';
+      }
+      @configClass(DirectNamespace)
+      class SomeConfig extends BaseClassConfig {
+        x = 1;
+      }
+  const registered = ConfigClassRegistry.get('DirectNamespace');
+      assert.strictEqual(registered, SomeConfig, 'Should register using class constructor name as namespace');
+    });
+
+    t.test('should allow passing Thunk of class constructor', () => {
+      class ThunkNamespace extends BaseClassConfig {
+        value: string = 'thunk';
+      }
+      const thunkInstance: Thunk<typeof ThunkNamespace> = new Thunk(() => ThunkNamespace);
+      @configClass(thunkInstance)
+      class ThunkedConfig extends BaseClassConfig {
+        y = 2;
+      }
+  const registered = ConfigClassRegistry.get('ThunkNamespace');
+      assert.strictEqual(registered, ThunkedConfig, 'Should register using resolved thunk class name as namespace');
     });
   });
 });
