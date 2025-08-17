@@ -6,10 +6,11 @@ import signature from "cookie-signature";
 
 import { registerDi } from "../../core/di/decorators/registerDi.js";
 import { di } from "../../core/di/decorators/di.js";
-import { type BaseLogger } from "../../core/logger/baseLogger.js";
+import { BaseLogger } from "../../core/logger/baseLogger.js";
 import { BaseError } from "../../core/baseErrors.js";
-import { type ParsedForm, type BaseRequestHandlerConfig } from "./types.js";
+import { type ParsedForm } from "./types.js";
 import { config } from "../config/decorators/config.js";
+import { type BaseRequestHandlerConfig } from "./baseRequestHandler.js";
 
 @registerDi()
 export class BaseRequest {
@@ -19,10 +20,10 @@ export class BaseRequest {
   #url: URL;
   #ctxId: string;
 
-  @di("BaseLogger", "BaseRequest")
+  @di(BaseLogger, "BaseRequest")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  @config('BaseRequestHandler')
   private accessor config!: BaseRequestHandlerConfig;
 
   constructor(ctxId: string, req: http.IncomingMessage) {

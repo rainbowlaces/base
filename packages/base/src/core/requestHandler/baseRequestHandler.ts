@@ -1,24 +1,46 @@
 import http from "http";
 import { WebSocketServer } from "ws";
 import type { Duplex } from "stream";
-import { type BaseLogger } from "../logger/baseLogger.js";
+import { BaseLogger } from "../logger/baseLogger.js";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { di } from "../di/decorators/di.js";
 import { type BasePubSub } from "../pubsub/basePubSub.js";
 import { type BaseRouter } from "./baseRouter.js";
 import { BaseHttpContext } from "./httpContext.js";
-import { type BaseRequestHandlerConfig } from "./types.js";
 import { config } from "../config/decorators/config.js";
+import { BaseClassConfig } from "../config/types.js";
+import { configClass } from "../config/decorators/configClass.js";
+import type formidable from "formidable";
+import { tmpdir } from "os";
+
+@configClass('BaseRequestHandler')
+export class BaseRequestHandlerConfig extends BaseClassConfig {
+  requestTimeout: number = 5000;
+  port: number = 3000;
+  cookieSecret: string = "";
+  maxBodySize: number = 1024 * 1024; // 1MB
+  formEncoding: formidable.BufferEncoding = 'utf8';
+  uploadDir: string = tmpdir();
+  keepExtensions: boolean = false;
+  maxUploadSize: number = 1024 * 1024; // 1MB
+  maxFields: number = 1000;
+}
+
+declare module "../config/types.js" {
+  interface BaseAppConfig {
+    BaseRequestHandler?: ConfigData<BaseRequestHandlerConfig>;
+  }
+}
 
 @registerDi({setup: true, singleton: true, teardown: true, phase: 150})
 export class BaseRequestHandler {
   #server!: http.Server;
   #wss!: WebSocketServer;
 
-  @di<BaseLogger>("BaseLogger", "RequestHandler")
+  @di(BaseLogger, "RequestHandler")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  @config('BaseRequestHandler')
   private accessor config!: BaseRequestHandlerConfig;
 
   @di<BasePubSub>("BasePubSub")

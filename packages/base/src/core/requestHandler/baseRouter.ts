@@ -2,12 +2,11 @@ import { registerDi } from "../di/decorators/registerDi.js";
 import { type RouteTarget, type UrlParams, type Routes } from "./types.js";
 import { BaseClassConfig, type ConfigData } from "../config/types.js";
 import { config } from "../config/decorators/config.js";
-import { configClass } from "../config/decorators/provider.js";
+import { configClass } from "../config/decorators/configClass.js";
 import { BaseError } from "../baseErrors.js";
 import { di } from "../di/baseDi.js";
-import type { BaseLogger } from "../logger/baseLogger.js";
-
-@configClass("BaseRouter")
+import { BaseLogger } from "../logger/baseLogger.js";
+@configClass('BaseRouter')
 class BaseRouterConfig extends BaseClassConfig {
   routes: Routes = {};
   defaultRoute: string = "/";
@@ -24,10 +23,10 @@ export class BaseRouter {
   private routes: Routes = {};
   private defaultRoute?: string;
 
-  @config<BaseRouterConfig>("BaseRouter")
+  @config('BaseRouter')
   private accessor config!: BaseRouterConfig;
 
-  @di<BaseLogger>("BaseLogger", "Router")
+  @di(BaseLogger, "Router")
   private accessor logger!: BaseLogger;
 
   public async setup(): Promise<void> {

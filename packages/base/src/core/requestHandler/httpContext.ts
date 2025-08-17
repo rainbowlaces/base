@@ -4,7 +4,7 @@ import type { WebSocketServer, WebSocket } from "ws";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { di } from "../di/decorators/di.js";
 import { BaseContext } from "../module/baseContext.js";
-import { type HttpContextData, type BaseRequestHandlerConfig } from "./types.js";
+import { type HttpContextData } from "./types.js";
 import { BaseRequest } from "./baseRequest.js";
 import { BaseResponse } from "./baseResponse.js";
 import { BaseError } from "../baseErrors.js";
@@ -13,6 +13,7 @@ import { type BasePubSub } from "../pubsub/basePubSub.js";
 import { config } from "../config/decorators/config.js";
 import { BaseContext as _BaseContextStatic } from "../module/baseContext.js";
 import { getActionMetadata } from "./metadata.js";
+import { type BaseRequestHandlerConfig } from "./baseRequestHandler.js";
 
 @registerDi()
 export class BaseHttpContext extends BaseContext<HttpContextData> {
@@ -25,7 +26,7 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
   #timeoutTimer: NodeJS.Timeout | null = null;
   #baseTimeoutMs = 0;
 
-  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  @config('BaseRequestHandler')
   private accessor handlerConfig!: BaseRequestHandlerConfig;
 
   @di<BasePubSub>("BasePubSub")

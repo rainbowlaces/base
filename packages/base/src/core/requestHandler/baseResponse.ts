@@ -2,14 +2,15 @@ import type * as http from "http";
 import { type Readable } from "stream";
 import { registerDi } from "../../core/di/decorators/registerDi.js";
 import { di } from "../../core/di/decorators/di.js";
-import { type BaseLogger } from "../../core/logger/baseLogger.js";
+import { BaseLogger } from "../../core/logger/baseLogger.js";
 import { EventEmitter } from "events";
 
 import cookie from "cookie";
 import signature from "cookie-signature";
-import { type BaseRequestHandlerConfig, type CookieOptions } from "./types.js";
+import {  type CookieOptions } from "./types.js";
 import { config } from "../config/decorators/config.js";
 import { type MaybeAsync } from "../types.js";
+import { type BaseRequestHandlerConfig } from "./baseRequestHandler.js";
 
 @registerDi()
 export class BaseResponse extends EventEmitter {
@@ -23,10 +24,10 @@ export class BaseResponse extends EventEmitter {
 
   #headers: http.OutgoingHttpHeaders = {};
 
-  @di("BaseLogger", "BaseResponse")
+  @di(BaseLogger, "BaseResponse")
   private accessor logger!: BaseLogger;
 
-  @config<BaseRequestHandlerConfig>("BaseRequestHandler")
+  @config('BaseRequestHandler')
   private accessor config!: BaseRequestHandlerConfig;
 
   #ctxId: string;
