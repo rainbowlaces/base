@@ -41,25 +41,38 @@ function writeFile(targetPath, contents, { force, quietLog }) {
 export function createInitCommand(program) {
   program
     .command("init")
-    .description("Scaffold a new Base project (files + scripts + peers).")
-    .option("--force", "Overwrite existing files")
-    .option(
-      "--client",
-      "Include client scaffold (tsconfig.client.json + client/loader.ts)"
-    )
+    .argument('[targetDir]', 'Directory to create / use (defaults to current working directory)')
+  .description("Scaffold a new Base project (files + scripts + peers). Client scaffold included by default.")
+  .option("--force", "Overwrite existing files")
+  .option("--no-client", "Skip client scaffold (omit tsconfig.client.json + client/loader.ts)")
     .option("--no-mod-example", "Skip HelloModule example")
     .option(
       "--no-install",
       "Skip installing peer dev dependencies (typescript, eslint, nodemon, esbuild)"
     )
-    .action(async (options) => {
-      const { projectRoot } = program.paths;
+    .action(async (targetDir, options) => {
+      // Determine target project root: create if user supplied a relative/absolute path
+      let projectRoot = program.paths.projectRoot; // default (current resolved root)
+      if (targetDir) {
+        const provided = path.resolve(process.cwd(), targetDir);
+        try {
+          if (!fs.existsSync(provided)) {
+            fs.mkdirSync(provided, { recursive: true });
+          }
+          projectRoot = provided;
+        } catch (err) {
+          program.quietError(`❌ Unable to prepare target directory: ${provided}`);
+          program.quietError(err?.message || String(err));
+          process.exit(1);
+        }
+      }
       const { quietLog, quietError } = program;
 
       try {
-        quietLog("🛠  Initialising Base project scaffold...");
-        const force = !!options.force;
-        const addClient = !!options.client;
+  quietLog(`🛠  Initialising Base project scaffold in: ${projectRoot}`);
+  const force = !!options.force;
+  // client scaffold now default ON; Commander sets options.client === false when --no-client used
+  const addClient = options.client !== false;
 
         const created = [];
         const skipped = [];
@@ -90,6 +103,16 @@ export function createInitCommand(program) {
             FILES.tsconfigClient
           );
           attempt("clientLoader", "src/client/loader.ts", FILES.clientLoader);
+        } else {
+          // Replace base.config.js with server-only config (remove client stanza)
+          try {
+            const serverOnly = `// Framework build configuration (server only)\nexport default {\n  server: { ignore: ['src/client/**'] }\n};\n`;
+            const cfgPath = path.join(projectRoot, 'base.config.js');
+            fs.writeFileSync(cfgPath, serverOnly, 'utf8');
+            quietLog('✅ Adjusted base.config.js for server-only (no client)');
+          } catch (e) {
+            quietError('⚠️ Failed to adjust base.config.js for server-only mode', e?.message || e);
+          }
         }
 
         // --- package.json scripts + peer deps ---
@@ -191,7 +214,11 @@ export function createInitCommand(program) {
         );
         if (skipped.length)
           quietLog(`Skipped files (exists): ${skipped.join(", ")}`);
-        quietLog("Done. Run: npm run start:dev");
+        quietLog("Done. Next steps:");
+        if (targetDir) {
+          quietLog(`  cd ${path.relative(process.cwd(), projectRoot) || projectRoot}`);
+        }
+        quietLog("  npm run start:dev");
       } catch (e) {
         quietError("❌ init failed", e);
         process.exit(1);
