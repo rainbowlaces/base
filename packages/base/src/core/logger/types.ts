@@ -1,6 +1,3 @@
-import { BaseClassConfig, type ConfigData } from "../config/types.js";
-import { configClass } from "../config/decorators/provider.js";
-
 export enum LogLevel {
   FATAL = 1,
   ERROR = 2,
@@ -58,19 +55,4 @@ export interface LogObjectTransformer {
    * @returns The transformed value.
    */
   transform(value: unknown): unknown;
-}
-
-@configClass("BaseLogger")
-export class LoggerConfig extends BaseClassConfig {
-  logLevel: LogLevel = LogLevel.INFO;
-  redaction: boolean = true;
-  patterns: PatternMap = {};
-  maxMessageLength: number = 1000;
-}
-
-// Declaration merging to add the logger config to the global app config type.
-declare module "../config/types.js" {
-  interface BaseAppConfig {
-    BaseLogger?: ConfigData<LoggerConfig>;
-  }
 }

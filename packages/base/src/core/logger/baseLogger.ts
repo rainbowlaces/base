@@ -3,14 +3,31 @@ import {
   type LogContext,
   LogLevel,
   type SerializedLogMessage,
-  type LoggerConfig,
   type LogObjectTransformer,
+  type PatternMap,
 } from "./types.js";
 import { camelToLowerUnderscore } from "../../utils/string.js";
 import { NodeConsole, type Console } from "../../utils/console.js";
 import { registerDi } from "../di/decorators/registerDi.js";
 import { diByTag } from "../di/baseDi.js";
 import { config } from "../config/decorators/config.js";
+import { configClass } from "../config/decorators/configClass.js";
+import { BaseClassConfig } from "../config/types.js";
+
+@configClass('BaseLogger')
+export class LoggerConfig extends BaseClassConfig {
+  logLevel: LogLevel = LogLevel.INFO;
+  redaction: boolean = true;
+  patterns: PatternMap = {};
+  maxMessageLength: number = 1000;
+}
+
+// Declaration merging to add the logger config to the global app config type.
+declare module "../config/types.js" {
+  interface BaseAppConfig {
+    BaseLogger?: ConfigData<LoggerConfig>;
+  }
+}
 
 /**
  * BaseLogger provides a flexible, testable logging solution.
@@ -23,7 +40,7 @@ export class BaseLogger {
   readonly baseTags: string[];
   readonly #console: Console;
 
-  @config<LoggerConfig>("BaseLogger")
+  @config("BaseLogger")
   private accessor config!: LoggerConfig;
 
   @diByTag("Logger:Serializer")

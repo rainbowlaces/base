@@ -1,12 +1,13 @@
-import { BaseDi } from "../../di/baseDi.js";
-import { type LoggerConfig, type LogObjectTransformer } from "../types.js";
+import { type LogObjectTransformer } from "../types.js";
 import { logSerializer } from "../decorators/logSerializer.js";
+import { BaseLogger, type LoggerConfig } from "../baseLogger.js";
+import { config } from "../../config/decorators/config.js";
 
 export interface ScalarSerializerConfig {
   maxLength: number;
 }
 
-declare module "../types.js" {
+declare module "../baseLogger.js" {
   interface LoggerConfig {
     scalarSerializer?: ScalarSerializerConfig;
   }
@@ -18,16 +19,19 @@ declare module "../types.js" {
  */
 @logSerializer() // Lowest priority, acts as a catch-all for primitives.
 export class ScalarSerializer implements LogObjectTransformer {
-    readonly priority: number = 100;
-  
-    private readonly config: ScalarSerializerConfig;
+  readonly priority: number = 100;
+  private readonly config: ScalarSerializerConfig;
+
+  @config(BaseLogger)
+  private accessor fullConfig!: LoggerConfig;
 
   constructor() {
-    const fullLoggerConfig = BaseDi.resolve<LoggerConfig>('Config.BaseLogger');
-    this.config = fullLoggerConfig.scalarSerializer ?? { maxLength: 1024 };
-  }  
+    this.config = this.fullConfig.scalarSerializer ?? { maxLength: 1024 };
+  }
 
-  public canTransform(value: unknown): value is string | number | boolean | null | undefined {
+  public canTransform(
+    value: unknown
+  ): value is string | number | boolean | null | undefined {
     const type = typeof value;
     return (
       type === "string" ||
@@ -41,10 +45,15 @@ export class ScalarSerializer implements LogObjectTransformer {
   /**
    * Transforms the scalar value. If it's a long string, it truncates it.
    */
-  public transform(value: string | number | boolean | null | undefined): unknown {
+  public transform(
+    value: string | number | boolean | null | undefined
+  ): unknown {
     if (typeof value === "string" && value.length > this.config.maxLength) {
       const truncationMarker = "...[TRUNCATED]";
-      return `${value.substring(0, this.config.maxLength - truncationMarker.length)}${truncationMarker}`;
+      return `${value.substring(
+        0,
+        this.config.maxLength - truncationMarker.length
+      )}${truncationMarker}`;
     }
     return value;
   }

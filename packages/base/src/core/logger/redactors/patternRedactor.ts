@@ -1,5 +1,6 @@
-import { BaseDi } from "../../di/baseDi.js";
-import { type LoggerConfig, type LogObjectTransformer } from "../types.js";
+import { config } from "../../config/decorators/config.js";
+import { BaseLogger, type LoggerConfig } from "../baseLogger.js";
+import { type LogObjectTransformer } from "../types.js";
 
 /**
  * An abstract base class for redactor plugins that operate on simple string patterns.
@@ -12,10 +13,12 @@ export abstract class PatternRedactor implements LogObjectTransformer {
   protected abstract readonly defaultPattern: RegExp;
   #pattern: RegExp | undefined;
 
+  @config(BaseLogger)
+  private accessor config!: LoggerConfig
+
   private get pattern(): RegExp {
     if (!this.#pattern) {
-      const fullLoggerConfig = BaseDi.resolve<LoggerConfig>('Config.BaseLogger');
-      const configuredPattern = fullLoggerConfig.patterns[this.patternName];
+      const configuredPattern = this.config.patterns[this.patternName];
       
       this.#pattern = new RegExp(
         configuredPattern || this.defaultPattern,
