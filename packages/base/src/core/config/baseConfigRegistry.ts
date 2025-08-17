@@ -2,7 +2,7 @@ import { registerDi } from "../di/decorators/registerDi.js";
 import { merge } from "../../utils/recursion.js";
 import { BaseDi } from "../di/baseDi.js";
 import { type BaseAppConfig } from "./types.js";
-import { getAllConfigClasses } from "./decorators/provider.js";
+import { ConfigClassRegistry } from "./configClassRegistry.js";
 
 export abstract class BaseConfigProvider {
   abstract get config(): Partial<BaseAppConfig>;
@@ -38,7 +38,7 @@ export class BaseConfigRegistry {
     this.config = mergedConfig as BaseAppConfig;
 
     // Get all registered config classes
-    const allConfigClasses = getAllConfigClasses();
+  const allConfigClasses = ConfigClassRegistry.getAll();
     
     // Create instances for all registered config classes
     for (const [namespace, configClass] of allConfigClasses) {
