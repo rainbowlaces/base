@@ -114,6 +114,8 @@ export function tsRules(options = {}) {
             message: "HTMLElementTagNameMap properties must be lowercase kebab-case (custom elements must start with lowercase)",
           },
         ],
+  // Custom project rules
+  "no-self-referential-config/no-self-referential-config": "error",
       },
     },
   ];
