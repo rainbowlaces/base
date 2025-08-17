@@ -19,7 +19,8 @@
     "lint:fix": "pnpm lint --fix",
     "tsc": "node ./bin/cli.js build --types-only",
     "build": "pnpm lint && node ./bin/cli.js build -q",
-    "test": "pnpm build --test && node --enable-source-maps --test --test-reporter=dot '_test/test/**/*.js'",    
+    "test": "pnpm build --test && node --enable-source-maps --test --test-reporter=dot '_test/test/**/*.js'",
+    "test:spec": "pnpm build --test && node --enable-source-maps --test --test-reporter=spec '_test/test/**/*.js'",    
     "start:dev:watch": "nodemon --watch src --ext ts,css --exec 'pnpm start:dev'",
     "release": "pnpm lint && node ./bin/cli.js build --release"
   },
