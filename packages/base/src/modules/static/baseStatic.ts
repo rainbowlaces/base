@@ -97,7 +97,8 @@ export class BaseStatic extends BaseModule<BaseStaticConfig> {
     this.logger.info(`BaseStatic setup complete`, []);
   }
 
-  @request({ topic: "/get/static/:path*" , phase: 10 })
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  @request({ topic: "/get/static/:path*" , phase: 10, _internal: true })
   async handleStatic({ context: ctx, path: reqPath }: BaseHttpActionArgs & { path?: string }) {
     if (!reqPath) {
       this.logger.debug(`No path provided, returning 400`, [ctx.id]);

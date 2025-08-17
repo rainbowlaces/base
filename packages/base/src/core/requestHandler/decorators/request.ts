@@ -4,6 +4,7 @@ import { type BasePubSubArgs } from "../../pubsub/types.js";
 import { BaseContext } from "../../module/baseContext.js";
 import { type BaseModule } from "../../module/baseModule.js";
 import { type BaseAction, type ActionOptions } from "../../module/types.js";
+import { BaseError } from "../../baseErrors.js";
 import { setActionMetadata } from "../metadata.js";
 import { type BaseHttpActionArgs } from "../types.js";
 
@@ -28,6 +29,9 @@ function request(optionsOrTopic?: ActionOptions | string) {
       options.middleware = options.middleware ?? true;
     }
     
+  if (options.phase !== undefined && options.phase < 50 && !options._internal) {
+      throw new BaseError(`Request action phase must be >= 50 (reserved <50 for internal actions). Received: ${options.phase}.`);
+    }
     target.phase = options.phase ?? 100;
     target.middleware = options.middleware ?? false; // Default to false if not specified
   if (options.timeout !== undefined) setActionMetadata(target, { timeout: options.timeout });

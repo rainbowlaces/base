@@ -9,6 +9,9 @@ export interface ActionOptions {
   phase?: number;
   topic?: string;
   middleware?: boolean;
+  /** @internal Allow phases below public minimum (50). Not for external use. */
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  _internal?: boolean;
 }
 
 export interface BaseAction extends Subscriber {

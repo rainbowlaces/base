@@ -26,21 +26,24 @@ class TestModule extends BaseModule {
   actionOrder: string[] = [];
 
   // Action that throws an error for testing error handling
-  @request({ topic: '/test', phase: 0 })
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  @request({ topic: '/test', phase: 0, _internal: true })
   async errorAction(_args: BaseActionArgs): Promise<void> {
     this.actionOrder.push('error');
     throw new Error('Test error');
   }
 
   // Action with dependencies for testing dependency resolution  
-  @request({ topic: '/test', phase: 1 })
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  @request({ topic: '/test', phase: 1, _internal: true })
   async dependentAction(args: BaseActionArgs): Promise<void> {
     this.actionOrder.push('dependent');
     args.context.data.dependent = 'completed';
   }
 
   // Regular action for testing basic execution
-  @request({ topic: '/test', phase: 2 })
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  @request({ topic: '/test', phase: 2, _internal: true })
   async regularAction(args: BaseActionArgs): Promise<void> {
     this.actionOrder.push('regular');
     args.context.data.regular = 'completed';
