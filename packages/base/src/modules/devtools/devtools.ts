@@ -4,7 +4,7 @@ import { BaseModule } from "../../core/module/baseModule.js";
 import { di } from "../../core/di/baseDi.js";
 import { request } from "../../core/requestHandler/decorators/request.js";
 import { type BaseHttpActionArgs } from "../../core/requestHandler/types.js";
-import { configClass } from "../../core/config/decorators/provider.js";
+import { configClass } from "../../core/config/decorators/configClass.js";
 import { BaseClassConfig, type ConfigData } from "../../core/config/types.js";
 
 @configClass("BaseDevtools")

@@ -3,7 +3,7 @@ import type * as fs from "fs";
 import mime from "mime-types";
 import zlib from "zlib";
 import { BaseClassConfig, type ConfigData } from "../../core/config/types.js";
-import { configClass } from "../../core/config/decorators/provider.js";
+import { configClass } from "../../core/config/decorators/configClass.js";
 import { BaseModule } from "../../core/module/baseModule.js";
 import { di } from "../../core/di/baseDi.js";
 import { BaseError } from "../../core/baseErrors.js";
