@@ -12,25 +12,25 @@ importers:
         specifier: ^2.29.6
         version: 2.29.6(@types/node@24.3.0)
       '@eslint/js':
-        specifier: ^9.29.0
+        specifier: ^9.33.0
         version: 9.33.0
       '@types/node':
-        specifier: ^24.0.3
+        specifier: ^24.3.0
         version: 24.3.0
       esbuild:
-        specifier: ^0.25.5
+        specifier: ^0.25.9
         version: 0.25.9
       eslint:
         specifier: ^9.29.0
         version: 9.33.0
       nodemon:
-        specifier: ^3.1.4
+        specifier: ^3.1.10
         version: 3.1.10
       syncpack:
         specifier: ^13.0.4
         version: 13.0.4(typescript@5.9.2)
       typescript:
-        specifier: ^5.8.3
+        specifier: ^5.9.2
         version: 5.9.2
 
   packages/base:
