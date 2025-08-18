@@ -13,15 +13,6 @@ export default [
             "scaffold/**/*",
         ],
     },
-        {
-            plugins: {
-                'no-self-referential-config': {
-                    rules: {
-                        'no-self-referential-config': (await import('./eslint-rules/no-self-referential-config.js')).noSelfReferentialConfig
-                    }
-                }
-            }
-        },
     // JavaScript files - use basic rules without TypeScript type checking
     jsRules,
     // TypeScript files - use strict type checking
