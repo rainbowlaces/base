@@ -1,4 +1,4 @@
-Check the package.json for the scripts availble. Use the `npm run` command to run scripts.
+Check the package.json for the scripts availble.
 
 first switch to the project directory:
 ```bash

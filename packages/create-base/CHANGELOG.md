@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.5
+
+### Patch Changes
+
+- 11812ad: Release with correct build
+- Updated dependencies [11812ad]
+  - @rainbowlaces/base@3.15.5
+
 ## 3.15.4
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.5
+
+### Patch Changes
+
+- 11812ad: Release with correct build
+
 ## 3.15.4
 
 ### Patch Changes
