@@ -161,8 +161,10 @@ export abstract class BaseContext<
       // Run phases
       await this._runPhases();
     } catch (error) {
-      // Ensure context is in error state for any coordination failures
-      this.error();
+      // Only flag as error if not a 'no handlers' scenario
+      if (!(error instanceof Error && error.message.includes("No handlers were found for topic"))) {
+        this.error();
+      }
       throw error;
     }
   }
@@ -175,7 +177,7 @@ export abstract class BaseContext<
     );
     this.logger.debug(`Executing phases in order: [${sortedPhases.join(", ")}]`);
 
-    for (const phase of sortedPhases) {
+  for (const phase of sortedPhases) {
       const actionsInPhase = this.#phaseMap.get(phase) ?? new Set();
       this.logger.debug(`Starting phase ${phase} with ${actionsInPhase.size} actions: [${Array.from(actionsInPhase).join(", ")}]`);
 
@@ -191,10 +193,20 @@ export abstract class BaseContext<
             if (dep === actionId) {
               this.logger.debug(`Action ${actionId} completed in phase ${phase}`);
               this.off("dependencyDone", completionHandler);
+              this.off("dependencyError", errorHandler);
+              resolve();
+            }
+          };
+          const errorHandler = (dep: string) => {
+            if (dep === actionId) {
+              this.logger.debug(`Action ${actionId} errored in phase ${phase}`);
+              this.off("dependencyDone", completionHandler);
+              this.off("dependencyError", errorHandler);
               resolve();
             }
           };
           this.on("dependencyDone", completionHandler);
+          this.on("dependencyError", errorHandler);
 
           // Trigger the action execution
           this.logger.debug(`Triggering execution of ${actionId}`);
@@ -212,8 +224,8 @@ export abstract class BaseContext<
 
       // Check for errors
       if (this.#state === "error") {
-        this.logger.debug(`Context entered error state during phase ${phase}, stopping execution`);
-        return;
+        this.logger.debug(`Context entered error state during phase ${phase}, stopping execution with throw`);
+        throw new Error("ContextActionError");
       }
     }
 

@@ -177,6 +177,14 @@ export class BaseResponse extends EventEmitter {
         this.end();
         resolve();
       });
+      stream.on("error", (err) => {
+        this.logger.error("Stream error while sending response", [this.#ctxId], { error: err });
+        if (!this.headersSent) {
+          this.statusCode(500);
+        }
+        this.end();
+        resolve();
+      });
     });
   }
 

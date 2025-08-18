@@ -24,6 +24,8 @@ export class BaseRequestHandlerConfig extends BaseClassConfig {
   keepExtensions: boolean = false;
   maxUploadSize: number = 1024 * 1024; // 1MB
   maxFields: number = 1000;
+  /** If true, 404 (no handlers) will mark context as error and publish error event */
+  treat404AsError: boolean = false;
 }
 
 declare module "../config/types.js" {

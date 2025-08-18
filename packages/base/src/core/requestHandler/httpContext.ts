@@ -25,6 +25,8 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
   #wss?: WebSocketServer;
   #timeoutTimer: NodeJS.Timeout | null = null;
   #baseTimeoutMs = 0;
+  #startTime = Date.now();
+  #activityWindowMs = 0; // rolling inactivity timeout window
 
   @config('BaseRequestHandler')
   private accessor handlerConfig!: BaseRequestHandlerConfig;
@@ -56,42 +58,70 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
     this.#head = head;
     this.#wss = wss;
 
-  this.#topic = `/request/${this.id}/${this.#req.method}${this.#req.cleanPath}`;
+  this.#topic = `/request/${this.id}/${this.#req.method.toLowerCase()}${this.#req.cleanPath}`;
 
   // Compute timeout (max action timeout or global default)
   this.#baseTimeoutMs = this._computeInitialTimeout();
+  this.#activityWindowMs = this.handlerConfig.requestTimeout; // reuse global (configurable later)
 
-    if (res) {
-      this.#res.on("done", () => {
-        this._clearTimeoutTimer();
-        this.done();
-      });
-      this.#res.on("error", () => {
-        this._clearTimeoutTimer();
-        this.error();
-      });
+  if (res) {
       // Listen for dynamic timeout extensions
       this.#res.on("extend-timeout", (ms: number) => {
         this.logger.debug(`Extending timeout to ${ms}ms`, [this.id]);
         this._armTimeout(ms);
       });
+      // Rolling activity timeout bumps
+      this.#res.on('activity', () => this._bumpActivityTimeout());
       // Arm initial timeout
       this._armTimeout(this.#baseTimeoutMs);
     }
 
-    void this.coordinateAndRun(this.#topic).catch((error: unknown) => {
+    void this.coordinateAndRun(this.#topic).catch(async (error: unknown) => {
+      if (this.#res.headersSent) {
+        this.logger.error("Error after headers sent. Cannot send error page.", [this.id], { error });
+        return;
+      }
+
       if (error instanceof Error && error.message.includes("No handlers were found for topic")) {
-        this.logger.debug("Returning 404 for unhandled route:", [], { error });
-      } else {
-        this.logger.error("HTTP context coordination failed:", [], { error });
-      }
-      // For HTTP contexts, respond with 404 or 501
-      if (!this.#res.headersSent) {
+        this.logger.debug("Returning 404 for unhandled route:", [this.id]);
         this.#res.statusCode(404);
-        void this.#res.send("Not Found");
+        await this.#res.send("Not Found");
+        const payload = { context: this, duration: Date.now() - this.#startTime };
+        void this.bus.pub(`/request/${this.id}/notfound`, payload);
+        if (this.handlerConfig.treat404AsError) {
+          void this.bus.pub(`/request/${this.id}/error`, { ...payload, error: new Error('NotFound') });
+          this.error();
+        } else {
+          this.done();
+        }
+      } else {
+        this.logger.error("Unhandled error during request processing. Sending 500.", [this.id], { error });
+        this.#res.statusCode(500);
+        await this.#res.send("Internal Server Error");
+  void this.bus.pub(`/request/${this.id}/error`, { context: this, error, duration: Date.now() - this.#startTime });
+        this.error();
       }
-      this.error();
     });
+
+    let finished = false;
+    const finalise = () => {
+      if (finished) return;
+      finished = true;
+
+      if (this.state !== 'error') this.done();
+      
+      this._clearTimeoutTimer();
+      const duration = Date.now() - this.#startTime;
+      const payload = { context: this, duration };
+      void this.bus.pub(`/request/${this.id}/closed`, payload);
+      void this.bus.pub(`/request/${this.id}/final`, payload);
+      
+      this.#res.rawResponse.removeListener('finish', finalise);
+      this.#res.rawResponse.removeListener('close', finalise);
+    };
+
+    this.#res.rawResponse.on('finish', finalise);
+    this.#res.rawResponse.on('close', finalise);
   }
 
   protected getContextType(): string {
@@ -196,8 +226,15 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
       if (this.#res.finished) return;
       this.logger.warn(`Request timed out after ${ms}ms`, [this.id]);
       this.#res.statusCode(408);
+      this.error();
       void this.#res.send("Request timed out.");
+      void this.bus.pub(`/request/${this.id}/timeout`, { context: this, duration: Date.now() - this.#startTime });
     }, ms);
+  }
+
+  private _bumpActivityTimeout() {
+    if (!this.#activityWindowMs) return;
+    this._armTimeout(this.#activityWindowMs);
   }
 
   private _clearTimeoutTimer() {

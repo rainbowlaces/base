@@ -404,7 +404,7 @@ describe("BaseContext Unit Tests", () => {
       });
     });
 
-    it("should handle coordination errors gracefully", async () => {
+  it("should treat missing handlers as non-error (404 flow)", async () => {
       const context = new TestContext();
       
       // Try to coordinate a topic with no handlers
@@ -414,7 +414,8 @@ describe("BaseContext Unit Tests", () => {
       } catch (error) {
         assert.ok(error instanceof Error, "Should throw an Error");
         assert.ok(error.message.includes('No handlers'), "Error should mention no handlers");
-        assert.strictEqual(context.state, 'error', "Context should be in error state");
+    // Now should remain non-error to allow 404 path to set done later
+    assert.notStrictEqual(context.state, 'error', "Context should not enter error state for 404 coordination");
       }
     });
   });
