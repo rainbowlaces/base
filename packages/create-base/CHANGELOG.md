@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.9
+
+### Patch Changes
+
+- 7441e42: Fix to start.js to correctly start local dev server.
+- Updated dependencies [7441e42]
+  - @rainbowlaces/base@3.15.9
+
 ## 3.15.8
 
 ### Patch Changes
