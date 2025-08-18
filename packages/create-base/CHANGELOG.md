@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.7
+
+### Patch Changes
+
+- 50e2d25: Fix to ensure BaseRequestHandler is augmenting the AppConfig correctly
+- Updated dependencies [50e2d25]
+  - @rainbowlaces/base@3.15.7
+
 ## 3.15.6
 
 ### Patch Changes
