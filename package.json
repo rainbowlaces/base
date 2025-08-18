@@ -4,7 +4,7 @@
   "scripts": {
     "deps:check": "syncpack list-mismatches",
     "deps:fix": "syncpack fix-mismatches",
-    "release:package": "git stash -u && pnpm changeset && git add .changeset && git commit -m 'chore: Add changeset' && pnpm changeset version && git add . && git commit -m 'chore(release): Version packages' && pnpm --filter \"@rainbowlaces/base\" release && pnpm changeset publish && git stash pop"
+    "release:base": "git stash -u && pnpm changeset && git add .changeset && git commit -m 'chore: Add changeset' && pnpm changeset version && git add . && git commit -m 'chore(release): Version packages' && pnpm --filter \"@rainbowlaces/base\" release && pnpm changeset publish && git stash pop"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.6",
