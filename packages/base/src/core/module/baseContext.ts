@@ -22,7 +22,7 @@ export abstract class BaseContext<
   @di(BasePubSub)
   private static accessor pubsub: BasePubSub;
 
-  @di(BaseLogger, "HttpHandler")
+  @di(BaseLogger, "BaseContext")
   protected accessor logger!: BaseLogger;
 
   #data: T = {} as T;
@@ -31,7 +31,7 @@ export abstract class BaseContext<
   private static readonly actionRegistry = new Map<URLPattern, BaseAction[]>();
 
   static registerAction(topic: string, action: BaseAction): void {
-    const logger = BaseDi.resolve(BaseLogger, "HttpHandler");
+    const logger = BaseDi.resolve(BaseLogger, "BaseContext");
     logger.debug(`Registering action ${action.module}/${action.name} for topic ${topic}`);
     
     try {
@@ -48,7 +48,7 @@ export abstract class BaseContext<
   static getActionsForTopic(topic: string): { actions: BaseAction[], params: Record<string, string> } {
     const matchingActions: BaseAction[] = [];
     const extractedParams: Record<string, string> = {};
-    const logger = BaseDi.resolve(BaseLogger, "HttpHandler");
+    const logger = BaseDi.resolve(BaseLogger, "BaseContext");
     
     logger.debug(`Finding actions for topic: ${topic}`);
     
