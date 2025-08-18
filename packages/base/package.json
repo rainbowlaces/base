@@ -1,7 +1,7 @@
 {
   "name": "@rainbowlaces/base",
   "access": "public",
-  "version": "3.14.8",
+  "version": "3.15.0",
   "description": "An extensible and modular Node.js framework for building scalable web applications with built-in support for routing, middleware, configuration management, and more, designed for simplicity and ease of use.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -20,21 +20,21 @@
     "tsc": "node ./bin/cli.js build --types-only",
     "build": "pnpm lint && node ./bin/cli.js build -q",
     "test": "pnpm build --test && node --enable-source-maps --test --test-reporter=dot '_test/test/**/*.js'",
-    "test:spec": "pnpm build --test && node --enable-source-maps --test --test-reporter=spec '_test/test/**/*.js'",    
+    "test:spec": "pnpm build --test && node --enable-source-maps --test --test-reporter=spec '_test/test/**/*.js'",
     "start:dev:watch": "nodemon --watch src --ext ts,css --exec 'pnpm start:dev'",
     "release": "pnpm lint && node ./bin/cli.js build --release"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/cookie": "^0.6.0", 
+    "@types/cookie": "^0.6.0",
     "@types/cookie-signature": "^1.1.2",
-    "@types/formidable": "^3.4.5",    
-    "@types/mime-types": "^3.0.1",    
+    "@types/formidable": "^3.4.5",
+    "@types/mime-types": "^3.0.1",
     "@types/sanitize-html": "^2.11.0",
     "@types/ws": "^8.18.1",
-    "esbuild-plugin-copy": "^2.1.1",    
-    "lit": "^3.3.1"                    
+    "esbuild-plugin-copy": "^2.1.1",
+    "lit": "^3.3.1"
   },
   "peerDependencies": {
     "esbuild": "^0.25.9",
@@ -42,12 +42,12 @@
     "nodemon": "^3.1.10",
     "typescript": "^5.9.2"
   },
-  "dependencies": {    
-    "dotenv": "^17.2.0",    
+  "dependencies": {
+    "dotenv": "^17.2.0",
     "chalk": "^5.3.0",
     "commander": "^14.0.0",
     "cookie": "^1.0.2",
-    "cookie-signature": "^1.2.1",    
+    "cookie-signature": "^1.2.1",
     "formidable": "^3.5.1",
     "glob": "^11.0.3",
     "luxon": "^3.4.4",
