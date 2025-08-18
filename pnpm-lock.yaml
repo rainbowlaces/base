@@ -21,7 +21,7 @@ importers:
         specifier: ^0.25.9
         version: 0.25.9
       eslint:
-        specifier: ^9.29.0
+        specifier: ^9.33.0
         version: 9.33.0
       nodemon:
         specifier: ^3.1.10
@@ -51,10 +51,10 @@ importers:
         specifier: ^17.2.0
         version: 17.2.1
       esbuild:
-        specifier: ^0.25.5
+        specifier: ^0.25.9
         version: 0.25.9
       eslint:
-        specifier: ^9.29.0
+        specifier: ^9.33.0
         version: 9.33.0
       formidable:
         specifier: ^3.5.1
@@ -72,7 +72,7 @@ importers:
         specifier: ^5.0.7
         version: 5.1.5
       nodemon:
-        specifier: ^3.1.4
+        specifier: ^3.1.10
         version: 3.1.10
       sanitize-html:
         specifier: ^2.13.0
@@ -81,7 +81,7 @@ importers:
         specifier: ^0.5.21
         version: 0.5.21
       typescript:
-        specifier: ^5.8.3
+        specifier: ^5.9.2
         version: 5.9.2
       typescript-eslint:
         specifier: ^8.35.0
@@ -118,8 +118,8 @@ importers:
   packages/create-base:
     dependencies:
       '@rainbowlaces/base':
-        specifier: workspace:*
-        version: link:../base
+        specifier: 3.15.1
+        version: 3.15.1(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)
 
 packages:
 
@@ -455,6 +455,16 @@ packages:
 
   '@paralleldrive/cuid2@2.2.2':
     resolution: {integrity: sha512-ZOBkgDwEdoYVlSeRbYYXs0S9MejQofiVYoTbKzy/6GQa39/q5tQU2IX46+shYnUkpEl3wc+J6wRlar7r2EK2xA==}
+
+  '@rainbowlaces/base@3.15.1':
+    resolution: {integrity: sha512-RfmMHzUF38UWILrY4DkQwJSDKJcuEq0rjNr3gHE6WXxCS8YJVwEtToZBO3AkARYFXIHzFooqQ49uZwFkBnXlBA==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
+    peerDependencies:
+      esbuild: ^0.25.9
+      eslint: ^9.33.0
+      nodemon: ^3.1.10
+      typescript: ^5.9.2
 
   '@sindresorhus/merge-streams@2.3.0':
     resolution: {integrity: sha512-LtoMMhxAlorcGhmFYI+LhPgbPZCkgP6ra1YL604EeF6U98pLlQ3iWIGMdWSC+vWmPBWBNgmDBAhnAobLROJmwg==}
@@ -1912,6 +1922,31 @@ snapshots:
   '@paralleldrive/cuid2@2.2.2':
     dependencies:
       '@noble/hashes': 1.8.0
+
+  '@rainbowlaces/base@3.15.1(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)':
+    dependencies:
+      chalk: 5.5.0
+      commander: 14.0.0
+      cookie: 1.0.2
+      cookie-signature: 1.2.2
+      dotenv: 17.2.1
+      esbuild: 0.25.9
+      eslint: 9.33.0
+      formidable: 3.5.4
+      glob: 11.0.3
+      luxon: 3.7.1
+      mime-types: 3.0.1
+      nanoid: 5.1.5
+      nodemon: 3.1.10
+      sanitize-html: 2.17.0
+      source-map-support: 0.5.21
+      typescript: 5.9.2
+      typescript-eslint: 8.39.1(eslint@9.33.0)(typescript@5.9.2)
+      ws: 8.18.3
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
 
   '@sindresorhus/merge-streams@2.3.0': {}
 
