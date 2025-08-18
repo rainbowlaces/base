@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.6
+
+### Patch Changes
+
+- 91f6935: Fixing things
+- Updated dependencies [91f6935]
+  - @rainbowlaces/base@3.15.6
+
 ## 3.15.5
 
 ### Patch Changes
