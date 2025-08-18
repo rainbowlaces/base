@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.10
+
+### Patch Changes
+
+- 575f9ae: Implement path shortening for improved logging readability
+
 ## 3.15.9
 
 ### Patch Changes

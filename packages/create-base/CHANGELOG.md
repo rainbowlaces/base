@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.10
+
+### Patch Changes
+
+- 575f9ae: Implement path shortening for improved logging readability
+- Updated dependencies [575f9ae]
+  - @rainbowlaces/base@3.15.10
+
 ## 3.15.9
 
 ### Patch Changes
