@@ -1,5 +1,6 @@
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs";
 import { PassThrough } from "stream";
 import { fileURLToPath } from "url";
 
@@ -27,8 +28,17 @@ export function createStartCommand(program) {
           ? entryFile
           : path.join(projectRoot, entryFile);
       } else {
-        // If no entry file is provided at all, create a sensible default absolute path.
-        finalEntryFile = path.join(projectRoot, "dist", "src", "index.js");
+        // If no entry file is provided, prefer the test app entry when developing the framework itself.
+        // Dev builds place the test app at: dist/testApp/src/index.js
+        const testAppEntry = path.join(projectRoot, "dist", "testApp", "src", "index.js");
+        const frameworkEntry = path.join(projectRoot, "dist", "src", "index.js");
+        if (fs.existsSync(testAppEntry)) {
+          finalEntryFile = testAppEntry;
+          quietLog?.(`Detected test app build - starting: ${path.relative(projectRoot, finalEntryFile)}`);
+        } else {
+          finalEntryFile = frameworkEntry;
+          quietLog?.(`Test app entry not found; starting framework entry: ${path.relative(projectRoot, finalEntryFile)}`);
+        }
       }
 
       try {
