@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.1
+
+### Patch Changes
+
+- 1987724: Added simple README.md
+- Updated dependencies [1987724]
+  - @rainbowlaces/base@3.15.1
+
 ## 3.15.0
 
 ### Patch Changes

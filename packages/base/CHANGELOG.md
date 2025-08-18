@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.1
+
+### Patch Changes
+
+- 1987724: Added simple README.md
+
 ## 3.15.0
 
 ### Minor Changes
