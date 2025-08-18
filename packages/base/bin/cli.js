@@ -22,10 +22,17 @@ let paths;
 try {
   paths = resolvePaths();
   
+  function leftTrimPath(p, max = 30) {
+    if (!p || typeof p !== 'string') return String(p);
+    if (p.length <= max) return p;
+    return '...' + p.slice(-max);
+  }
+
+  const MAX_PATH_DISPLAY = 30;
   const infoLines = [
     `Base Framework: ${version}`,
-    `Framework: ${paths.frameworkRoot}`,
-    `Project: ${paths.projectRoot}`
+    `Framework: ${leftTrimPath(paths.frameworkRoot, MAX_PATH_DISPLAY)}`,
+    `Project: ${leftTrimPath(paths.projectRoot, MAX_PATH_DISPLAY)}`
   ];
   
   // Only show header if not quiet
