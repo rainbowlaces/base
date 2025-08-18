@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.8
+
+### Patch Changes
+
+- b8f247c: Fix BaseRequestHandler config error
+
 ## 3.15.7
 
 ### Patch Changes
