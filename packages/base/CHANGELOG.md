@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.3
+
+### Patch Changes
+
+- 6ff72e3: Make esbuild-plugin-copy a full dep
+
 ## 3.15.2
 
 ### Patch Changes
