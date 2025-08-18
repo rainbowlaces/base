@@ -40,6 +40,7 @@ export { BaseRequest } from "./core/requestHandler/baseRequest.js";
 export { BaseResponse } from "./core/requestHandler/baseResponse.js";
 export { BaseRouter } from "./core/requestHandler/baseRouter.js";
 export { BaseHttpContext } from "./core/requestHandler/httpContext.js";
+export { BaseRequestHandler } from "./core/requestHandler/baseRequestHandler.js";
 
 // DI exports
 export { BaseDi } from "./core/di/baseDi.js";
