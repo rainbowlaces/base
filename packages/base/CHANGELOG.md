@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.2
+
+### Patch Changes
+
+- ff517ef: Bump dependencies.
+
 ## 3.15.1
 
 ### Patch Changes
