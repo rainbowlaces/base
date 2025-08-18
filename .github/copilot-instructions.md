@@ -17,7 +17,6 @@ To check for specific test output, use `pnpm test:spec | grep "pattern"` to filt
 
 DO NOT GREP THE DOT REPORTER OUTPUT - use the full test:spec command instead.
 
-We use the dot reporter `pnpm test` for concise output, so you generally shouldn't need to filter unless looking for specific 
-test names or errors.
+We use the dot reporter `pnpm test` for concise output, with detailed errors, so you generally shouldn't need to filter unless looking for specific test successes.
 
 Generally, run all the tests. They are fast. Don't test in isolation unless you are debugging a specific issue.
