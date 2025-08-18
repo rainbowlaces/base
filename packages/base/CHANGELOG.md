@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.4
+
+### Patch Changes
+
+- afc5e9a: Fix issue with eslint rules
+
 ## 3.15.3
 
 ### Patch Changes

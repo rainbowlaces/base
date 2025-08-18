@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.4
+
+### Patch Changes
+
+- afc5e9a: Fix issue with eslint rules
+- Updated dependencies [afc5e9a]
+  - @rainbowlaces/base@3.15.4
+
 ## 3.15.3
 
 ### Patch Changes
