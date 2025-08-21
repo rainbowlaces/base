@@ -24,7 +24,6 @@ export class BaseRequestHandlerConfig extends BaseClassConfig {
   keepExtensions: boolean = false;
   maxUploadSize: number = 1024 * 1024; // 1MB
   maxFields: number = 1000;
-  /** If true, 404 (no handlers) will mark context as error and publish error event */
   treat404AsError: boolean = false;
 }
 
@@ -59,7 +58,6 @@ export class BaseRequestHandler {
   async setup() {
     const port = this.config.port;
     
-    // Set up WebSocket upgrade handling
     this.#server.on('upgrade', (request, socket, head) => {
       this.handleUpgrade(request, socket, head);
     });
@@ -70,10 +68,59 @@ export class BaseRequestHandler {
   }
 
   async teardown() {
-    this.#server.removeAllListeners();
-    this.#wss.removeAllListeners();
-    this.#wss.close();
-    this.#server.closeAllConnections();
+    const server = this.#server;
+    const wss = this.#wss;
+
+    server.removeAllListeners('request');
+    server.removeAllListeners('upgrade');
+
+    try {
+      wss.clients.forEach((client) => {
+        try { client.terminate(); } catch { /* ignore */ }
+      });
+      wss.removeAllListeners();
+      wss.close();
+    } catch { /* ignore */ }
+
+    await new Promise<void>((resolve) => {
+      let resolved = false;
+      const forceTimer = setTimeout(() => {
+        try {
+          const s = server as typeof server & {
+            closeAllConnections?: () => void;
+            closeIdleConnections?: () => void;
+          };
+          s.closeAllConnections?.();
+          s.closeIdleConnections?.();
+        } catch { /* ignore */ }
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }, 1500).unref();
+
+      try {
+        server.close((err?: Error) => {
+          clearTimeout(forceTimer);
+          if (err) {
+            this.logger.error('Error closing HTTP server', [], { err });
+          } else {
+            this.logger.info('HTTP server closed');
+          }
+          if (!resolved) {
+            resolved = true;
+            resolve();
+          }
+        });
+      } catch (err) {
+        clearTimeout(forceTimer);
+        this.logger.error('Exception invoking server.close()', [], { err });
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }
+    });
   }
 
   private async handleContext(ctx: BaseHttpContext) {
@@ -97,15 +144,9 @@ export class BaseRequestHandler {
     return this.handleContext(ctx);
   }
 
-  /**
-   * Handle WebSocket upgrade requests using the "Promotable Request" model
-   * This creates a normal BaseHttpContext and publishes standard HTTP topics
-   * Authentication and middleware will run normally, then @request handlers can call context.upgrade()
-   */
   private handleUpgrade(request: http.IncomingMessage, socket: Duplex, head: Buffer) {
     this.logger.debug(`Received upgrade request for ${request.url}, treating as promotable HTTP request`);
     
-    // Apply routing logic just like normal HTTP requests
     const _url = new URL(request.url ?? "", `http://example.com`);
     const rw = this.router.handleRoute(_url.pathname);
 
@@ -114,11 +155,7 @@ export class BaseRequestHandler {
       request.url = rw.target + _url.search;
     }
 
-    // Create a special BaseHttpContext that knows it's upgradable
-    // We pass undefined for res since this is an upgrade request, plus socket, head, and WSS
     const ctx = new BaseHttpContext(request, undefined, socket, head, this.#wss);
-    
-    // Publish to normal HTTP topic - this triggers @request middleware pipeline
     return this.handleContext(ctx);
   }
 }
