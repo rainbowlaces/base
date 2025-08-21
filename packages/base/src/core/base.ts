@@ -9,9 +9,6 @@ class BaseMainConfig extends BaseClassConfig {
   port: number = 3000;
   autoloadIgnore: string[] = [];
   autoload: boolean = true;
-  // When true, once shutdown begins we strip additional signal listeners
-  // (SIGINT/SIGTERM/SIGQUIT/SIGUSR2) and install no-op guards to avoid
-  // duplicate shutdown paths from third-party libs.
   strictSignals: boolean = true;
 }
 
@@ -45,9 +42,8 @@ export class Base {
     this.fsRoot = getDirname(metaUrl);
     this.libRoot = getDirname(import.meta.url);
 
-    // Note: Using console.debug here since logger isn't available yet during DI setup
-    console.debug(`[Base] Registering fsRoot: ${this.fsRoot}`);
-    console.debug(`[Base] Registering libRoot: ${this.libRoot}`);
+    console.debug(`Registering fsRoot: ${this.fsRoot}`);
+    console.debug(`Registering libRoot: ${this.libRoot}`);
 
     BaseDi.register(this.fsRoot, "fsRoot");
     BaseDi.register(this.libRoot, "libRoot");
@@ -67,7 +63,7 @@ export class Base {
       try {
         this.logger.error("Uncaught Exception", [], { err });
       } catch {
-        console.error("[Base] Uncaught Exception (logger unavailable)", err);
+        console.error("Uncaught Exception (logger unavailable)", err);
       }
       process.exitCode = 1;
       if (!this.isShuttingDown) void this.shutdown();
@@ -88,8 +84,6 @@ export class Base {
     };
   process.on("unhandledRejection", this.unhandledHandlerRef);
 
-  // Handle graceful shutdown signals
-  // Use prependOnceListener so our handler runs before any other user-land listeners
   process.prependOnceListener("SIGTERM", () => {
       this.logger.info(
         "Received SIGTERM signal, initiating graceful shutdown",
@@ -114,7 +108,6 @@ export class Base {
       void this.shutdown();
     });
 
-    // Nodemon/debugger restart signal
   process.prependOnceListener("SIGUSR2", () => {
       this.logger.info(
         "Received SIGUSR2 signal, initiating graceful shutdown (nodemon)",
@@ -123,7 +116,6 @@ export class Base {
       void this.shutdown();
     });
 
-    // Prefer explicit IPC message from the CLI to avoid clashes with library signal hooks
   if (typeof process.on === "function") {
       try {
         process.on("message", (msg: unknown) => {
@@ -145,7 +137,6 @@ export class Base {
 
     await BaseInitializer.run();
 
-    // Cache config needed during shutdown to avoid DI lookups later
     try {
       this.strictSignalsEnabled = this.config.strictSignals;
     } catch {
@@ -165,16 +156,13 @@ export class Base {
     }
 
     this.isShuttingDown = true;
-    this.logger.info("Starting graceful shutdown process", []);
+  this.logger.info("Starting graceful shutdown", []);
     try {
-      // Expose a shutdown flag for modules to adjust behavior/logging during teardown
       BaseDi.register(true, "ShuttingDown");
     } catch {
       // ignore if DI not available
     }
 
-    // Detach error handlers early so late driver errors / promise rejections after DI
-    // teardown don't try to resolve a logger that has been unregistered.
     if (this.uncaughtHandlerRef) {
       process.removeListener("uncaughtException", this.uncaughtHandlerRef);
       this.uncaughtHandlerRef = undefined;
@@ -184,7 +172,6 @@ export class Base {
       this.unhandledHandlerRef = undefined;
     }
 
-    // Optional hard mode: prevent duplicate shutdown paths from other listeners
   if (this.strictSignalsEnabled && !this.shutdownByIpc) {
       try {
         const signals: NodeJS.Signals[] = [
@@ -194,11 +181,8 @@ export class Base {
           "SIGUSR2",
         ];
         for (const sig of signals) {
-          // Remove all remaining listeners for subsequent signals
           process.removeAllListeners(sig);
-          // Install a no-op guard so future signals during shutdown don't trigger anything else
           process.on(sig, () => {
-            // Keep it minimal to avoid noisy logs while tearing down
           });
         }
       } catch {
@@ -207,28 +191,41 @@ export class Base {
     }
 
     try {
-      // Teardown all services in reverse dependency order
       await BaseDi.teardown();
       console.log("All services have been torn down successfully");
-      // Prefer letting the event loop drain so logs flush cleanly
-      process.exitCode = 0;
+      process.exitCode = process.exitCode ?? 0;
     } catch (error) {
       console.error("Error during graceful shutdown:", error);
       process.exitCode = 1;
     } finally {
-      // Fallback: force exit after a short grace period in case handles remain open
-      // This preserves previous behavior while giving I/O a chance to flush
-      // Give the process a bit more time by default to allow teardown logs to flush
-      // and async cleanups (e.g., containers) to complete. Can be overridden via env.
-  const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 4000);
-      setTimeout(() => {
-        // Only force if still running
+      try {
+        const anyProc = process as NodeJS.Process & { disconnect?: () => void; channel?: unknown };
+        if (anyProc.channel && typeof anyProc.disconnect === 'function') {
+          anyProc.disconnect();
+          console.log('Disconnected IPC channel');
+        }
+      } catch {
+        // ignore IPC disconnect errors
+      }
+
+      const timeout = Number(process.env.BASE_SHUTDOWN_TIMEOUT_MS ?? 4000);
+  const forceTimer = setTimeout(() => {
         try {
+          console.warn(`Forcing process exit after ${timeout}ms grace period (code=${process.exitCode ?? 0})`);
           process.exit(process.exitCode ?? 0);
         } catch {
           // ignore
         }
-      }, timeout).unref();
+  }, timeout).unref();
+      if (process.env.NODE_ENV === 'development' || process.env.TEST) {
+        forceTimer.refresh();
+        forceTimer.ref();
+        setTimeout(() => {
+          try {
+            process.exit(process.exitCode ?? 0);
+          } catch { /* ignore fast exit errors */ }
+        }, 500);
+      }
     }
   }
 }

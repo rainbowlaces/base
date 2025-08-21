@@ -52,7 +52,7 @@ export function createStartCommand(program) {
           const cliPath = path.resolve(__dirname, "..", "cli.js");
 
       // Spawn the application process
-      const appProc = spawn(
+  const appProc = spawn(
             process.execPath,
             [
               "--inspect",
@@ -65,15 +65,15 @@ export function createStartCommand(program) {
             {
               cwd: projectRoot,
               env: { ...process.env, NODE_ENV: "development" },
-        // Enable IPC so we can signal shutdown via message instead of OS signals
-        stdio: ["ignore", "pipe", "pipe", "ipc"],
-        // Detach so the app does NOT get TTY signals directly; parent will forward one clean signal.
-        detached: true,
+      // Enable IPC so we can signal shutdown via message instead of OS signals
+      stdio: ["ignore", "pipe", "pipe", "ipc"],
+      // NOT detached: let it die with the parent and receive TTY signals (we still prefer IPC)
+      detached: false,
             }
           );
 
           // Spawn the formatter process: `node <cliPath> format-log`
-          const fmtProc = spawn(
+      const fmtProc = spawn(
             process.execPath,
             [
               cliPath,
@@ -85,8 +85,7 @@ export function createStartCommand(program) {
             ],
             {
               stdio: ["pipe", "inherit", "inherit"],
-              // Put formatter in its own group so Ctrl+C doesn't kill it before we can fallback.
-              detached: true,
+        detached: false,
             }
           );
 
@@ -165,28 +164,38 @@ export function createStartCommand(program) {
           let shutdownMsgSent = false;
           const sendShutdown = (reason) => {
             if (shutdownMsgSent) return;
+            const isSignal = /^SIG/.test(String(reason));
+            if (isSignal) {
+              // Child receives the same signal directly (shared TTY). Do NOT send IPC message to avoid duplicate shutdown path.
+              program.quietLog?.(`Signal ${reason} received; child will self-handle`);
+              return;
+            }
             shutdownMsgSent = true;
+            let sent = false;
             try {
               if (appProc.connected && typeof appProc.send === "function") {
                 appProc.send("START_GRACEFUL_SHUTDOWN");
-                program.quietLog(`Sent shutdown message (${reason}) to app (pid ${appProc.pid})`);
-                return;
+                program.quietLog?.(`Sent shutdown IPC (${reason}) to app (pid ${appProc.pid})`);
+                sent = true;
               }
             } catch {}
-            // Fallback to SIGTERM if IPC is unavailable
-            try {
-              if (appProc.exitCode === null && appProc.signalCode === null) {
-                appProc.kill("SIGTERM");
-                program.quietLog(`IPC unavailable; forwarded SIGTERM (${reason}) to app (pid ${appProc.pid})`);
+            if (!sent) {
+              // Fallback to SIGTERM if IPC not available and process still running
+              try {
+                if (appProc.exitCode === null && appProc.signalCode === null) {
+                  appProc.kill("SIGTERM");
+                  program.quietLog?.(`Fallback SIGTERM (${reason}) to app (pid ${appProc.pid})`);
+                }
+              } catch (e) {
+                program.quietError?.("Failed to signal app shutdown:", e?.message || e);
               }
-            } catch (e) {
-              program.quietError("Failed to signal app shutdown:", e?.message || e);
             }
           };
-          process.on("SIGINT", () => sendShutdown("SIGINT"));
-          process.on("SIGTERM", () => sendShutdown("SIGTERM"));
-          process.on("SIGQUIT", () => sendShutdown("SIGQUIT"));
-          process.on("SIGHUP", () => sendShutdown("SIGHUP"));
+          ["SIGINT","SIGTERM","SIGQUIT","SIGHUP","SIGUSR2"].forEach(sig => {
+            process.on(sig, () => sendShutdown(sig));
+          });
+          // Fallback: ensure child gets shutdown if parent exits without signal
+          process.on("exit", () => sendShutdown("parent-exit"));
           appProc.on("disconnect", () => {
             // IPC channel closed unexpectedly; ensure the app gets a shutdown signal
             sendShutdown("disconnect");
@@ -200,6 +209,10 @@ export function createStartCommand(program) {
                 (signal ? ` by signal ${signal}` : ` with code ${code}`)
             );
 
+            // Aggressively close stdio pipes to allow sockets to disappear quickly
+            try { appProc.stdout?.destroy(); } catch {}
+            try { appProc.stderr?.destroy(); } catch {}
+
             // Close the merged stream once stdout/stderr close
             const endMerged = () => {
               try {
@@ -211,7 +224,7 @@ export function createStartCommand(program) {
 
             // After merged finishes piping, close formatter stdin to allow flush
             const gracefulFlushTimeout = Number(
-              process.env.BASE_LOG_FLUSH_TIMEOUT_MS ?? 1000
+              process.env.BASE_FAST_LOG_FLUSH_MS ?? process.env.BASE_LOG_FLUSH_TIMEOUT_MS ?? 600
             );
 
             const finishAndExit = () => {
@@ -241,8 +254,11 @@ export function createStartCommand(program) {
             if (merged.writableEnded) {
               finishAndExit();
             } else {
+              // Encourage early finish
+              setTimeout(() => {
+                try { merged.end(); } catch {}
+              }, 100);
               merged.once("finish", finishAndExit);
-              // Safety timeout in case finish never triggers — keep alive to honor flush window
               setTimeout(finishAndExit, gracefulFlushTimeout);
             }
           });
