@@ -16,13 +16,12 @@ export type ConfigData<T extends BaseClassConfig> = {
 
 export abstract class BaseClassConfig {
   public hydrate(data?: Partial<any> | null): void {
-    if (data) {
-      for (const key in data) {
-        if (key in this) {
-           
-          (this as any)[key] = data[key];
-        }
-      }
+    if (!data) return;
+    for (const key in data) {
+      if (!(key in this)) continue;
+      const value = (data as any)[key];
+      if (value === undefined) continue;
+      (this as any)[key] = value;
     }
   }
 }
