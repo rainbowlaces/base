@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.12
+
+### Patch Changes
+
+- 7e08aae: Fix: Ensure undefined config values take on config defaults.
+- Updated dependencies [7e08aae]
+  - @rainbowlaces/base@3.15.12
+
 ## 3.15.11
 
 ### Patch Changes

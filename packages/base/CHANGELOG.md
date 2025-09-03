@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.15.12
+
+### Patch Changes
+
+- 7e08aae: Fix: Ensure undefined config values take on config defaults.
+
 ## 3.15.11
 
 ### Patch Changes
