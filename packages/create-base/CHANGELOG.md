@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.15.13
+
+### Patch Changes
+
+- 2cc9fe7: ensure consistent route parameter typing for @sub and @request decorators
+- Updated dependencies [2cc9fe7]
+  - @rainbowlaces/base@3.15.13
+
 ## 3.15.12
 
 ### Patch Changes
