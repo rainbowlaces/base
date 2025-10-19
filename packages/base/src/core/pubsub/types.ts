@@ -5,8 +5,17 @@ export interface BasePubSubArgs {
 
 export type MatchedTopics = Map<string, BasePubSubArgs>;
 
+/**
+ * A function that handles pubsub messages.
+ * Can be generic to accept typed arguments with route parameters.
+ * 
+ * @example
+ * const handler: Subscriber<BasePubSubArgs & { id: string }> = async ({ topic, id }) => {
+ *   console.log(topic, id);
+ * };
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Subscriber = (args: BasePubSubArgs) => Promise<any> | Promise<void>;
+export type Subscriber<T extends BasePubSubArgs = BasePubSubArgs> = (args: T) => Promise<any> | Promise<void>;
 
 export interface Subscription {
   topic: string;

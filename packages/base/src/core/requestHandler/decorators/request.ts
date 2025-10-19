@@ -8,6 +8,15 @@ import { BaseError } from "../../baseErrors.js";
 import { setActionMetadata } from "../metadata.js";
 import { type BaseHttpActionArgs } from "../types.js";
 
+/**
+ * Request decorator. Use manual type intersections for route params.
+ * 
+ * @example
+ * @request("/users/:id")
+ * async getUser({ context, id }: BaseHttpActionArgs & { id: string }) {
+ *   const user = await this.userService.findById(id);
+ * }
+ */
 function request(optionsOrTopic?: ActionOptions | string) {
   return function (
     this: unknown,

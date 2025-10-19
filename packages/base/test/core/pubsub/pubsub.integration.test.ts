@@ -99,9 +99,11 @@ describe("PubSub Integration Tests", () => {
 
       class PatternSubscriber {
         @sub("user/:id/updated")
-        async onUserUpdate(args: BasePubSubArgs): Promise<void> {
+        async onUserUpdate(args: BasePubSubArgs & { id: string }): Promise<void> {
           methodCalled = true;
           receivedArgs = args;
+          // TypeScript knows args.id exists (via manual intersection)
+          assert.strictEqual(typeof args.id, "string", "id should be a string");
         }
       }
 
@@ -113,8 +115,9 @@ describe("PubSub Integration Tests", () => {
       assert.ok(methodCalled, "Pattern-based method should be called");
       assert.ok(receivedArgs, "Method should receive arguments");
       
-      const args = receivedArgs as BasePubSubArgs & { name: string };
+      const args = receivedArgs as BasePubSubArgs & { name: string; id: string };
       assert.strictEqual(args.topic, "user/123/updated", "Topic should match");
+      assert.strictEqual(args.id, "123", "ID param should be extracted");
       assert.strictEqual(args.name, "John", "Data should be passed through");
     });
   });

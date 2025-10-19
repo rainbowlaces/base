@@ -60,14 +60,14 @@ export class BasePubSub {
     }
   }
 
-  sub(
+  sub<T extends BasePubSubArgs = BasePubSubArgs>(
     topic: string,
-    handler: Subscriber,
+    handler: Subscriber<T>,
     once = false,
   ): Subscription {
     const subscription: Subscription = {
       topic,
-      handler,
+      handler: handler as Subscriber,
       pattern: this.createURLPattern(topic),
       once,
       matchedTopics: new Map<string, BasePubSubArgs>(),
