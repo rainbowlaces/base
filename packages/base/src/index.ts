@@ -40,6 +40,7 @@ export { BaseRequest } from "./core/requestHandler/baseRequest.js";
 export { BaseResponse } from "./core/requestHandler/baseResponse.js";
 export { BaseRouter } from "./core/requestHandler/baseRouter.js";
 export { BaseHttpContext } from "./core/requestHandler/httpContext.js";
+export { BaseWebSocketContext } from "./core/requestHandler/websocketContext.js";
 export { BaseRequestHandler } from "./core/requestHandler/baseRequestHandler.js";
 
 // DI exports
@@ -63,6 +64,8 @@ export { UnsafeTag } from "./modules/templates/engine/tags/unsafeTag.js";
 // Decorator exports
 export { provider as config } from "./core/config/decorators/provider.js";
 export { request } from "./core/requestHandler/decorators/request.js";
+export { upgrade } from "./core/requestHandler/decorators/upgrade.js";
+export { websocket, message } from "./core/requestHandler/decorators/websocket.js";
 export { di } from "./core/di/decorators/di.js";
 export { provider } from "./core/config/decorators/provider.js";
 export { configClass } from "./core/config/decorators/configClass.js";
@@ -169,6 +172,8 @@ export type {
   CookieOptions,
   ParsedForm
 } from "./core/requestHandler/types.js";
+
+export type { BaseWebSocketActionArgs } from "./core/requestHandler/websocketContext.js";
 
 // Module types
 export type { 
