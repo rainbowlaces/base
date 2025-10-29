@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.16.1
+
+### Patch Changes
+
+- 5facec6: Dep bump
+- Updated dependencies [5facec6]
+  - @rainbowlaces/base@3.16.1
+
 ## 3.16.0
 
 ### Minor Changes
