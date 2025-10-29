@@ -1,5 +1,16 @@
 # @rainbowlaces/create-base
 
+## 3.16.0
+
+### Minor Changes
+
+- 69e2664: Web Sockets Support
+
+### Patch Changes
+
+- Updated dependencies [69e2664]
+  - @rainbowlaces/base@3.16.0
+
 ## 3.15.13
 
 ### Patch Changes
