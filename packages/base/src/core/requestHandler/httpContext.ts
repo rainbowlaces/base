@@ -177,7 +177,7 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
 
       // Set up WebSocket event handlers
       ws.on('message', (data: Buffer) => {
-        this.handleWebSocketMessage(wsContext, data);
+        wsContext.handleMessage(data);
       });
 
       ws.on('close', () => {
@@ -190,11 +190,6 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
         wsContext.error();
         wsContext.destroy();
       });
-
-      // Publish upgrade event for @upgrade handlers
-      const upgradeTopic = `/websocket/upgrade${wsContext.path}`;
-      this.logger.debug(`Publishing upgrade event`, [wsContext.id], { topic: upgradeTopic });
-      void this.bus.pub(upgradeTopic, { context: wsContext });
     });
 
     // Mark this HTTP context as done since it's now been promoted
@@ -240,24 +235,5 @@ export class BaseHttpContext extends BaseContext<HttpContextData> {
   private _clearTimeoutTimer() {
     if (this.#timeoutTimer) clearTimeout(this.#timeoutTimer);
     this.#timeoutTimer = null;
-  }
-
-  /**
-   * Handle incoming WebSocket messages (moved from BaseRequestHandler)
-   */
-  private handleWebSocketMessage(context: BaseWebSocketContext, data: Buffer) {
-    try {
-      const payload = JSON.parse(data.toString());
-      const topic = `/websocket/message${context.path}`;
-      
-      this.logger.debug(`WebSocket message received`, [context.id], { topic, payload });
-      
-      // Publish to the PubSub bus - this triggers the @websocket/@message handlers
-      void this.bus.pub(topic, { context, payload });
-      
-    } catch (error) {
-      this.logger.warn(`Failed to parse WebSocket message`, [context.id], { error, data: data.toString() });
-      // Don't close connection on parse error, just ignore the message
-    }
   }
 }

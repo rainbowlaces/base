@@ -2,9 +2,39 @@ import type formidable from "formidable";
 import { type BasePubSubArgs } from "../pubsub/types.js";
 import { type BaseHttpContext } from "./httpContext.js";
 import { type BaseContextData } from "../module/baseContext.js";
+import type { BaseWebSocketContext } from "./websocketContext.js";
 
 export interface BaseHttpActionArgs extends BasePubSubArgs {
   context: BaseHttpContext;
+}
+
+/**
+ * Arguments passed to @upgrade handlers
+ * Includes WebSocket context and URL pattern parameters extracted from the connection path
+ */
+export interface BaseWebSocketUpgradeArgs extends BasePubSubArgs {
+  context: BaseWebSocketContext;
+  params?: Record<string, string>;
+}
+
+/**
+ * Arguments passed to @message handlers
+ * Includes WebSocket context, message payload, and URL pattern parameters
+ * from the combined connection path + message path
+ */
+export interface BaseWebSocketMessageArgs extends BasePubSubArgs {
+  context: BaseWebSocketContext;
+  payload?: unknown;
+  params?: Record<string, string>;
+}
+
+/**
+ * Arguments passed to @close handlers
+ * Includes WebSocket context and URL pattern parameters extracted from the connection path
+ */
+export interface BaseWebSocketCloseArgs extends BasePubSubArgs {
+  context: BaseWebSocketContext;
+  params?: Record<string, string>;
 }
 
 /**

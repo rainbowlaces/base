@@ -2,6 +2,8 @@ import { describe, it } from "node:test";
 import assert from "node:assert";
 import { BaseHttpContext } from "../../../src/core/requestHandler/httpContext.js";
 import { BaseWebSocketContext } from "../../../src/core/requestHandler/websocketContext.js";
+import { BaseDi } from "../../../src/core/di/baseDi.js";
+import { getMockPubSub, getMockWebSocketManager, getMockLogger } from "../../testUtils/utils.js";
 import { WebSocket } from "ws";
 import type * as http from "http";
 import type { Duplex } from "stream";
@@ -9,6 +11,12 @@ import { type WebSocketServer } from "ws";
 
 describe("WebSocket Data Handoff", () => {
   it("should properly transfer data from HTTP context to WebSocket context", () => {
+    // Setup DI mocks
+    BaseDi.reset();
+    BaseDi.register(getMockLogger(), { key: "BaseLogger", singleton: true, type: "scalar" });
+    BaseDi.register(getMockWebSocketManager(), { key: "BaseWebSocketManager", singleton: true, type: "scalar" });
+    BaseDi.register(getMockPubSub(), { key: "BasePubSub", singleton: true, type: "scalar" });
+
     // Create mock objects
     const mockRequest = {
       url: "/chat/secure",

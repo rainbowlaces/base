@@ -3,6 +3,7 @@ import { type BaseModule } from "../../src/core/module/baseModule.js";
 import { type BaseClassConfig } from "../../src/core/config/types.js";
 import { type FileSystem } from "../../src/utils/fileSystem.js";
 import { type BasePubSub } from "../../src/core/pubsub/basePubSub.js";
+import { type BaseWebSocketManager } from "../../src/core/requestHandler/websocketManager.js";
 import { ConfigClassRegistry } from "../../src/core/config/configClassRegistry.js";
 
 import { mock } from 'node:test';
@@ -34,6 +35,16 @@ export function getMockPubSub(): BasePubSub {
         teardown: mock.fn(async () => { /* Mock pubsub method */ }),
         get inFlight() { return 0; }
     } as unknown as BasePubSub;
+}
+
+export function getMockWebSocketManager(): BaseWebSocketManager {
+    return {
+        register: mock.fn(() => { /* Mock register method */ }),
+        unregister: mock.fn(() => { /* Mock unregister method */ }),
+        broadcast: mock.fn(() => { /* Mock broadcast method */ }),
+        getConnectionCount: mock.fn(() => 0),
+        teardown: mock.fn(() => { /* Mock teardown method */ })
+    } as unknown as BaseWebSocketManager;
 }
 
 export function getMockFileSystem(): FileSystem {

@@ -5,6 +5,7 @@ import { BaseWebSocketContext } from "../../../src/core/requestHandler/websocket
 import { BaseDi } from "../../../src/core/di/baseDi.js";
 import { BasePubSub } from "../../../src/core/pubsub/basePubSub.js";
 import { BaseLogger } from "../../../src/core/logger/baseLogger.js";
+import { getMockWebSocketManager, getMockLogger } from "../../testUtils/utils.js";
 import type * as http from "http";
 import { WebSocket } from "ws";
 
@@ -89,6 +90,12 @@ describe("WebSocket Promotable Request Integration", () => {
       write: () => { /* noop */ },
       end: () => { /* noop */ }
     } as any;
+
+    // Setup DI mocks
+    BaseDi.reset();
+    BaseDi.register(getMockLogger(), { key: "BaseLogger", singleton: true, type: "scalar" });
+    BaseDi.register(getMockWebSocketManager(), { key: "BaseWebSocketManager", singleton: true, type: "scalar" });
+    BaseDi.register(new BasePubSub(), { key: "BasePubSub", singleton: true, type: "scalar" });
 
     const httpContext = new BaseHttpContext(mockRequest, mockResponse);
     

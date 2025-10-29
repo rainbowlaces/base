@@ -12,6 +12,8 @@ import { BaseClassConfig } from "../config/types.js";
 import { configClass } from "../config/decorators/configClass.js";
 import type formidable from "formidable";
 import { tmpdir } from "os";
+// Import to ensure BaseWebSocketManager is registered in DI
+import "./websocketManager.js";
 
 @configClass('BaseRequestHandler')
 export class BaseRequestHandlerConfig extends BaseClassConfig {

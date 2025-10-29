@@ -36,8 +36,8 @@ importers:
   packages/base:
     dependencies:
       chalk:
-        specifier: ^5.3.0
-        version: 5.5.0
+        specifier: ^5.6.0
+        version: 5.6.2
       commander:
         specifier: ^14.0.0
         version: 14.0.0
@@ -45,37 +45,40 @@ importers:
         specifier: ^1.0.2
         version: 1.0.2
       cookie-signature:
-        specifier: ^1.2.1
+        specifier: ^1.2.2
         version: 1.2.2
       dotenv:
-        specifier: ^17.2.0
+        specifier: ^17.2.1
         version: 17.2.1
       esbuild:
         specifier: ^0.25.9
         version: 0.25.9
+      esbuild-plugin-copy:
+        specifier: ^2.1.1
+        version: 2.1.1(esbuild@0.25.9)
       eslint:
         specifier: ^9.33.0
         version: 9.33.0
       formidable:
-        specifier: ^3.5.1
+        specifier: ^3.5.4
         version: 3.5.4
       glob:
         specifier: ^11.0.3
         version: 11.0.3
       luxon:
-        specifier: ^3.4.4
+        specifier: ^3.7.1
         version: 3.7.1
       mime-types:
         specifier: ^3.0.1
         version: 3.0.1
       nanoid:
-        specifier: ^5.0.7
+        specifier: ^5.1.5
         version: 5.1.5
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
       sanitize-html:
-        specifier: ^2.13.0
+        specifier: ^2.17.0
         version: 2.17.0
       source-map-support:
         specifier: ^0.5.21
@@ -84,7 +87,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       typescript-eslint:
-        specifier: ^8.35.0
+        specifier: ^8.39.1
         version: 8.39.1(eslint@9.33.0)(typescript@5.9.2)
       ws:
         specifier: ^8.18.3
@@ -103,14 +106,11 @@ importers:
         specifier: ^3.0.1
         version: 3.0.1
       '@types/sanitize-html':
-        specifier: ^2.11.0
+        specifier: ^2.16.0
         version: 2.16.0
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-      esbuild-plugin-copy:
-        specifier: ^2.1.1
-        version: 2.1.1(esbuild@0.25.9)
       lit:
         specifier: ^3.3.1
         version: 3.3.1
@@ -118,8 +118,8 @@ importers:
   packages/create-base:
     dependencies:
       '@rainbowlaces/base':
-        specifier: 3.15.1
-        version: 3.15.1(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)
+        specifier: 3.15.13
+        version: 3.15.13(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)
 
 packages:
 
@@ -456,8 +456,8 @@ packages:
   '@paralleldrive/cuid2@2.2.2':
     resolution: {integrity: sha512-ZOBkgDwEdoYVlSeRbYYXs0S9MejQofiVYoTbKzy/6GQa39/q5tQU2IX46+shYnUkpEl3wc+J6wRlar7r2EK2xA==}
 
-  '@rainbowlaces/base@3.15.1':
-    resolution: {integrity: sha512-RfmMHzUF38UWILrY4DkQwJSDKJcuEq0rjNr3gHE6WXxCS8YJVwEtToZBO3AkARYFXIHzFooqQ49uZwFkBnXlBA==}
+  '@rainbowlaces/base@3.15.13':
+    resolution: {integrity: sha512-RxMNDO/hEstzTrvX4v9bQinFynyrpv0D7FbCkYMN1g6eDB33l9K0z/Cfq5I6utm58bqeJ6w6/wqM5AfDOlhP0w==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
@@ -653,6 +653,10 @@ packages:
 
   chalk@5.5.0:
     resolution: {integrity: sha512-1tm8DTaJhPBG3bIkVeZt1iZM9GfSX2lzOeDVZH9R9ffRHpmHvxZ/QhgQH/aDTkswQVt+YHdXAdS/In/30OjCbg==}
+    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
+
+  chalk@5.6.2:
+    resolution: {integrity: sha512-7NzBL0rN6fMUW+f7A6Io4h40qQlG+xGmtMxfbnH/K7TAtt8JQWVQK+6g0UXKMeVJoyV5EkkNsErQ8pVD3bLHbA==}
     engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
 
   chardet@2.1.0:
@@ -1923,14 +1927,15 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@rainbowlaces/base@3.15.1(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)':
+  '@rainbowlaces/base@3.15.13(esbuild@0.25.9)(eslint@9.33.0)(nodemon@3.1.10)(typescript@5.9.2)':
     dependencies:
-      chalk: 5.5.0
+      chalk: 5.6.2
       commander: 14.0.0
       cookie: 1.0.2
       cookie-signature: 1.2.2
       dotenv: 17.2.1
       esbuild: 0.25.9
+      esbuild-plugin-copy: 2.1.1(esbuild@0.25.9)
       eslint: 9.33.0
       formidable: 3.5.4
       glob: 11.0.3
@@ -2144,7 +2149,7 @@ snapshots:
 
   chalk-template@1.1.0:
     dependencies:
-      chalk: 5.5.0
+      chalk: 5.6.2
 
   chalk@4.1.2:
     dependencies:
@@ -2152,6 +2157,8 @@ snapshots:
       supports-color: 7.2.0
 
   chalk@5.5.0: {}
+
+  chalk@5.6.2: {}
 
   chardet@2.1.0: {}
 
@@ -2649,7 +2656,7 @@ snapshots:
 
   log-symbols@6.0.0:
     dependencies:
-      chalk: 5.5.0
+      chalk: 5.6.2
       is-unicode-supported: 1.3.0
 
   lru-cache@10.4.3: {}
@@ -2738,7 +2745,7 @@ snapshots:
 
   ora@8.2.0:
     dependencies:
-      chalk: 5.5.0
+      chalk: 5.6.2
       cli-cursor: 5.0.0
       cli-spinners: 2.9.2
       is-interactive: 2.0.0

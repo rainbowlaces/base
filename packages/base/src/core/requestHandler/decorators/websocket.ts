@@ -4,8 +4,13 @@ import { type BasePubSubArgs } from "../../pubsub/types.js";
 import { BaseContext } from "../../module/baseContext.js";
 import { type BaseModule } from "../../module/baseModule.js";
 import { type BaseAction, type ActionOptions } from "../../module/types.js";
-import { type BaseWebSocketActionArgs } from "../websocketContext.js";
+import { type BaseWebSocketMessageArgs } from "../types.js";
 
+/**
+ * @message decorator for handling WebSocket messages
+ * Uses URLPattern for path matching and parameter extraction (handled by BaseContext)
+ * Supports message multiplexing via { path, payload } message structure
+ */
 function message(optionsOrTopic?: ActionOptions | string) {
   return function (
     this: unknown,
@@ -43,11 +48,13 @@ function message(optionsOrTopic?: ActionOptions | string) {
         `/context/execute/${moduleName}/${actionName}`,
         async function (args: BasePubSubArgs) {
           if (!args.context) return;
-          await module.executeAction(target.name, args as BaseWebSocketActionArgs);
+          
+          // BaseContext already extracted URL params and spread them into args
+          await module.executeAction(target.name, args as BaseWebSocketMessageArgs);
         }
       );
     });
   };
 }
 
-export { message, message as websocket };
+export { message };

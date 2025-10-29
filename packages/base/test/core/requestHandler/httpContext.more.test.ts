@@ -11,6 +11,7 @@ import { BaseRouter } from '../../../src/core/requestHandler/baseRouter.js';
 import { request } from '../../../src/core/requestHandler/decorators/request.js';
 import { BaseModule } from '../../../src/core/module/baseModule.js';
 import { registerDi } from '../../../src/core/di/decorators/registerDi.js';
+import { getMockWebSocketManager } from '../../testUtils/utils.js';
 import type { Duplex } from 'stream';
 import { WebSocket } from 'ws';
 
@@ -119,6 +120,7 @@ describe('BaseHttpContext additional scenarios', () => {
     const socket = { destroy: () => {} } as unknown as Duplex;
     const head = Buffer.from('x');
     const wss = { handleUpgrade: (_r: any,_s: any,_h: any, cb: any) => { const ws = { readyState: WebSocket.OPEN, on: ()=>{}, send: ()=>{} }; cb(ws); } } as any;
+    BaseDi.register(getMockWebSocketManager(), { key: 'BaseWebSocketManager', singleton: true, type: 'scalar' });
     BaseDi.register({ requestTimeout: 50, port: 0 }, { key: 'Config.BaseRequestHandler' });
     const ctx = new BaseHttpContext(req, undefined, socket, head, wss);
     assert.strictEqual(ctx.isUpgradable, true);
