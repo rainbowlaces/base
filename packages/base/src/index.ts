@@ -51,6 +51,7 @@ export { BaseInitializer } from "./core/di/baseInitializer.js";
 
 // Module exports
 export { BaseStatic } from "./modules/static/baseStatic.js"
+export { BaseDevtools } from "./modules/devtools/devtools.js";
 
 // Template exports
 export { BaseTemplate } from "./modules/templates/baseTemplate.js";
