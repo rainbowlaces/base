@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.16.2
+
+### Patch Changes
+
+- 087b474: Fix BaseStatic export
+- Updated dependencies [087b474]
+  - @rainbowlaces/base@3.16.2
+
 ## 3.16.1
 
 ### Patch Changes
