@@ -50,6 +50,7 @@ export { BaseAutoload } from "./core/di/baseAutoload.js";
 export { BaseInitializer } from "./core/di/baseInitializer.js";
 
 // Module exports
+export { BaseStatic } from "./modules/static/baseStatic.js"
 
 // Template exports
 export { BaseTemplate } from "./modules/templates/baseTemplate.js";
