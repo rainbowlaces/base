@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.16.3
+
+### Patch Changes
+
+- 1a1adf1: Fix devtools export
+- Updated dependencies [1a1adf1]
+  - @rainbowlaces/base@3.16.3
+
 ## 3.16.2
 
 ### Patch Changes

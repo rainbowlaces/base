@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.16.3
+
+### Patch Changes
+
+- 1a1adf1: Fix devtools export
+
 ## 3.16.2
 
 ### Patch Changes
