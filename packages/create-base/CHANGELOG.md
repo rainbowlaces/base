@@ -1,5 +1,13 @@
 # @rainbowlaces/create-base
 
+## 3.17.1
+
+### Patch Changes
+
+- d0c5a44: Version bumps
+- Updated dependencies [d0c5a44]
+  - @rainbowlaces/base@3.17.1
+
 ## 3.17.0
 
 ### Minor Changes

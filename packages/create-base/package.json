@@ -1,6 +1,6 @@
 {
   "name": "@rainbowlaces/create-base",
-  "version": "3.17.0",
+  "version": "3.17.1",
   "description": "Initializer for the Base Framework.",
   "type": "module",
   "bin": {
@@ -8,7 +8,7 @@
   },
   "scripts": {},
   "dependencies": {
-    "@rainbowlaces/base": "3.17.0"
+    "@rainbowlaces/base": "3.17.1"
   },
   "license": "MIT"
 }

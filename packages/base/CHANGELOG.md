@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.17.1
+
+### Patch Changes
+
+- d0c5a44: Version bumps
+
 ## 3.17.0
 
 ### Minor Changes
