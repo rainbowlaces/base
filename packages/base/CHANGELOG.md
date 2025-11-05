@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.17.0
+
+### Minor Changes
+
+- cb1a5da: New embedMap decorator and improved helper methods for working with Embed and RefMany
+
 ## 3.16.3
 
 ### Patch Changes
