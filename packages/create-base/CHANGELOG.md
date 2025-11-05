@@ -1,5 +1,16 @@
 # @rainbowlaces/create-base
 
+## 3.19.0
+
+### Minor Changes
+
+- 623b9e1: Decorator redesign
+
+### Patch Changes
+
+- Updated dependencies [623b9e1]
+  - @rainbowlaces/base@3.19.0
+
 ## 3.18.0
 
 ### Minor Changes

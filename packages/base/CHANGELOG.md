@@ -1,5 +1,11 @@
 # @rainbowlaces/base
 
+## 3.19.0
+
+### Minor Changes
+
+- 623b9e1: Decorator redesign
+
 ## 3.18.0
 
 ### Minor Changes
