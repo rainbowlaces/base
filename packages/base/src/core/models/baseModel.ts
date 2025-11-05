@@ -15,12 +15,14 @@ import {
   type ModelFieldKeys,
   type ModelFieldValue,
   type ModelEvent,
+  type ModelConstructor,
 } from "./types.js";
 
 import { UniqueID } from "./uniqueId.js";
 import { serialize } from "../../utils/serialization.js";
 import { toUniqueIdAsync, toUniqueIdsAsync } from "./utils.js";
 import { BaseModelCollection } from "./baseModelCollection.js";
+import { resolve } from "../../utils/thunk.js";
 
 // Flexible type for appendTo that supports both reference and embed relations
 type AppendToItem<T extends BaseModel> = 
@@ -186,8 +188,10 @@ export abstract class BaseModel {
         // --- RELATIONSHIP HYDRATION ---
         if (fieldMeta.relation && rawValue != null) {
           const isMany = fieldMeta.relation.cardinality === "many";
+          const isMap = isMany && fieldMeta.relation.structure === "map";
+          const isArray = isMany && (!fieldMeta.relation.structure || fieldMeta.relation.structure === "array");
           const items =
-            isMany && !Array.isArray(rawValue) ? [rawValue] : rawValue;
+            isArray && !Array.isArray(rawValue) ? [rawValue] : rawValue;
 
           if (fieldMeta.relation.type === "reference") {
             if (isMany) {
@@ -202,7 +206,18 @@ export abstract class BaseModel {
             const serializeItem = (item: any) =>
               item instanceof BaseModel ? item.serialize() : item;
 
-            if (isMany) {
+            if (isMap) {
+              // For 'map' embed, store a plain object of serialized data
+              // Handle Map<string, T> or Record<string, T> input
+              const mapData: Record<string, unknown> = rawValue instanceof Map ? 
+                Object.fromEntries(rawValue.entries()) : rawValue as Record<string, unknown>;
+              const serializedMap: Record<string, unknown> = {};
+              for (const [key, item] of Object.entries(mapData)) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                serializedMap[key] = serializeItem(item as any);
+              }
+              processedValue = serializedMap;
+            } else if (isArray) {
               // For 'many' embed, always store an array of serialized data
               const collection =
                 items instanceof BaseModelCollection
@@ -508,6 +523,156 @@ export abstract class BaseModel {
       relationName,
       newRawData as ModelFieldValue<this, K>
     );
+  }
+
+  /**
+   * Set or update a specific entry in an embedMap field.
+   * Accepts either a model instance or serialized data.
+   * 
+   * @param fieldKey - The name of the embedMap field
+   * @param mapKey - The key within the map
+   * @param value - The model instance or serialized data to store
+   */
+  public setInMap<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    mapKey: string,
+    value: T | ModelData<T>
+  ): void {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(
+        `Field '${fieldKey}' is not defined in the schema.`
+      );
+    }
+
+    if (!fieldMeta.relation || fieldMeta.relation.structure !== 'map') {
+      throw new BaseError(
+        `'setInMap' can only be used on an 'embedMap' field.`
+      );
+    }
+
+    // Get current map data (or empty object)
+    const currentData = (this.get(fieldKey as string) as Record<string, unknown>) || {};
+
+    // Serialize the value if it's a model instance
+    let serializedValue: unknown;
+    if (value && typeof value === 'object' && 'serialize' in value) {
+      serializedValue = (value as BaseModel).serialize();
+    } else {
+      serializedValue = value;
+    }
+
+    // Update the map
+    const updatedData = { ...currentData, [mapKey]: serializedValue };
+    
+    this.set(
+      fieldKey as ModelFieldKeys<this>,
+      updatedData as ModelFieldValue<this, ModelFieldKeys<this>>
+    );
+  }
+
+  /**
+   * Get a specific entry from an embedMap field, returning a hydrated model.
+   * 
+   * @param fieldKey - The name of the embedMap field
+   * @param mapKey - The key within the map
+   * @returns The hydrated model instance, or undefined if not found
+   */
+  public async getFromMap<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    mapKey: string
+  ): Promise<T | undefined> {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta?.relation || fieldMeta.relation.structure !== 'map') {
+      throw new BaseError(
+        `'getFromMap' can only be used on an 'embedMap' field.`
+      );
+    }
+
+    // Get current map data
+    const currentData = (this.get(fieldKey as string) as Record<string, ModelData<BaseModel>>) || {};
+    
+    if (!(mapKey in currentData)) {
+      return undefined;
+    }
+
+    // Resolve the model constructor and hydrate
+    const modelConstructor = resolve(fieldMeta.relation.model) as ModelConstructor<T>;
+    const hydratedModel = await modelConstructor.fromData(currentData[mapKey]);
+    
+    return hydratedModel as T;
+  }
+
+  /**
+   * Delete a specific entry from an embedMap field.
+   * 
+   * @param fieldKey - The name of the embedMap field
+   * @param mapKey - The key within the map to delete
+   * @returns true if the entry was deleted, false if it didn't exist
+   */
+  public deleteFromMap<K extends keyof this & string>(
+    fieldKey: K,
+    mapKey: string
+  ): boolean {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta?.relation || fieldMeta.relation.structure !== 'map') {
+      throw new BaseError(
+        `'deleteFromMap' can only be used on an 'embedMap' field.`
+      );
+    }
+
+    // Get current map data
+    const currentData = (this.get(fieldKey as string) as Record<string, unknown>) || {};
+    
+    if (!(mapKey in currentData)) {
+      return false;
+    }
+
+    // Create new object without the key
+    const { [mapKey]: _removed, ...updatedData } = currentData;
+    
+    this.set(
+      fieldKey as ModelFieldKeys<this>,
+      updatedData as ModelFieldValue<this, ModelFieldKeys<this>>
+    );
+    
+    return true;
+  }
+
+  /**
+   * Check if a specific key exists in an embedMap field.
+   * 
+   * @param fieldKey - The name of the embedMap field
+   * @param mapKey - The key within the map to check
+   * @returns true if the key exists, false otherwise
+   */
+  public hasInMap<K extends keyof this & string>(
+    fieldKey: K,
+    mapKey: string
+  ): boolean {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta?.relation || fieldMeta.relation.structure !== 'map') {
+      throw new BaseError(
+        `'hasInMap' can only be used on an 'embedMap' field.`
+      );
+    }
+
+    // Get current map data
+    const currentData = (this.get(fieldKey as string) as Record<string, unknown>) || {};
+    
+    return mapKey in currentData && currentData[mapKey] !== undefined;
   }
 
   public has(key: ModelFieldKeys<this>): boolean {

@@ -84,6 +84,7 @@ export { field } from "./core/models/decorators/field.js";
 export { reference } from "./core/models/decorators/reference.js";
 export { derived } from "./core/models/decorators/derived.js";
 export { embed } from "./core/models/decorators/embed.js";
+export { embedMap } from "./core/models/decorators/embedMap.js";
 export { meta } from "./core/models/decorators/meta.js";
 
 // Logger decorators
@@ -138,6 +139,7 @@ export type {
   RefMany,
   EmbedOne,
   EmbedMany,
+  EmbedMap,
   ModelMetadata,
   FieldMetadata,
   BaseModelSchema,

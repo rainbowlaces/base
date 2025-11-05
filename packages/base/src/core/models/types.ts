@@ -106,6 +106,7 @@ export interface FieldMetadata {
         type: RelationType;
         model: ModelConstructor | Thunk<ModelConstructor>;
         cardinality: Cardinality;
+        structure?: 'array' | 'map';
     };
 }
 
@@ -194,6 +195,11 @@ export interface EmbedMany<T extends BaseModel> {
     (values: MaybeAsync<T[] | BaseModelCollection<T>>): Promise<void>;
 }
 
+export interface EmbedMap<T extends BaseModel> {
+    (): Promise<Map<string, T>>;
+    (value: MaybeAsync<Map<string, T>>): Promise<void>;
+}
+
 type DerivedFieldKeys<T> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [P in keyof T]: T[P] extends () => Derived<any> ? P : never;
@@ -210,6 +216,7 @@ export type ModelData<T extends BaseModel> = {
         : T[P] extends RefMany<infer U> ? DefinedId<U>[]
         : T[P] extends EmbedOne<infer U> ? ModelData<U>
         : T[P] extends EmbedMany<infer U> ? ModelData<U>[]
+        : T[P] extends EmbedMap<infer U> ? Record<string, ModelData<U>>
         // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
         : T[P] extends Function ? never
         : T[P];
@@ -238,5 +245,19 @@ export type ModelRelationItemType<T extends BaseModel, K extends ModelRelationKe
     K extends keyof T 
         ? T[K] extends RefMany<infer U> ? U
         : T[K] extends EmbedMany<infer U> ? U
+        : never
+        : never;
+
+/** Extract only map field keys that support embedMap operations */
+export type ModelMapKeys<T extends BaseModel> = {
+    [P in keyof T]: T[P] extends EmbedMap<infer _U>
+        ? P extends string ? P : never
+        : never;
+}[keyof T];
+
+/** Extract the model type for a map field */
+export type ModelMapItemType<T extends BaseModel, K extends ModelMapKeys<T>> = 
+    K extends keyof T 
+        ? T[K] extends EmbedMap<infer U> ? U
         : never
         : never;
