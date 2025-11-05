@@ -1,11 +1,10 @@
 // src/core/models/baseModelCollection.ts
-import { type BaseModel } from "./baseModel.js";
-import { type ModelData, type ModelConstructor, type NoDerivedModelData } from "./types.js";
+import { type ModelData, type ModelConstructor, type NoDerivedModelData, type IBaseModel } from "./types.js";
 
 /**
  * A concrete, minimal collection that implements lazy iteration.
  */
-export class BaseModelCollection<T extends BaseModel> implements AsyncIterable<T> {
+export class BaseModelCollection<T extends IBaseModel> implements AsyncIterable<T> {
     protected readonly source: Iterable<ModelData<T>> | AsyncIterable<ModelData<T>>;
     protected readonly modelConstructor: ModelConstructor<T>;
 
@@ -26,12 +25,12 @@ export class BaseModelCollection<T extends BaseModel> implements AsyncIterable<T
         if (Symbol.asyncIterator in this.source) {
             // Handle AsyncIterable - lazy loading
             for await (const item of this.source) {
-                yield await this.modelConstructor.fromData(item);
+                yield await this.modelConstructor.fromData(item) as T;
             }
         } else {
             // Handle Iterable - lazy loading  
             for (const item of this.source) {
-                yield await this.modelConstructor.fromData(item);
+                yield await this.modelConstructor.fromData(item) as T;
             }
         }
     }
@@ -46,6 +45,6 @@ export class BaseModelCollection<T extends BaseModel> implements AsyncIterable<T
 
     async serialize(): Promise<NoDerivedModelData<T>[]> {
         const models = await this.toArray();
-        return models.map(model => model.serialize());
+        return models.map(model => model.serialize() as NoDerivedModelData<T>);
     }
 }

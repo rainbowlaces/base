@@ -1,10 +1,42 @@
-import { type BaseModel } from './baseModel.js';
 import { type BaseIdentifiableModel } from './baseIdentifiableModel.js';
 import { type BaseModelCollection } from './baseModelCollection.js';
 import { type UniqueID } from './uniqueId.js';
 import { type Thunk } from '../../utils/thunk.js';
 import { type MaybeAsync, type Scalar } from '../types.js';
 import { type Identifiable, type DefinedId, type AsyncDefinedId, type AsyncDefinedIds } from './utils.js';
+
+/**
+ * Minimal interface for BaseModel to break circular dependencies.
+ * Intermediate layers (BaseModelCore, BaseModelRelations) reference this interface
+ * instead of the concrete BaseModel class to avoid circular type dependencies.
+ * The concrete BaseModel class implements this interface with proper generic constraints.
+ */
+export interface IBaseModel {
+  // Instance members needed by intermediate layers
+  get(key: string): unknown;
+  set(key: string, value: unknown): void;
+  has(key: string): boolean;
+  serialize(): Record<string, unknown>;
+}
+
+/**
+ * Type that exposes protected internal methods for decorator use.
+ * Decorators can cast models to this type to access _internalGet/_internalSet.
+ */
+export interface IBaseModelDecoratorAccessor {
+  _internalGet<T>(key: string): T;
+  _internalSet(key: string, value: unknown): void;
+}
+
+/**
+ * Constructor type for IBaseModel.
+ * Used in intermediate layers when accessing `this.constructor`.
+ */
+export interface IBaseModelConstructor {
+  new(): IBaseModel;
+  getProcessedSchema(): BaseModelSchema;
+  fromData(data: Record<string, unknown>): Promise<IBaseModel>;
+}
 
 export type Cardinality = 'one' | 'many';
 export type RelationType = 'reference' | 'embed';
@@ -123,14 +155,14 @@ export interface BaseModelSchema {
 }
 
 export type ModelEventType = "create" | "update" | "delete";
-export interface ModelEvent<E extends BaseModel = BaseModel> {
+export interface ModelEvent<E extends IBaseModel = IBaseModel> {
     id: UniqueID;
     type: ModelEventType;
-    model: BaseModel;
+    model: IBaseModel;
     data: NoDerivedModelData<E>;
 }
 
-export type ModelConstructor<T extends BaseModel = BaseModel> = (new () => T) & typeof BaseModel;
+export type ModelConstructor<T extends IBaseModel = IBaseModel> = (new () => T) & IBaseModelConstructor;
 
 // Options for the @field decorator
 export interface FieldOptions<T = unknown> {
@@ -156,11 +188,11 @@ export type DefinedIds<T extends Identifiable> = DefinedId<T>[];
 // --- Capability Interfaces (as per refactoring spec) ---
 
 export interface Persistable {
-    persist(): Promise<void>;
+    _onPersist(): Promise<void>;
 }
 
 export interface Deletable {
-    delete(): Promise<void>;
+    _onDelete(): Promise<void>;
 }
 
 // Collection Capabilities
@@ -185,17 +217,17 @@ export interface RefMany<T extends BaseIdentifiableModel> {
     (values: AsyncDefinedIds<T>): Promise<void>;
 }
 
-export interface EmbedOne<T extends BaseModel> {
+export interface EmbedOne<T extends IBaseModel> {
     (): Promise<T | undefined>;
     (value: MaybeAsync<T>): Promise<void>;
 }
 
-export interface EmbedMany<T extends BaseModel> {
+export interface EmbedMany<T extends IBaseModel> {
     (): Promise<BaseModelCollection<T>>;
     (values: MaybeAsync<T[] | BaseModelCollection<T>>): Promise<void>;
 }
 
-export interface EmbedMap<T extends BaseModel> {
+export interface EmbedMap<T extends IBaseModel> {
     (): Promise<Map<string, T>>;
     (value: MaybeAsync<Map<string, T>>): Promise<void>;
 }
@@ -205,11 +237,11 @@ type DerivedFieldKeys<T> = {
   [P in keyof T]: T[P] extends () => Derived<any> ? P : never;
 }[keyof T];
 
-export type NoDerivedModelData<T extends BaseModel> = Omit<ModelData<T>, DerivedFieldKeys<T>>;
+export type NoDerivedModelData<T extends IBaseModel> = Omit<ModelData<T>, DerivedFieldKeys<T>>;
 
 type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
 
-export type ModelData<T extends BaseModel> = {
+export type ModelData<T extends IBaseModel> = {
     [P in keyof T]?:
         T[P] extends () => Derived<infer U> ? Awaited<U>
         : T[P] extends RefOne<infer U> ? DefinedId<U>
@@ -225,14 +257,14 @@ export type ModelData<T extends BaseModel> = {
 // --- TYPE-SAFE KEY UTILITIES ---
 
 /** Extract valid field keys from a model instance - only data fields, not methods */
-export type ModelFieldKeys<T extends BaseModel> = string & keyof ModelData<T>;
+export type ModelFieldKeys<T extends IBaseModel> = string & keyof ModelData<T>;
 
 /** Extract the type of a specific field from a model */
-export type ModelFieldValue<T extends BaseModel, K extends ModelFieldKeys<T>> = 
+export type ModelFieldValue<T extends IBaseModel, K extends ModelFieldKeys<T>> = 
     K extends keyof ModelData<T> ? ModelData<T>[K] : unknown;
 
 /** Extract only relation field keys that support 'many' cardinality for appendTo */
-export type ModelRelationKeys<T extends BaseModel> = {
+export type ModelRelationKeys<T extends IBaseModel> = {
     [P in keyof T]: T[P] extends RefMany<infer _U> 
         ? P extends string ? P : never
         : T[P] extends EmbedMany<infer _U>
@@ -241,7 +273,7 @@ export type ModelRelationKeys<T extends BaseModel> = {
 }[keyof T];
 
 /** Extract the item type for a many-relation field */
-export type ModelRelationItemType<T extends BaseModel, K extends ModelRelationKeys<T>> = 
+export type ModelRelationItemType<T extends IBaseModel, K extends ModelRelationKeys<T>> = 
     K extends keyof T 
         ? T[K] extends RefMany<infer U> ? U
         : T[K] extends EmbedMany<infer U> ? U
@@ -249,14 +281,14 @@ export type ModelRelationItemType<T extends BaseModel, K extends ModelRelationKe
         : never;
 
 /** Extract only map field keys that support embedMap operations */
-export type ModelMapKeys<T extends BaseModel> = {
+export type ModelMapKeys<T extends IBaseModel> = {
     [P in keyof T]: T[P] extends EmbedMap<infer _U>
         ? P extends string ? P : never
         : never;
 }[keyof T];
 
 /** Extract the model type for a map field */
-export type ModelMapItemType<T extends BaseModel, K extends ModelMapKeys<T>> = 
+export type ModelMapItemType<T extends IBaseModel, K extends ModelMapKeys<T>> = 
     K extends keyof T 
         ? T[K] extends EmbedMap<infer U> ? U
         : never

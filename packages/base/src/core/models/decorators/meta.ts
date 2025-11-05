@@ -5,7 +5,7 @@ import { type ModelMetadata } from "../types.js";
  * 
  * @example
  * @meta('mongo', { collection: 'users' })
- * class User extends BaseModel<User> { }
+ * class User extends IBaseModel<User> { }
  */
 export function meta<K extends keyof ModelMetadata>(key: K, value: ModelMetadata[K]) {
     return (target: unknown, _context: ClassDecoratorContext) => {

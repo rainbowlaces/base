@@ -20,12 +20,12 @@ export class TestUser extends BaseIdentifiableModel implements Persistable, Dele
     @field({ default: () => new Date() })
     accessor createdAt!: Date;
 
-    async persist(): Promise<void> {
+    async _onPersist(): Promise<void> {
         // Mock persistence - just mark as persisted
         (this as any).persistCalled = true;
     }
 
-    async delete(): Promise<void> {
+    async _onDelete(): Promise<void> {
         // Mock deletion
         (this as any).deleteCalled = true;
     }

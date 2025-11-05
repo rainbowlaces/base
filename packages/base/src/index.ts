@@ -26,7 +26,7 @@ export { BaseClassConfig } from "./core/config/types.js";
 export { BaseConfigProvider, BaseConfigRegistry } from "./core/config/baseConfigRegistry.js";
 
 // Models exports
-export { BaseModel } from "./core/models/baseModel.js";
+export { BaseModel as BaseModel } from "./core/models/baseModel.js";
 export { BaseIdentifiableModel } from "./core/models/baseIdentifiableModel.js";
 export { BaseModelCollection } from "./core/models/baseModelCollection.js";
 export { UniqueID } from "./core/models/uniqueId.js";

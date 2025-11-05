@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { type BaseModel } from "../baseModel.js";
-import { type FieldOptions, type FieldMetadata, type Derived } from "../types.js";
+import { type FieldOptions, type FieldMetadata, type Derived, type IBaseModel } from "../types.js";
 import { FIELD_METADATA_SYMBOL } from "./field.js";
 
 type Target<M, T> = (this: M) => Derived<T>
@@ -16,7 +15,7 @@ type Target<M, T> = (this: M) => Derived<T>
  *
  * @example
  * @model
- * class Article extends BaseModel {
+ * class Article extends IBaseModel {
  * @derived()
  * async wordCount(): Derived<Promise<number>> {
  * const content = await this.content(); // Assuming content is async
@@ -25,7 +24,7 @@ type Target<M, T> = (this: M) => Derived<T>
  * }
  */
 export function derived<T>(opts: FieldOptions<T> = {}) {
-  return function <M extends BaseModel>(
+  return function <M extends IBaseModel>(
     target: Target<M, T>,
     ctx: ClassMethodDecoratorContext<M, Target<M, T>>
   ) {

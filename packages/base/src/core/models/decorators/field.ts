@@ -1,11 +1,10 @@
-import { type BaseModel } from "../baseModel.js";
-import { type FieldOptions, type FieldMetadata } from "../types.js";
+import { type FieldOptions, type FieldMetadata, type IBaseModel, type IBaseModelDecoratorAccessor } from "../types.js";
 
 export const FIELD_METADATA_SYMBOL = Symbol.for("model.field-meta");
 
 export function field<T>(opts: FieldOptions<T> = {}) {
   // The signature now only accepts an accessor context.
-  return function <M extends BaseModel>(
+  return function <M extends IBaseModel>(
     _target: unknown,
     ctx: ClassAccessorDecoratorContext<M, T>
   ) {
@@ -24,8 +23,12 @@ export function field<T>(opts: FieldOptions<T> = {}) {
         ...(relation && { relation })
     };
 
-    function getter(this: M): T { return this._internalGet<T>(name); }
-    function setter(this: M, v: T) { this._internalSet<T>(name, v); }
+    function getter(this: M): T { 
+      return (this as M & IBaseModelDecoratorAccessor)._internalGet<T>(name); 
+    }
+    function setter(this: M, v: T) { 
+      (this as M & IBaseModelDecoratorAccessor)._internalSet(name, v); 
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (getter as any)[FIELD_METADATA_SYMBOL] = { name, meta };

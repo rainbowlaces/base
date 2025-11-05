@@ -24,7 +24,8 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     }
 
     // --- Implementation of Persistable and Deletable ---
-    public async persist(): Promise<void> {
+    // Note: These are internal hooks called by save() and remove()
+    public async _onPersist(): Promise<void> {
         const store = this.getClassStore();
         const id = this.id.toString();
         const data = this.serialize();
@@ -33,7 +34,7 @@ export abstract class MemoryModel extends BaseIdentifiableModel implements Persi
     }
 
 
-    public async delete(): Promise<void> {
+    public async _onDelete(): Promise<void> {
         const store = this.getClassStore();
         store.delete(this.id.toString());
     }

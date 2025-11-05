@@ -54,7 +54,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         class MockPersistableProfile extends TestProfile implements Persistable {
             persistCalled = false;
             
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.persistCalled = true;
             }
         }
@@ -177,7 +177,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         class MockPersistableProfile extends TestProfile implements Persistable {
             persistCalled = false;
             
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.persistCalled = true;
             }
         }
@@ -223,7 +223,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         class MockDeletableProfile extends TestProfile implements Deletable {
             deleteCalled = false;
             
-            async delete(): Promise<void> {
+            async _onDelete(): Promise<void> {
                 this.deleteCalled = true;
             }
         }
@@ -326,7 +326,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         class FailingPersistableProfile extends TestProfile implements Persistable {
             persistCalled = false;
             
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.persistCalled = true;
                 throw new Error('Database connection failed');
             }
@@ -366,7 +366,7 @@ describe('BaseModel: Instance State & Data Management', () => {
         class SuccessfulPersistableProfile extends TestProfile implements Persistable {
             persistCalled = false;
             
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.persistCalled = true;
             }
         }
@@ -486,7 +486,7 @@ describe('BaseModel: Event System', () => {
 
     it('should generate unique event IDs for each event', async () => {
         class MockEventProfile extends TestProfile implements Persistable {
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 // Mock persistence
             }
         }
@@ -516,7 +516,7 @@ describe('BaseModel: Event System', () => {
 
     it('should include correct model reference in events', async () => {
         class MockEventProfile extends TestProfile implements Persistable {
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 // Mock persistence
             }
         }
@@ -539,7 +539,7 @@ describe('BaseModel: Event System', () => {
 
     it('should maintain event data consistency with model serialization', async () => {
         class MockEventProfile extends TestProfile implements Persistable {
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 // Mock persistence
             }
         }
@@ -566,7 +566,7 @@ describe('BaseModel: Event System', () => {
 
     it('should publish events with empty data when model has no set fields', async () => {
         class MockEventProfile extends TestProfile implements Persistable {
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 // Mock persistence
             }
         }
@@ -588,7 +588,7 @@ describe('BaseModel: Event System', () => {
 
     it('should publish events with complex nested/embedded data', async () => {
         class MockEventProfile extends TestProfile implements Persistable {
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 // Mock persistence
             }
         }
@@ -623,7 +623,7 @@ describe('BaseModel: Event System', () => {
     it('should handle rapid multiple save operations with unique events', async () => {
         class MockRapidProfile extends TestProfile implements Persistable {
             saveCount = 0;
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.saveCount++;
             }
         }
@@ -674,7 +674,7 @@ describe('BaseModel: Event System', () => {
 
         class MockFailureProfile extends TestProfile implements Persistable {
             persistCalled = false;
-            async persist(): Promise<void> {
+            async _onPersist(): Promise<void> {
                 this.persistCalled = true;
             }
         }

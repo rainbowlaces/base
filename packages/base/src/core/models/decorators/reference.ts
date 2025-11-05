@@ -1,11 +1,10 @@
 // We use the same 'any' escape hatch to keep the implementation simple. 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { type BaseModel } from "../baseModel.js";
 import { type BaseIdentifiableModel } from "../baseIdentifiableModel.js";
 import { type BaseModelCollection } from "../baseModelCollection.js";
 import { BaseError } from "../../baseErrors.js";
-import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds, type RefOne, type RefMany, type ModelConstructor, type FieldMetadata } from "../types.js";
+import { type FieldOptions, type Cardinality, type AsyncDefinedId, type AsyncDefinedIds, type RefOne, type RefMany, type ModelConstructor, type FieldMetadata, type IBaseModel, type IBaseModelDecoratorAccessor } from "../types.js";
 import { type UniqueID } from "../uniqueId.js";
 import { toUniqueIdAsync, toUniqueIdsAsync } from "../utils.js";
 import { field, FIELD_METADATA_SYMBOL } from "./field.js";
@@ -15,18 +14,18 @@ import { type Thunk, resolve } from "../../../utils/thunk.js";
 export function reference<T extends BaseIdentifiableModel>(
     model: ModelConstructor<T> | Thunk<ModelConstructor<T>>,
     options: { cardinality: "one" } & FieldOptions<T>
-): <M extends BaseModel>(target: ClassAccessorDecoratorTarget<M, RefOne<T>>, context: ClassAccessorDecoratorContext) => ClassAccessorDecoratorResult<M, RefOne<T>>;
+): <M extends IBaseModel>(target: ClassAccessorDecoratorTarget<M, RefOne<T>>, context: ClassAccessorDecoratorContext) => ClassAccessorDecoratorResult<M, RefOne<T>>;
 
 export function reference<T extends BaseIdentifiableModel>(
     model: ModelConstructor<T> | Thunk<ModelConstructor<T>>,
     options: { cardinality: "many" } & FieldOptions<T[]>
-): <M extends BaseModel>(target: ClassAccessorDecoratorTarget<M, RefMany<T>>, context: ClassAccessorDecoratorContext) => ClassAccessorDecoratorResult<M, RefMany<T>>;
+): <M extends IBaseModel>(target: ClassAccessorDecoratorTarget<M, RefMany<T>>, context: ClassAccessorDecoratorContext) => ClassAccessorDecoratorResult<M, RefMany<T>>;
 
 export function reference<T extends BaseIdentifiableModel>(
     model: ModelConstructor<T> | Thunk<ModelConstructor<T>>,
     options: { cardinality: Cardinality } & FieldOptions<T | T[]>
 ) {
-    return function<M extends BaseModel>(target: unknown, context: ClassAccessorDecoratorContext<M, any>) {
+    return function<M extends IBaseModel>(target: unknown, context: ClassAccessorDecoratorContext<M, any>) {
         const propertyName = context.name as string;
 
         // 1. Delegate to the @field decorator factory.
@@ -59,14 +58,14 @@ export function reference<T extends BaseIdentifiableModel>(
                         const value = args[0];
                         if (value !== undefined) {
                             const resolvedId = await toUniqueIdAsync(value as any);
-                            this._internalSet(propertyName, resolvedId);
+                            (this as M & IBaseModelDecoratorAccessor)._internalSet(propertyName, resolvedId);
                         } else {
-                            this._internalSet(propertyName, undefined);
+                            (this as M & IBaseModelDecoratorAccessor)._internalSet(propertyName, undefined);
                         }
                         return undefined;
                     } else {
                         // Getter mode: resolve the reference
-                        const id = this._internalGet<UniqueID>(propertyName);
+                        const id = (this as M & IBaseModelDecoratorAccessor)._internalGet<UniqueID>(propertyName);
                         if (!id) return undefined;
                         return (resolvedModel as any).byId(id);
                     }
@@ -79,7 +78,7 @@ export function reference<T extends BaseIdentifiableModel>(
                         const value = args[0];
                         if (value) {
                             const resolvedIds = await toUniqueIdsAsync(value as any);
-                            this._internalSet(propertyName, resolvedIds);
+                            (this as M & IBaseModelDecoratorAccessor)._internalSet(propertyName, resolvedIds);
                         } else {
                             return (resolvedModel as any).byIds([]);
                         }
@@ -87,7 +86,7 @@ export function reference<T extends BaseIdentifiableModel>(
                         return (resolvedModel as any).byIds([]);
                     } else {
                         // Getter mode: resolve the references
-                        const ids = this._internalGet<UniqueID[]>(propertyName) || [];
+                        const ids = (this as M & IBaseModelDecoratorAccessor)._internalGet<UniqueID[]>(propertyName) || [];
                         return (resolvedModel as any).byIds(ids);
                     }
                 };

@@ -2,10 +2,9 @@
 
 import { registerDi } from "../../di/decorators/registerDi.js";
 import { FIELD_METADATA_SYMBOL } from "./field.js";
-import { type BaseModel } from "../baseModel.js";
-import { type ModelConstructor, type FieldMetadata } from "../types.js";
+import { type ModelConstructor, type FieldMetadata, type IBaseModel } from "../types.js";
 
-export function model<T extends BaseModel>(ctor: ModelConstructor<T>): void {
+export function model<T extends IBaseModel>(ctor: ModelConstructor<T>): void {
   let currentProto = ctor.prototype;
   
   while (currentProto && currentProto !== Object.prototype) {

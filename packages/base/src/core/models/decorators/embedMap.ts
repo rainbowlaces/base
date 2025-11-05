@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { type BaseModel } from "../baseModel.js";
 import { BaseError } from "../../baseErrors.js";
 import { 
     type FieldOptions, 
@@ -8,7 +7,9 @@ import {
     type ModelConstructor, 
     type EmbedMap, 
     type NoDerivedModelData,
-    type FieldMetadata
+    type FieldMetadata,
+    type IBaseModel,
+    type IBaseModelDecoratorAccessor,
 } from "../types.js";
 import { field, FIELD_METADATA_SYMBOL } from "./field.js";
 import { type Thunk, resolve } from "../../../utils/thunk.js";
@@ -23,11 +24,11 @@ import { type MaybeAsync } from "../../types.js";
  * @param options - Field options (readOnly, default, etc.)
  * @returns Decorator function that creates a function-like accessor
  */
-export function embedMap<T extends BaseModel>(
-    model: ModelConstructor | Thunk<ModelConstructor>,
+export function embedMap<T extends IBaseModel>(
+    model: ModelConstructor<T> | Thunk<ModelConstructor<T>>,
     options: FieldOptions = {}
-): (target: unknown, context: ClassAccessorDecoratorContext<BaseModel, EmbedMap<T>>) => ClassAccessorDecoratorResult<BaseModel, EmbedMap<T>> {
-    return function(target: unknown, context: ClassAccessorDecoratorContext<BaseModel, EmbedMap<T>>) {
+): (target: unknown, context: ClassAccessorDecoratorContext<IBaseModel, EmbedMap<T>>) => ClassAccessorDecoratorResult<IBaseModel, EmbedMap<T>> {
+    return function(target: unknown, context: ClassAccessorDecoratorContext<IBaseModel, EmbedMap<T>>) {
         const propertyName = context.name as string;
 
         // 1. Attach metadata using @field decorator
@@ -51,11 +52,11 @@ export function embedMap<T extends BaseModel>(
         };
 
         // 4. Create the function-like accessor for the embedded map relationship
-        const accessor = function(this: BaseModel): EmbedMap<T> {
+        const accessor = function(this: IBaseModel): EmbedMap<T> {
             // Resolve the model constructor from Thunk if needed
-            const resolvedModel = resolve(model) as ModelConstructor<T>;
+            const resolvedModel = resolve(model);
             
-            return async function(this: BaseModel, value?: MaybeAsync<Map<string, T>>): Promise<Map<string, T> | void> {
+            return async function(this: IBaseModel, value?: MaybeAsync<Map<string, T>>): Promise<Map<string, T> | void> {
                 if (arguments.length > 0) {
                     // Setter: serialize the Map to a plain object
                     let resolvedValue = value;
@@ -67,21 +68,21 @@ export function embedMap<T extends BaseModel>(
                     
                     // Handle undefined/null as empty map
                     if (resolvedValue === undefined || resolvedValue === null) {
-                        this._internalSet(propertyName, {});
+                        (this as IBaseModel & IBaseModelDecoratorAccessor)._internalSet(propertyName, {});
                         return;
                     }
                     
                     // Convert Map<string, T> to Record<string, ModelData<T>>
                     const dataToSet: Record<string, NoDerivedModelData<T>> = {};
                     for (const [key, model] of resolvedValue.entries()) {
-                        dataToSet[key] = model.serialize();
+                        dataToSet[key] = model.serialize() as NoDerivedModelData<T>;
                     }
                     
-                    this._internalSet(propertyName, dataToSet);
+                    (this as IBaseModel & IBaseModelDecoratorAccessor)._internalSet(propertyName, dataToSet);
                     return;
                 } else {
                     // Getter: deserialize the plain object to a Map
-                    const rawData = this._internalGet<Record<string, ModelData<T>>>(propertyName);
+                    const rawData = (this as IBaseModel & IBaseModelDecoratorAccessor)._internalGet<Record<string, ModelData<T>>>(propertyName);
                     
                     // Handle undefined/null as empty map
                     if (rawData === undefined || rawData === null) {
@@ -91,8 +92,8 @@ export function embedMap<T extends BaseModel>(
                     // Convert Record<string, ModelData<T>> to Map<string, T>
                     const entries: [string, T][] = [];
                     for (const [key, data] of Object.entries(rawData)) {
-                        const hydratedModel = await resolvedModel.fromData(data);
-                        entries.push([key, hydratedModel]);
+                        const hydratedModel = await resolvedModel.fromData(data as Record<string, unknown>);
+                        entries.push([key, hydratedModel as T]);
                     }
                     
                     return new Map<string, T>(entries);
