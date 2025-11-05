@@ -48,8 +48,8 @@ export function embed<T extends BaseModel>(
         }
 
         // 3. Add relation metadata
-        const fieldMetadata = (fieldResult.get as any)[FIELD_METADATA_SYMBOL] as FieldMetadata;
-        fieldMetadata.relation = { type: 'embed', model, cardinality: options.cardinality };
+        const fieldMetadataContainer = (fieldResult.get as any)[FIELD_METADATA_SYMBOL] as { name: string; meta: FieldMetadata };
+        fieldMetadataContainer.meta.relation = { type: 'embed', model, cardinality: options.cardinality };
 
         // 4. Create the function-like accessor for the embedded relationship
         const accessor = function(this: BaseModel): EmbedOne<T> | EmbedMany<T> {
@@ -92,7 +92,7 @@ export function embed<T extends BaseModel>(
         };
 
         // 5. Copy the metadata from the field decorator to our accessor
-        (accessor as any)[FIELD_METADATA_SYMBOL] = fieldMetadata;
+        (accessor as any)[FIELD_METADATA_SYMBOL] = fieldMetadataContainer;
 
         // 6. Return the descriptor with function-like accessor
         return {

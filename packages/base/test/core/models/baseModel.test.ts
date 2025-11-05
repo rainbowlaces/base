@@ -1039,13 +1039,13 @@ describe('BaseModel: appendTo Method', () => {
         const item = await TestItem.create({ name: 'Item 1' });
 
         // This should throw at runtime because 'item' is not a many relationship
-        assert.rejects(
+        await assert.rejects(
             async () => {
                 // We need to cast because TypeScript should prevent this at compile time
                 await (container as any).appendTo('item', item);
             },
             {
-                message: `'appendTo' can only be used on a 'many' relationship field.`
+                message: `'appendToArray' can only be used on a 'many' relationship field.`
             },
             'Should throw error for non-many fields'
         );

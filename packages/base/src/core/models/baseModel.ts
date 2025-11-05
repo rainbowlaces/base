@@ -456,7 +456,27 @@ export abstract class BaseModel {
     this.#data[key] = convertedValue;
   }
 
+  /**
+   * Append items to an embedMany or refMany field.
+   * 
+   * @param relationName - The name of the many relationship field
+   * @param itemsToAdd - Item(s) to append (model instances, IDs, or serialized data)
+   * @deprecated Use appendToArray instead for consistency with other array helper methods
+   */
   protected async appendTo<K extends keyof this & string, T extends BaseModel>(
+    relationName: K,
+    itemsToAdd: AppendToItems<T>
+  ): Promise<void> {
+    return this.appendToArray(relationName, itemsToAdd);
+  }
+
+  /**
+   * Append items to an embedMany or refMany field.
+   * 
+   * @param relationName - The name of the many relationship field
+   * @param itemsToAdd - Item(s) to append (model instances, IDs, or serialized data)
+   */
+  protected async appendToArray<K extends keyof this & string, T extends BaseModel>(
     relationName: K,
     itemsToAdd: AppendToItems<T>
   ): Promise<void> {
@@ -471,7 +491,7 @@ export abstract class BaseModel {
 
     if (!fieldMeta || !isMany) {
       throw new BaseError(
-        `'appendTo' can only be used on a 'many' relationship field.`
+        `'appendToArray' can only be used on a 'many' relationship field.`
       );
     }
 
@@ -526,6 +546,269 @@ export abstract class BaseModel {
   }
 
   /**
+   * Get a specific item from an embedMany field by index, returning a hydrated model.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param index - The index of the item to retrieve
+   * @returns The hydrated model instance, or undefined if index is out of bounds
+   */
+  protected async getFromArray<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    index: number
+  ): Promise<T | undefined> {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'getFromArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as Array<ModelData<BaseModel> | UniqueID>) || [];
+    
+    if (index < 0 || index >= currentData.length) {
+      return undefined;
+    }
+
+    const item = currentData[index];
+
+    // Handle reference relations - return the ID
+    if (fieldMeta.relation?.type === 'reference') {
+      return item as unknown as T;
+    }
+
+    // Handle embed relations - hydrate the model
+    const modelConstructor = resolve(fieldMeta.relation!.model) as ModelConstructor<T>;
+    const hydratedModel = await modelConstructor.fromData(item as ModelData<T>);
+    
+    return hydratedModel;
+  }
+
+  /**
+   * Set or update a specific item in an embedMany field by index.
+   * Accepts either a model instance or serialized data.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param index - The index of the item to update
+   * @param value - The model instance or serialized data to store
+   */
+  protected setInArray<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    index: number,
+    value: T | ModelData<T>
+  ): void {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'setInArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as unknown[]) || [];
+    
+    if (index < 0 || index >= currentData.length) {
+      throw new BaseError(`Index ${index} is out of bounds for array with length ${currentData.length}.`);
+    }
+
+    // Serialize the value if it's a model instance
+    let serializedValue: unknown;
+    if (value && typeof value === 'object' && 'serialize' in value) {
+      serializedValue = (value as BaseModel).serialize();
+    } else {
+      serializedValue = value;
+    }
+
+    const updatedData = [...currentData];
+    updatedData[index] = serializedValue;
+    
+    this.set(
+      fieldKey as ModelFieldKeys<this>,
+      updatedData as ModelFieldValue<this, ModelFieldKeys<this>>
+    );
+  }
+
+  /**
+   * Delete a specific item from an embedMany field by index.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param index - The index of the item to delete
+   * @returns true if the item was deleted, false if index was out of bounds
+   */
+  protected deleteFromArray<K extends keyof this & string>(
+    fieldKey: K,
+    index: number
+  ): boolean {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'deleteFromArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as unknown[]) || [];
+    
+    if (index < 0 || index >= currentData.length) {
+      return false;
+    }
+
+    const updatedData = [...currentData.slice(0, index), ...currentData.slice(index + 1)];
+    
+    this.set(
+      fieldKey as ModelFieldKeys<this>,
+      updatedData as ModelFieldValue<this, ModelFieldKeys<this>>
+    );
+    
+    return true;
+  }
+
+  /**
+   * Check if a specific index exists in an embedMany field.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param index - The index to check
+   * @returns true if the index exists, false otherwise
+   */
+  protected hasInArray<K extends keyof this & string>(
+    fieldKey: K,
+    index: number
+  ): boolean {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'hasInArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as unknown[]) || [];
+    
+    return index >= 0 && index < currentData.length;
+  }
+
+  /**
+   * Find the first item in an embedMany field that matches the predicate.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param predicate - Function to test each item
+   * @returns The first matching hydrated model, or undefined if not found
+   */
+  protected async findInArray<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    predicate: (item: T, index: number) => boolean | Promise<boolean>
+  ): Promise<T | undefined> {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'findInArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as Array<ModelData<BaseModel>>) || [];
+    
+    if (fieldMeta.relation?.type === 'reference') {
+      throw new BaseError(`'findInArray' is not supported for reference relations. Use 'filterArray' to get IDs.`);
+    }
+
+    const modelConstructor = resolve(fieldMeta.relation!.model) as ModelConstructor<T>;
+    
+    for (let i = 0; i < currentData.length; i++) {
+      const hydratedModel = await modelConstructor.fromData(currentData[i] as ModelData<T>);
+      const matches = await Promise.resolve(predicate(hydratedModel, i));
+      
+      if (matches) {
+        return hydratedModel;
+      }
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * Filter items in an embedMany field that match the predicate.
+   * 
+   * @param fieldKey - The name of the embedMany field
+   * @param predicate - Function to test each item
+   * @returns Array of matching hydrated models
+   */
+  protected async filterArray<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K,
+    predicate: (item: T, index: number) => boolean | Promise<boolean>
+  ): Promise<T[]> {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isArray = fieldMeta.relation?.cardinality === 'many' && 
+                    (!fieldMeta.relation.structure || fieldMeta.relation.structure === 'array');
+
+    if (!isArray) {
+      throw new BaseError(`'filterArray' can only be used on an 'embedMany' or 'refMany' field with array structure.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as Array<ModelData<BaseModel>>) || [];
+    
+    if (fieldMeta.relation?.type === 'reference') {
+      throw new BaseError(`'filterArray' is not supported for reference relations.`);
+    }
+
+    const modelConstructor = resolve(fieldMeta.relation!.model) as ModelConstructor<T>;
+    const results: T[] = [];
+    
+    for (let i = 0; i < currentData.length; i++) {
+      const hydratedModel = await modelConstructor.fromData(currentData[i] as ModelData<T>);
+      const matches = await Promise.resolve(predicate(hydratedModel, i));
+      
+      if (matches) {
+        results.push(hydratedModel);
+      }
+    }
+    
+    return results;
+  }
+
+  /**
    * Set or update a specific entry in an embedMap field.
    * Accepts either a model instance or serialized data.
    * 
@@ -533,7 +816,7 @@ export abstract class BaseModel {
    * @param mapKey - The key within the map
    * @param value - The model instance or serialized data to store
    */
-  public setInMap<K extends keyof this & string, T extends BaseModel>(
+  protected setInMap<K extends keyof this & string, T extends BaseModel>(
     fieldKey: K,
     mapKey: string,
     value: T | ModelData<T>
@@ -581,7 +864,7 @@ export abstract class BaseModel {
    * @param mapKey - The key within the map
    * @returns The hydrated model instance, or undefined if not found
    */
-  public async getFromMap<K extends keyof this & string, T extends BaseModel>(
+  protected async getFromMap<K extends keyof this & string, T extends BaseModel>(
     fieldKey: K,
     mapKey: string
   ): Promise<T | undefined> {
@@ -616,7 +899,7 @@ export abstract class BaseModel {
    * @param mapKey - The key within the map to delete
    * @returns true if the entry was deleted, false if it didn't exist
    */
-  public deleteFromMap<K extends keyof this & string>(
+  protected deleteFromMap<K extends keyof this & string>(
     fieldKey: K,
     mapKey: string
   ): boolean {
@@ -655,7 +938,7 @@ export abstract class BaseModel {
    * @param mapKey - The key within the map to check
    * @returns true if the key exists, false otherwise
    */
-  public hasInMap<K extends keyof this & string>(
+  protected hasInMap<K extends keyof this & string>(
     fieldKey: K,
     mapKey: string
   ): boolean {

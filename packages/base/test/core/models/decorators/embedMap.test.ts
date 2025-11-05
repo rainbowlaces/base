@@ -326,7 +326,7 @@ describe('BaseModel: Map Helper Methods', () => {
         const comment = new TestComment();
         mock.method(comment, 'serialize', () => ({ content: 'Test comment' }));
 
-        post.setInMap('comments', 'first', comment);
+        (post as any).setInMap('comments', 'first', comment);
 
         const serialized = post.serialize();
         assert.deepStrictEqual((serialized as any).comments, {
@@ -342,7 +342,7 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        post.setInMap('comments', 'key1', { content: 'Direct data' } as any);
+        (post as any).setInMap('comments', 'key1', { content: 'Direct data' } as any);
 
         const serialized = post.serialize();
         assert.deepStrictEqual((serialized as any).comments, {
@@ -358,8 +358,8 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        post.setInMap('comments', 'key1', { content: 'First' } as any);
-        post.setInMap('comments', 'key1', { content: 'Updated' } as any);
+        (post as any).setInMap('comments', 'key1', { content: 'First' } as any);
+        (post as any).setInMap('comments', 'key1', { content: 'Updated' } as any);
 
         const serialized = post.serialize();
         assert.deepStrictEqual((serialized as any).comments, {
@@ -378,9 +378,9 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        post.setInMap('comments', 'test', { content: 'Test' } as any);
+        (post as any).setInMap('comments', 'test', { content: 'Test' } as any);
 
-        const result = await post.getFromMap('comments', 'test');
+        const result = await (post as any).getFromMap('comments', 'test');
         assert.strictEqual(result, mockComment, 'Should return hydrated model');
     });
 
@@ -392,7 +392,7 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        const result = await post.getFromMap('comments', 'nonexistent');
+        const result = await (post as any).getFromMap('comments', 'nonexistent');
         assert.strictEqual(result, undefined, 'Should return undefined for missing key');
     });
 
@@ -404,10 +404,10 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        post.setInMap('comments', 'key1', { content: 'First' } as any);
-        post.setInMap('comments', 'key2', { content: 'Second' } as any);
+        (post as any).setInMap('comments', 'key1', { content: 'First' } as any);
+        (post as any).setInMap('comments', 'key2', { content: 'Second' } as any);
 
-        const deleted = post.deleteFromMap('comments', 'key1');
+        const deleted = (post as any).deleteFromMap('comments', 'key1');
         assert.strictEqual(deleted, true, 'Should return true when deleting existing key');
 
         const serialized = post.serialize();
@@ -424,7 +424,7 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        const deleted = post.deleteFromMap('comments', 'nonexistent');
+        const deleted = (post as any).deleteFromMap('comments', 'nonexistent');
         assert.strictEqual(deleted, false, 'Should return false for non-existent key');
     });
 
@@ -436,10 +436,10 @@ describe('BaseModel: Map Helper Methods', () => {
         }
 
         const post = new TestPost();
-        post.setInMap('comments', 'exists', { content: 'Test' } as any);
+        (post as any).setInMap('comments', 'exists', { content: 'Test' } as any);
 
-        assert.strictEqual(post.hasInMap('comments', 'exists'), true, 'Should return true for existing key');
-        assert.strictEqual(post.hasInMap('comments', 'missing'), false, 'Should return false for missing key');
+        assert.strictEqual((post as any).hasInMap('comments', 'exists'), true, 'Should return true for existing key');
+        assert.strictEqual((post as any).hasInMap('comments', 'missing'), false, 'Should return false for missing key');
     });
 
     it('should throw error when using map helpers on non-map fields', async () => {
@@ -452,19 +452,19 @@ describe('BaseModel: Map Helper Methods', () => {
         const post = new TestPost();
 
         assert.throws(() => {
-            post.setInMap('regularField' as any, 'key', 'value' as any);
+            (post as any).setInMap('regularField' as any, 'key', 'value' as any);
         }, /can only be used on an 'embedMap' field/, 'setInMap should throw on non-map field');
 
         await assert.rejects(async () => {
-            await post.getFromMap('regularField' as any, 'key');
+            await (post as any).getFromMap('regularField' as any, 'key');
         }, /can only be used on an 'embedMap' field/, 'getFromMap should throw on non-map field');
 
         assert.throws(() => {
-            post.deleteFromMap('regularField' as any, 'key');
+            (post as any).deleteFromMap('regularField' as any, 'key');
         }, /can only be used on an 'embedMap' field/, 'deleteFromMap should throw on non-map field');
 
         assert.throws(() => {
-            post.hasInMap('regularField' as any, 'key');
+            (post as any).hasInMap('regularField' as any, 'key');
         }, /can only be used on an 'embedMap' field/, 'hasInMap should throw on non-map field');
     });
 
@@ -481,21 +481,21 @@ describe('BaseModel: Map Helper Methods', () => {
         const post = new TestPost();
         
         // Set multiple values
-        post.setInMap('comments', 'a', { content: 'A' } as any);
-        post.setInMap('comments', 'b', { content: 'B' } as any);
-        post.setInMap('comments', 'c', { content: 'C' } as any);
+        (post as any).setInMap('comments', 'a', { content: 'A' } as any);
+        (post as any).setInMap('comments', 'b', { content: 'B' } as any);
+        (post as any).setInMap('comments', 'c', { content: 'C' } as any);
 
         // Check existence
-        assert.strictEqual(post.hasInMap('comments', 'a'), true);
-        assert.strictEqual(post.hasInMap('comments', 'b'), true);
-        assert.strictEqual(post.hasInMap('comments', 'c'), true);
+        assert.strictEqual((post as any).hasInMap('comments', 'a'), true);
+        assert.strictEqual((post as any).hasInMap('comments', 'b'), true);
+        assert.strictEqual((post as any).hasInMap('comments', 'c'), true);
 
         // Delete one
-        post.deleteFromMap('comments', 'b');
-        assert.strictEqual(post.hasInMap('comments', 'b'), false);
+        (post as any).deleteFromMap('comments', 'b');
+        assert.strictEqual((post as any).hasInMap('comments', 'b'), false);
 
         // Get one
-        const result = await post.getFromMap('comments', 'a');
+        const result = await (post as any).getFromMap('comments', 'a');
         assert.strictEqual(result, mockComment);
 
         // Check final state
