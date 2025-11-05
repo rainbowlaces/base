@@ -1,7 +1,7 @@
 import { describe, it, mock } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
-import { embed } from '../../../src/core/models/decorators/embed.js';
+import { embedMany } from '../../../src/core/models/decorators/embedMany.js';
 import { model } from '../../../src/core/models/decorators/model.js';
 import { field } from '../../../src/core/models/decorators/field.js';
 import { type EmbedMany } from '../../../src/core/models/types.js';
@@ -18,7 +18,7 @@ describe('BaseModel: Array Helper Methods', () => {
 
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
 
                 async getComment(index: number) {
@@ -40,7 +40,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return undefined for out of bounds index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
 
                 async getComment(index: number) {
@@ -79,7 +79,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should update item at specific index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -106,7 +106,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should accept serialized data', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -124,7 +124,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should throw for out of bounds index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -142,7 +142,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should delete item at specific index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -166,7 +166,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return false for out of bounds index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -182,7 +182,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return true for valid index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -199,7 +199,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return false for out of bounds index', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -215,7 +215,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should find first matching item', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -247,7 +247,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return undefined when no match found', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -264,7 +264,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should support async predicates', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -294,7 +294,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should filter items matching predicate', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -323,7 +323,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should return empty array when no matches', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -340,7 +340,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should support async predicates', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -368,7 +368,7 @@ describe('BaseModel: Array Helper Methods', () => {
         it('should pass index to predicate', async () => {
             @model
             class TestPost extends BaseModel {
-                @embed(TestComment, { cardinality: 'many' })
+                @embedMany(TestComment)
                 accessor comments!: EmbedMany<TestComment>;
             }
 
@@ -405,7 +405,7 @@ describe('BaseModel: Array Helper Methods', () => {
 
             @model
             class TestContainer extends BaseModel {
-                @embed(TestItem, { cardinality: 'many' })
+                @embedMany(TestItem)
                 accessor items!: EmbedMany<TestItem>;
 
                 async addItems(items: any[]): Promise<void> {

@@ -3,8 +3,8 @@ import { BaseModel } from '../../../src/core/models/baseModel.js';
 import { BaseIdentifiableModel } from '../../../src/core/models/baseIdentifiableModel.js';
 import { field } from '../../../src/core/models/decorators/field.js';
 import { model } from '../../../src/core/models/decorators/model.js';
-import { reference } from '../../../src/core/models/decorators/reference.js';
-import { embed } from '../../../src/core/models/decorators/embed.js';
+import { referenceOne } from '../../../src/core/models/decorators/referenceOne.js';
+import { embedMany } from '../../../src/core/models/decorators/embedMany.js';
 import { type Persistable, type Deletable, type ModelData, type RefOne, type EmbedMany } from '../../../src/core/models/types.js';
 import { UniqueID } from '../../../src/core/models/uniqueId.js';
 import { BaseDi } from '../../../src/core/di/baseDi.js';
@@ -59,10 +59,10 @@ export class TestPost extends BaseIdentifiableModel {
     @field()
     accessor title!: string;
 
-    @reference(TestUser, { cardinality: 'one' })
+    @referenceOne(TestUser)
     accessor author!: RefOne<TestUser>;
 
-    @embed(TestComment, { cardinality: 'many' })
+    @embedMany(TestComment)
     accessor comments!: EmbedMany<TestComment>;
 }
 

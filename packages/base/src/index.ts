@@ -77,9 +77,14 @@ export { baseModule } from "./core/module/decorators/baseModule.js";
 // Model decorators
 export { model } from "./core/models/decorators/model.js";
 export { field } from "./core/models/decorators/field.js";
-export { reference } from "./core/models/decorators/reference.js";
-export { embed } from "./core/models/decorators/embed.js";
+export { embedMany } from "./core/models/decorators/embedMany.js";
 export { embedMap } from "./core/models/decorators/embedMap.js";
+export { embedOne } from "./core/models/decorators/embedOne.js";
+export { referenceMany } from "./core/models/decorators/referenceMany.js";
+export { referenceOne } from "./core/models/decorators/referenceOne.js";
+export { embedOne } from "./core/models/decorators/embedOne.js";
+export { referenceMany } from "./core/models/decorators/referenceMany.js";
+export { referenceOne } from "./core/models/decorators/referenceOne.js";
 export { meta } from "./core/models/decorators/meta.js";
 
 // Logger decorators

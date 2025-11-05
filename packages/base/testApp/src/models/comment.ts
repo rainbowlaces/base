@@ -1,10 +1,10 @@
-import { model, reference, thunk, type RefOne, field } from '../../../src/index.js';
+import { model, referenceOne, thunk, type RefOne, field } from '../../../src/index.js';
 import { MemoryEmbeddableModel } from '../data/memoryEmbeddableModel.js';
 import { User } from './user.js';
 
 @model
 export class Comment extends MemoryEmbeddableModel {
-    @reference(thunk(() => User), { cardinality: 'one' })
+    @referenceOne(thunk(() => User))
     accessor author!: RefOne<User>;
 
     @field()

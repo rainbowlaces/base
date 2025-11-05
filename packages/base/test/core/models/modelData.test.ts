@@ -2,7 +2,8 @@ import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
 import { field } from '../../../src/core/models/decorators/field.js';
-import { embed } from '../../../src/core/models/decorators/embed.js';
+import { embedOne } from '../../../src/core/models/decorators/embedOne.js';
+import { embedMany } from '../../../src/core/models/decorators/embedMany.js';
 import { model } from '../../../src/core/models/decorators/model.js';
 import { type ModelData } from '../../../src/core/models/types.js';
 import { setupTestTeardown } from './setup.js';
@@ -32,10 +33,10 @@ class ComplexTestModel extends BaseModel {
     @field()
     accessor title!: string;
 
-    @embed(EmbeddedTestModel, { cardinality: 'one' })
+    @embedOne(EmbeddedTestModel)
     accessor embedded!: any;
 
-    @embed(EmbeddedTestModel, { cardinality: 'many' })
+    @embedMany(EmbeddedTestModel)
     accessor embeddedList!: any;
 }
 

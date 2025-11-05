@@ -6,7 +6,8 @@ import { BaseDi } from '../../../src/core/di/baseDi.js';
 import { BaseModel } from '../../../src/core/models/baseModel.js';
 import { field } from '../../../src/core/models/decorators/field.js';
 import { model } from '../../../src/core/models/decorators/model.js';
-import { embed } from '../../../src/core/models/decorators/embed.js';
+import { embedMany } from '../../../src/core/models/decorators/embedMany.js';
+import { embedOne } from '../../../src/core/models/decorators/embedOne.js';
 import { UniqueID } from '../../../src/core/models/uniqueId.js';
 import type { Persistable, Deletable, EmbedMany, EmbedOne } from '../../../src/core/models/types.js';
 
@@ -961,7 +962,7 @@ describe('BaseModel: appendTo Method', () => {
 
         @model
         class TestContainer extends BaseModel {
-            @embed(TestItem, { cardinality: 'many', default: () => [] })
+            @embedMany(TestItem, { default: () => [] })
             accessor items!: EmbedMany<TestItem>;
 
             async addItem(item: TestItem): Promise<void> {
@@ -997,7 +998,7 @@ describe('BaseModel: appendTo Method', () => {
 
         @model
         class TestContainer extends BaseModel {
-            @embed(TestItem, { cardinality: 'many', default: () => [] })
+            @embedMany(TestItem, { default: () => [] })
             accessor items!: EmbedMany<TestItem>;
 
             async addItems(items: TestItem[]): Promise<void> {
@@ -1031,7 +1032,7 @@ describe('BaseModel: appendTo Method', () => {
 
         @model
         class TestContainer extends BaseModel {
-            @embed(TestItem, { cardinality: 'one' })
+            @embedOne(TestItem)
             accessor item!: EmbedOne<TestItem>;
         }
 
