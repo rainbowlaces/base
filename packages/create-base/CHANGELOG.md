@@ -1,5 +1,16 @@
 # @rainbowlaces/create-base
 
+## 3.18.0
+
+### Minor Changes
+
+- 9dfb65b: Final BaseModels Refactor
+
+### Patch Changes
+
+- Updated dependencies [9dfb65b]
+  - @rainbowlaces/base@3.18.0
+
 ## 3.17.1
 
 ### Patch Changes

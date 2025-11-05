@@ -118,8 +118,8 @@ importers:
   packages/create-base:
     dependencies:
       '@rainbowlaces/base':
-        specifier: 3.17.0
-        version: 3.17.0(esbuild@0.25.12)(eslint@9.39.1)(nodemon@3.1.10)(typescript@5.9.3)
+        specifier: 3.17.1
+        version: 3.17.1(esbuild@0.25.12)(eslint@9.39.1)(nodemon@3.1.10)(typescript@5.9.3)
 
 packages:
 
@@ -452,13 +452,13 @@ packages:
   '@paralleldrive/cuid2@2.3.1':
     resolution: {integrity: sha512-XO7cAxhnTZl0Yggq6jOgjiOHhbgcO4NqFqwSmQpjK3b6TEE6Uj/jfSk6wzYyemh3+I0sHirKSetjQwn5cZktFw==}
 
-  '@rainbowlaces/base@3.17.0':
-    resolution: {integrity: sha512-z6aw7uBlyT0ykWlG8Sq9wd2iLes23o0EavckxMOChnZu5J8nQYQSOVZq59xDu+Bh1hKhgDKR3+SrvK9GundSIQ==}
+  '@rainbowlaces/base@3.17.1':
+    resolution: {integrity: sha512-s8Loo1q56kPdoCT1+YJIri6z/WYI+W/gOFkwJUhff3sHkYscaxDXzuEYaeX7UeSsi7NLOFfd3lXUpG4wZo+M6Q==}
     engines: {node: '>=24.0.0'}
     hasBin: true
     peerDependencies:
-      esbuild: ^0.25.11
-      eslint: ^9.38.0
+      esbuild: ^0.25.12
+      eslint: ^9.39.1
       nodemon: ^3.1.10
       typescript: ^5.9.3
 
@@ -1919,7 +1919,7 @@ snapshots:
     dependencies:
       '@noble/hashes': 1.8.0
 
-  '@rainbowlaces/base@3.17.0(esbuild@0.25.12)(eslint@9.39.1)(nodemon@3.1.10)(typescript@5.9.3)':
+  '@rainbowlaces/base@3.17.1(esbuild@0.25.12)(eslint@9.39.1)(nodemon@3.1.10)(typescript@5.9.3)':
     dependencies:
       chalk: 5.6.2
       commander: 14.0.2
