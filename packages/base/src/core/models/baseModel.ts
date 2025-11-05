@@ -958,6 +958,48 @@ export abstract class BaseModel {
     return mapKey in currentData && currentData[mapKey] !== undefined;
   }
 
+  /**
+   * Get all entries from an embedMap field as an array of [key, hydratedModel] tuples.
+   * Similar to Map.entries() but returns hydrated model instances.
+   * 
+   * @param fieldKey - The name of the embedMap field
+   * @returns Array of [key, hydratedModel] tuples
+   */
+  protected async getMapEntries<K extends keyof this & string, T extends BaseModel>(
+    fieldKey: K
+  ): Promise<Array<[string, T]>> {
+    const constructor = this.constructor as typeof BaseModel;
+    const schema = constructor.getProcessedSchema();
+    const fieldMeta = schema.fields[fieldKey as string];
+
+    if (!fieldMeta) {
+      throw new BaseError(`Field '${fieldKey}' is not defined in the schema.`);
+    }
+
+    const isMap = fieldMeta.relation?.cardinality === 'many' && 
+                  fieldMeta.relation?.structure === 'map';
+
+    if (!isMap) {
+      throw new BaseError(`'getMapEntries' can only be used on an 'embedMap' field.`);
+    }
+
+    const currentData = (this.get(fieldKey as string) as Record<string, ModelData<BaseModel>>) || {};
+    
+    if (fieldMeta.relation?.type === 'reference') {
+      throw new BaseError(`'getMapEntries' is not supported for reference relations.`);
+    }
+
+    const modelConstructor = resolve(fieldMeta.relation!.model) as ModelConstructor<T>;
+    const entries: Array<[string, T]> = [];
+
+    for (const [key, data] of Object.entries(currentData)) {
+      const hydratedModel = await modelConstructor.fromData(data as ModelData<T>);
+      entries.push([key, hydratedModel]);
+    }
+
+    return entries;
+  }
+
   public has(key: ModelFieldKeys<this>): boolean {
     return (
       this.defined(key) && key in this.#data && this.#data[key] !== undefined

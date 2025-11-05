@@ -442,6 +442,60 @@ describe('BaseModel: Map Helper Methods', () => {
         assert.strictEqual((post as any).hasInMap('comments', 'missing'), false, 'Should return false for missing key');
     });
 
+    it('should get all entries using getMapEntries()', async () => {
+        const mockComments = [
+            new TestComment(),
+            new TestComment(),
+            new TestComment()
+        ];
+        let callCount = 0;
+        mock.method(TestComment, 'fromData', () => {
+            return Promise.resolve(mockComments[callCount++]);
+        });
+
+        @model
+        class TestPost extends BaseModel {
+            @embedMap(TestComment)
+            accessor comments!: EmbedMap<TestComment>;
+        }
+
+        const post = new TestPost();
+        (post as any).setInMap('comments', 'first', { content: 'First' } as any);
+        (post as any).setInMap('comments', 'second', { content: 'Second' } as any);
+        (post as any).setInMap('comments', 'third', { content: 'Third' } as any);
+
+        const entries = await (post as any).getMapEntries('comments');
+
+        assert.strictEqual(entries.length, 3, 'Should return 3 entries');
+        
+        // Check that we got the right structure
+        assert.ok(Array.isArray(entries), 'Should return an array');
+        assert.ok(entries.every(e => Array.isArray(e) && e.length === 2), 'Each entry should be a [key, value] tuple');
+        
+        // Check the keys
+        const keys = entries.map(([key]) => key).sort();
+        assert.deepStrictEqual(keys, ['first', 'second', 'third'], 'Should have correct keys');
+        
+        // Check the values are the hydrated models
+        const values = entries.map(([, value]) => value);
+        assert.ok(values.includes(mockComments[0]), 'Should include first mock comment');
+        assert.ok(values.includes(mockComments[1]), 'Should include second mock comment');
+        assert.ok(values.includes(mockComments[2]), 'Should include third mock comment');
+    });
+
+    it('should return empty array for empty map in getMapEntries()', async () => {
+        @model
+        class TestPost extends BaseModel {
+            @embedMap(TestComment)
+            accessor comments!: EmbedMap<TestComment>;
+        }
+
+        const post = new TestPost();
+        const entries = await (post as any).getMapEntries('comments');
+
+        assert.strictEqual(entries.length, 0, 'Should return empty array');
+    });
+
     it('should throw error when using map helpers on non-map fields', async () => {
         @model
         class TestPost extends BaseModel {
