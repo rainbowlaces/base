@@ -9,7 +9,6 @@ import {
     type ModelConstructor, 
     type EmbedOne, 
     type EmbedMany, 
-    type NoDerivedModelData,
     type FieldMetadata,
     type IBaseModel,
     type IBaseModelDecoratorAccessor,
@@ -66,20 +65,20 @@ export function embed<T extends IBaseModel>(
                         return;
                     } else {
                         // Getter: deserialize and return the model
-                        const rawData = (this as IBaseModel & IBaseModelDecoratorAccessor)._internalGet<NoDerivedModelData<T>>(propertyName);
+                        const rawData = (this as IBaseModel & IBaseModelDecoratorAccessor)._internalGet<ModelData<T>>(propertyName);
                         if (rawData === undefined || rawData === null) return undefined;
-                        return await resolvedModel.fromData(rawData as ModelData<T>) as T;
+                        return await resolvedModel.fromData(rawData) as T;
                     }
                 }.bind(this) as EmbedOne<T>;
             } else {
                 return async function(this: IBaseModel, values?: T[] | BaseModelCollection<T>): Promise<BaseModelCollection<T> | void> {
                     if (arguments.length > 0) {
-                        let dataToSet: NoDerivedModelData<T>[] = [];
+                        let dataToSet: ModelData<T>[] = [];
                         if (values instanceof BaseModelCollection) {
                             dataToSet = await values.serialize();
                         }
                         else {
-                            dataToSet = (values ?? []).map(v => v.serialize() as NoDerivedModelData<T>);
+                            dataToSet = (values ?? []).map(v => v.serialize() as ModelData<T>);
                         }
                         (this as IBaseModel & IBaseModelDecoratorAccessor)._internalSet(propertyName, dataToSet);
                         return;

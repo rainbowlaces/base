@@ -31,10 +31,6 @@ export { BaseIdentifiableModel } from "./core/models/baseIdentifiableModel.js";
 export { BaseModelCollection } from "./core/models/baseModelCollection.js";
 export { UniqueID } from "./core/models/uniqueId.js";
 
-// Attributable exports
-export { Attributable } from "./core/models/attributable/attributable.js";
-export { Attribute } from "./core/models/attributable/attribute.js";
-
 // Request handler exports
 export { BaseRequest } from "./core/requestHandler/baseRequest.js";
 export { BaseResponse } from "./core/requestHandler/baseResponse.js";
@@ -82,7 +78,6 @@ export { baseModule } from "./core/module/decorators/baseModule.js";
 export { model } from "./core/models/decorators/model.js";
 export { field } from "./core/models/decorators/field.js";
 export { reference } from "./core/models/decorators/reference.js";
-export { derived } from "./core/models/decorators/derived.js";
 export { embed } from "./core/models/decorators/embed.js";
 export { embedMap } from "./core/models/decorators/embedMap.js";
 export { meta } from "./core/models/decorators/meta.js";
@@ -122,13 +117,11 @@ export type { BaseModelClass } from "./core/models/baseModel.js";
 export type { 
   ModelConstructor,
   ModelData,
-  NoDerivedModelData,
   DefinedId,
   DefinedIds,
   AsyncDefinedId,
   AsyncDefinedIds,
   Cardinality,
-  Derived,
   RelationType,
   ModelEventType,
   Persistable,
@@ -144,15 +137,7 @@ export type {
   FieldMetadata,
   BaseModelSchema,
   ModelEvent,
-  FieldOptions,
-  AttributeSpec,
-  AttributeValue,
-  GetAttributeReturn,
-  AttributeTypeConstructor,
-  AttributeScalarConstructor,
-  ComplexAttributeType,
-  AttributeTypeDefinition,
-  ExtractAttributeSpec
+  FieldOptions
 } from "./core/models/types.js";
 
 // Logger types

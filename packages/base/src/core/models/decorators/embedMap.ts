@@ -6,7 +6,6 @@ import {
     type ModelData, 
     type ModelConstructor, 
     type EmbedMap, 
-    type NoDerivedModelData,
     type FieldMetadata,
     type IBaseModel,
     type IBaseModelDecoratorAccessor,
@@ -73,9 +72,9 @@ export function embedMap<T extends IBaseModel>(
                     }
                     
                     // Convert Map<string, T> to Record<string, ModelData<T>>
-                    const dataToSet: Record<string, NoDerivedModelData<T>> = {};
+                    const dataToSet: Record<string, ModelData<T>> = {};
                     for (const [key, model] of resolvedValue.entries()) {
-                        dataToSet[key] = model.serialize() as NoDerivedModelData<T>;
+                        dataToSet[key] = model.serialize() as ModelData<T>;
                     }
                     
                     (this as IBaseModel & IBaseModelDecoratorAccessor)._internalSet(propertyName, dataToSet);

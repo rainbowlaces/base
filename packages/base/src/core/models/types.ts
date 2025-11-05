@@ -41,64 +41,6 @@ export interface IBaseModelConstructor {
 export type Cardinality = 'one' | 'many';
 export type RelationType = 'reference' | 'embed';
 
-// --- ATTRIBUTABLE TYPES ---
-
-/** A union of supported attribute type constructors for scalar values. */
-export type AttributeScalarConstructor = StringConstructor | NumberConstructor | BooleanConstructor | DateConstructor | typeof UniqueID;
-
-/** Legacy alias for backward compatibility */
-export type AttributeTypeConstructor = AttributeScalarConstructor;
-
-/**
- * Runtime validator interface for complex objects.
- * Provides type-safe validation through TypeScript type guards.
- */
-export interface ComplexAttributeType<T> {
-    validate: (value: unknown) => value is T;
-    
-    /**
-     * An optional function to define custom equality logic. It compares an
-     * arbitrary value 'a' (e.g., an ID provided by the developer) against a
-     * fully-formed instance 'b' from the attribute store.
-     */
-    equals?: (a: unknown, b: T) => boolean;
-}
-
-/**
- * Union type representing all valid attribute type definitions:
- * - Scalar constructors for primitive types
- * - Complex type validators for object types
- */
-export type AttributeTypeDefinition = 
-    | AttributeScalarConstructor 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    | ComplexAttributeType<any>;
-
-/**
- * Defines the specification for a model's attributes. Maps an attribute
- * name to a tuple containing its [TypeDefinition, Cardinality].
- */
-export interface AttributeSpec {
-    readonly [key: string]: readonly [type: AttributeTypeDefinition, cardinality: 'single' | 'many'];
-}
-
-/** Helper to get the instance type from a type definition */
-export type AttributeValue<T extends AttributeSpec, K extends keyof T> = 
-    T[K][0] extends StringConstructor ? string :
-    T[K][0] extends NumberConstructor ? number :
-    T[K][0] extends BooleanConstructor ? boolean :
-    T[K][0] extends DateConstructor ? Date :
-    T[K][0] extends typeof UniqueID ? UniqueID :
-    T[K][0] extends ComplexAttributeType<infer U> ? U :
-    never;
-
-/** Helper to determine the return type of getAttribute based on cardinality */
-export type GetAttributeReturn<T extends AttributeSpec, K extends keyof T> =
-    T[K][1] extends 'single' ? AttributeValue<T, K> | undefined : AttributeValue<T, K>[];
-
-/** Helper type to extract the Attributes property type from an attributable instance */
-export type ExtractAttributeSpec<T> = T extends { readonly Attributes: infer A } ? A : AttributeSpec;
-
 // --- METADATA INTERFACES (Designed for Extension) ---
 
 /**
@@ -159,7 +101,7 @@ export interface ModelEvent<E extends IBaseModel = IBaseModel> {
     id: UniqueID;
     type: ModelEventType;
     model: IBaseModel;
-    data: NoDerivedModelData<E>;
+    data: ModelData<E>;
 }
 
 export type ModelConstructor<T extends IBaseModel = IBaseModel> = (new () => T) & IBaseModelConstructor;
@@ -167,7 +109,6 @@ export type ModelConstructor<T extends IBaseModel = IBaseModel> = (new () => T) 
 // Options for the @field decorator
 export interface FieldOptions<T = unknown> {
     readOnly?: boolean;
-    derived?: boolean;
     default?: (() => T);
     hydrator?: (value: unknown) => T;
     validator?: (value: T) => true;
@@ -204,8 +145,6 @@ export interface Countable {
     count(): Promise<number | undefined>;
 }
 
-export type Derived<T> = T;
-
 // --- Relationship Types ---
 export interface RefOne<T extends BaseIdentifiableModel> {
     (): Promise<T | undefined>;
@@ -232,19 +171,9 @@ export interface EmbedMap<T extends IBaseModel> {
     (value: MaybeAsync<Map<string, T>>): Promise<void>;
 }
 
-type DerivedFieldKeys<T> = {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  [P in keyof T]: T[P] extends () => Derived<any> ? P : never;
-}[keyof T];
-
-export type NoDerivedModelData<T extends IBaseModel> = Omit<ModelData<T>, DerivedFieldKeys<T>>;
-
-type Awaited<T> = T extends PromiseLike<infer U> ? U : T;
-
 export type ModelData<T extends IBaseModel> = {
     [P in keyof T]?:
-        T[P] extends () => Derived<infer U> ? Awaited<U>
-        : T[P] extends RefOne<infer U> ? DefinedId<U>
+        T[P] extends RefOne<infer U> ? DefinedId<U>
         : T[P] extends RefMany<infer U> ? DefinedId<U>[]
         : T[P] extends EmbedOne<infer U> ? ModelData<U>
         : T[P] extends EmbedMany<infer U> ? ModelData<U>[]

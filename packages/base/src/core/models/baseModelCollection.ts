@@ -1,5 +1,5 @@
 // src/core/models/baseModelCollection.ts
-import { type ModelData, type ModelConstructor, type NoDerivedModelData, type IBaseModel } from "./types.js";
+import { type ModelData, type ModelConstructor, type IBaseModel } from "./types.js";
 
 /**
  * A concrete, minimal collection that implements lazy iteration.
@@ -43,8 +43,8 @@ export class BaseModelCollection<T extends IBaseModel> implements AsyncIterable<
         return items;
     }
 
-    async serialize(): Promise<NoDerivedModelData<T>[]> {
+    async serialize(): Promise<ModelData<T>[]> {
         const models = await this.toArray();
-        return models.map(model => model.serialize() as NoDerivedModelData<T>);
+        return models.map(model => model.serialize() as ModelData<T>);
     }
 }

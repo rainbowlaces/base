@@ -25,7 +25,6 @@ import {
   type BaseModelSchema,
   type ModelMetadata,
   type FieldMetadata,
-  type NoDerivedModelData,
   type ModelData,
   type IBaseModel,
 } from "./types.js";
@@ -160,7 +159,7 @@ export abstract class BaseModel extends BaseModelPersistence implements IBaseMod
    */
   public static async fromData<T extends BaseModel>(
     this: new () => T,
-    data: NoDerivedModelData<T>
+    data: ModelData<T>
   ): Promise<T> {
     const instance = new this();
     await instance.hydrate(data);

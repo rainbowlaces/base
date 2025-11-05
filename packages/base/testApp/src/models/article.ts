@@ -1,7 +1,6 @@
 import { MemoryModel } from '../data/memoryModel.js';
 import { Comment } from './comment.js';
-import { type Derived, embed, type EmbedMany, field, model, thunk } from '../../../src/index.js';
-import { derived } from '../../../src/core/models/decorators/derived.js';
+import { embed, type EmbedMany, field, model, thunk } from '../../../src/index.js';
 
 @model
 export class Article extends MemoryModel {
@@ -14,8 +13,7 @@ export class Article extends MemoryModel {
     @embed(thunk(() => Comment), { cardinality: 'many' })
     accessor comments!: EmbedMany<Comment>;
 
-    @derived()
-    async status(): Derived<Promise<string>> {
+    async status(): Promise<string> {
         return "draft";
     }
 }

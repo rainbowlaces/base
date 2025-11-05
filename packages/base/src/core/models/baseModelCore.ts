@@ -493,7 +493,6 @@ export abstract class BaseModelCore {
 
   /**
    * Serializes the model to a plain object representation.
-   * Excludes derived fields - use derive() for those.
    */
    
   public serialize(): Record<string, unknown> {
@@ -509,35 +508,6 @@ export abstract class BaseModelCore {
       }
     }
 
-    return data;
-  }
-
-  /**
-   * Derives all computed fields and returns the full model data.
-   * This includes both regular fields and derived fields.
-   */
-   
-  public async derive(): Promise<Record<string, unknown>> {
-     
-    const constructor = this.constructor as IBaseModelConstructor;
-    const schema = constructor.getProcessedSchema();
-    const data: Record<string, unknown> = this.serialize();
-    const promises: Promise<void>[] = [];
-
-    for (const key in schema.fields) {
-      if (schema.fields[key].options.derived) {
-        promises.push(
-          (async () => {
-            const method = (this as Record<string, unknown>)[key];
-            if (typeof method === "function") {
-              data[key] = await method.call(this);
-            }
-          })()
-        );
-      }
-    }
-
-    await Promise.all(promises);
     return data;
   }
 
