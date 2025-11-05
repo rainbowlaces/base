@@ -82,9 +82,6 @@ export { embedMap } from "./core/models/decorators/embedMap.js";
 export { embedOne } from "./core/models/decorators/embedOne.js";
 export { referenceMany } from "./core/models/decorators/referenceMany.js";
 export { referenceOne } from "./core/models/decorators/referenceOne.js";
-export { embedOne } from "./core/models/decorators/embedOne.js";
-export { referenceMany } from "./core/models/decorators/referenceMany.js";
-export { referenceOne } from "./core/models/decorators/referenceOne.js";
 export { meta } from "./core/models/decorators/meta.js";
 
 // Logger decorators
